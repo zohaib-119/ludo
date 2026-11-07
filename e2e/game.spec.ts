@@ -80,7 +80,7 @@ test('a full game on autoplay ends in results; play again starts a new game', as
   const host = await hostWithBots(browser, 'yellow', ['red', 'green', 'blue']);
   const page = host.page;
   await page.getByTestId('game-menu').click();
-  await page.getByRole('button', { name: 'Let the bot play for me' }).click();
+  await page.getByRole('switch', { name: 'Auto mode' }).click();
   await expect(page.getByTestId('im-back')).toBeVisible();
   const results = page.getByTestId('results');
   await expect(results).toBeVisible({ timeout: 180_000 });
