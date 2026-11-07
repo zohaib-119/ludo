@@ -160,14 +160,24 @@ export const BoardArt = memo(function BoardArt({
         const active = activeColor === col;
         return (
           <g key={`yard-${col}`}>
-            <rect x={o.x} y={o.y} width={6} height={6} fill={`url(#yard-${col})`} stroke={GRID} strokeWidth={0.035} />
+            {/* Rounded on all four corners, like the frame and the trays. */}
+            <rect
+              x={o.x + 0.04}
+              y={o.y + 0.04}
+              width={5.92}
+              height={5.92}
+              rx={0.5}
+              fill={`url(#yard-${col})`}
+              stroke={GRID}
+              strokeWidth={0.035}
+            />
             {active && (
               <rect
                 x={o.x + 0.12}
                 y={o.y + 0.12}
                 width={5.76}
                 height={5.76}
-                rx={0.35}
+                rx={0.4}
                 fill="none"
                 stroke="white"
                 strokeWidth={0.16}

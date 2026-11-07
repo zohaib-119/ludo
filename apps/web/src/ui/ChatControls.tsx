@@ -149,9 +149,9 @@ export function ChatPanel({
 
       <form
         onSubmit={send}
-        className="mt-2 flex items-center gap-1 rounded-full border border-line bg-surface p-1 pl-4 transition-shadow focus-within:border-accent focus-within:ring-4 focus-within:ring-accent/15"
+        className="mt-2 flex h-12 items-center gap-2 rounded-full border border-line bg-surface py-1 pr-1 pl-4 transition-shadow focus-within:border-accent focus-within:ring-4 focus-within:ring-accent/15"
       >
-        <label className="flex-1">
+        <label className="min-w-0 flex-1">
           <span className="sr-only">{t('chat.placeholder')}</span>
           <input
             ref={inputRef}
@@ -163,17 +163,17 @@ export function ChatPanel({
             data-testid="chat-input"
           />
         </label>
-        <IconButton
-          label={t('chat.send')}
+        {/* A round button sitting inside the pill, the same gap from its edge all round. */}
+        <button
           type="submit"
-          className={cx(
-            'shrink-0 rounded-full transition-opacity',
-            'bg-accent text-on-accent hover:bg-accent hover:text-on-accent',
-            !text.trim() && 'opacity-50',
-          )}
+          aria-label={t('chat.send')}
+          title={t('chat.send')}
+          disabled={!text.trim()}
+          className="flex size-10 shrink-0 items-center justify-center rounded-full bg-accent text-on-accent shadow-soft transition-[opacity,transform] hover:scale-105 active:scale-95 disabled:opacity-45 disabled:hover:scale-100"
+          data-testid="chat-send"
         >
-          <SendHorizontal className="size-5" />
-        </IconButton>
+          <SendHorizontal className="size-[18px] translate-x-px" />
+        </button>
       </form>
     </div>
   );
