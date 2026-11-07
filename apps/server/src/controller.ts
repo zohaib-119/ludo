@@ -5,6 +5,7 @@
  * See docs/03-architecture.md §4 and docs/05-protocol.md.
  */
 import {
+  type Action,
   type Color,
   type GameEvent,
   type GameState,
@@ -15,8 +16,11 @@ import {
   legalMoves,
   validateSetup,
 } from '@ludo/engine';
+import { chooseAction } from '@ludo/bot';
 import {
   AVATARS,
+  BOTS,
+  type BotCause,
   type ChatMessage,
   type Command,
   type CommandResult,
@@ -33,6 +37,7 @@ import {
   type PresetId,
   REACTIONS,
   type ReactMessage,
+  type RoomEvent,
   type RoomPhase,
   type RoomSettings,
   type RoomView,
@@ -42,6 +47,11 @@ import {
 } from '@ludo/protocol';
 
 export const HOST_TRANSFER_MS = 60_000;
+/** Bot pacing so humans can follow (docs/06-bot.md §4). */
+export const BOT_ROLL_DELAY_MS = 700;
+export const BOT_MOVE_DELAY_MS = 900;
+/** Consecutive timeouts before a seat is put on autoplay. */
+export const TIMEOUTS_FOR_AUTOPLAY = 2;
 export const DISPOSE_IDLE_MS: Record<RoomPhase, number> = {
   lobby: 5 * 60_000,
   playing: 30 * 60_000,
@@ -81,6 +91,21 @@ export interface ControllerDeps {
   rng: Rng;
   now: () => number;
   newId: () => string;
+  /** The bot's decision function (injected so tests can script it). */
+  bot?: (state: GameState, rng: Rng) => Action | null;
+}
+
+/** Per-seat automation state for human seats during a game. */
+interface SeatControl {
+  autoplay: boolean;
+  botControlled: boolean;
+  timeouts: number;
+}
+
+/** The next automatic decision: when, and why. */
+export interface Wake {
+  at: number;
+  cause: BotCause | 'takeover';
 }
 
 const fail = (code: ErrorCode, message: string): CommandResult => ({ ok: false, code, message });
@@ -92,7 +117,7 @@ const isObject = (v: unknown): v is Record<string, unknown> => typeof v === 'obj
 const isColor = (v: unknown): v is Color => typeof v === 'string' && (COLORS as readonly string[]).includes(v);
 // Control characters (C0 + DEL + C1) and bidi-override / zero-width formatting characters.
 // eslint-disable-next-line no-control-regex
-const CONTROL_CHARS = /[\u0000-\u001f\u007f-\u009f​-‏‪-‮⁦-⁩]/g;
+const CONTROL_CHARS = new RegExp('[\\u0000-\\u001f\\u007f-\\u009f\\u200b-\\u200f\\u202a-\\u202e\\u2066-\\u2069]', 'g');
 
 export function cleanText(raw: string): string {
   return raw.replace(CONTROL_CHARS, '').replace(/\s+/g, ' ').trim();
@@ -106,6 +131,11 @@ export class RoomController {
   private hostId: string | null = null;
   private settings: RoomSettings = { ...DEFAULT_ROOM_SETTINGS };
   private members = new Map<string, Member>();
+  /** Seats filled by bots (lobby and game). */
+  private bots = new Set<Color>();
+  private control: Partial<Record<Color, SeatControl>> = {};
+  /** When the current decision (roll or move) became due. */
+  private decisionAt = 0;
   private game: GameState | null = null;
   private stats: Partial<Record<Color, PlayerStats>> = {};
   private endedByHost = false;
@@ -210,7 +240,11 @@ export class RoomController {
     this.touch();
   }
 
-  /** Periodic housekeeping: host transfer. Call about once a second. */
+  /**
+   * Housekeeping and automation: host transfer, then any bot decision, timer
+   * expiry or offline takeover that is due. Call about once a second, and at
+   * `nextWakeAt()`.
+   */
   tick(): void {
     const now = this.deps.now();
     if (this.connectedMembers().length > 0) this.lastPresence = now;
@@ -218,6 +252,103 @@ export class RoomController {
     if (!host || (!host.connected && now - host.offlineSince >= HOST_TRANSFER_MS)) {
       this.transferHost();
     }
+    // Several automatic steps can be due at once (e.g. a takeover followed by its first decision).
+    for (let i = 0; i < 8; i++) {
+      const wake = this.computeWake();
+      if (!wake || wake.at > now) break;
+      this.runWake(wake);
+    }
+  }
+
+  /** When tick() next has automatic work to do, or null. */
+  nextWakeAt(): number | null {
+    return this.computeWake()?.at ?? null;
+  }
+
+  private computeWake(): Wake | null {
+    const g = this.game;
+    if (this.phase !== 'playing' || !g || g.turn.phase.kind === 'gameOver') return null;
+    // Nobody watching: the game pauses instead of bots racing ahead.
+    if (this.connectedMembers().length === 0) return null;
+    const seat = g.turn.seat;
+    const pace = g.turn.phase.kind === 'awaitRoll' ? BOT_ROLL_DELAY_MS : BOT_MOVE_DELAY_MS;
+    if (this.bots.has(seat)) return { at: this.decisionAt + pace, cause: 'bot' };
+    const c = this.control[seat];
+    if (c?.autoplay) return { at: this.decisionAt + pace, cause: 'autoplay' };
+    if (c?.botControlled) return { at: this.decisionAt + pace, cause: 'offline' };
+    const candidates: Wake[] = [];
+    const deadline = this.deadline();
+    if (deadline) candidates.push({ at: deadline, cause: 'timeout' });
+    const takeoverAt = this.takeoverAt();
+    if (takeoverAt) candidates.push({ at: takeoverAt, cause: 'takeover' });
+    candidates.sort((a, b) => a.at - b.at);
+    return candidates[0] ?? null;
+  }
+
+  /** Decision deadline for a human-controlled acting seat, or 0. */
+  private deadline(): number {
+    const g = this.game;
+    if (!g || this.phase !== 'playing' || this.settings.turnTimer === 0) return 0;
+    const seat = g.turn.seat;
+    const c = this.control[seat];
+    if (this.bots.has(seat) || c?.autoplay || c?.botControlled) return 0;
+    return this.decisionAt + this.settings.turnTimer * 1000;
+  }
+
+  /** When the bot takes over the offline acting seat, or 0. */
+  private takeoverAt(): number {
+    const g = this.game;
+    if (!g || this.phase !== 'playing' || this.settings.disconnectTakeover === 0) return 0;
+    const seat = g.turn.seat;
+    const c = this.control[seat];
+    if (this.bots.has(seat) || c?.autoplay || c?.botControlled) return 0;
+    const m = this.seatOwner(seat);
+    if (!m || m.connected) return 0;
+    return Math.max(this.decisionAt, m.offlineSince) + this.settings.disconnectTakeover * 1000;
+  }
+
+  private runWake(wake: Wake): void {
+    const g = this.game!;
+    const seat = g.turn.seat;
+    if (wake.cause === 'takeover') {
+      this.control[seat] = { ...this.controlOf(seat), botControlled: true };
+      this.touch();
+      return;
+    }
+    if (wake.cause === 'timeout') {
+      const c = this.controlOf(seat);
+      c.timeouts += 1;
+      if (c.timeouts >= TIMEOUTS_FOR_AUTOPLAY) c.autoplay = true;
+      this.control[seat] = c;
+    }
+    const decide = this.deps.bot ?? chooseAction;
+    const action = decide(g, this.deps.rng);
+    if (!action) return;
+    const isTurnRoll = action.type === 'roll' && g.turn.phase.kind === 'awaitRoll' && g.turn.phase.reason === 'turn';
+    const result = apply(g, action, this.deps.rng);
+    if (!result.ok) throw new Error(`Bot chose an illegal action: ${result.error.code}`);
+    if (isTurnRoll) (this.stats[seat] ??= emptyStats()).botTurns += 1;
+    this.afterGameAction(result.state, [{ type: 'BotActed', seat, cause: wake.cause }, ...result.events]);
+  }
+
+  private controlOf(seat: Color): SeatControl {
+    return { ...(this.control[seat] ?? { autoplay: false, botControlled: false, timeouts: 0 }) };
+  }
+
+  /** Common bookkeeping after any successful game action (human or bot). */
+  private afterGameAction(next: GameState, events: RoomEvent[]): void {
+    this.game = next;
+    this.decisionAt = this.deps.now();
+    this.recordStats(events);
+    // Control returns to a reconnected player at the start of their next turn.
+    for (const e of events) {
+      if (e.type !== 'TurnStarted') continue;
+      const c = this.control[e.seat];
+      if (c?.botControlled && this.seatOwner(e.seat)?.connected) this.control[e.seat] = { ...c, botControlled: false };
+    }
+    this.emitEvents(events);
+    if (next.turn.phase.kind === 'gameOver') this.phase = 'finished';
+    this.touch();
   }
 
   shouldDispose(): boolean {
@@ -246,6 +377,12 @@ export class RoomController {
         return this.applyPreset(member, cmd);
       case 'removeSeat':
         return this.removeSeat(member, cmd);
+      case 'addBot':
+        return this.addBot(member, cmd);
+      case 'setAutoplay':
+        return this.setAutoplay(member, cmd);
+      case 'hostBotTakeover':
+        return this.hostBotTakeover(member, cmd);
       case 'startGame':
         return this.startGame(member);
       case 'roll':
@@ -272,6 +409,7 @@ export class RoomController {
     const seats: RoomView['seats'] = {};
     for (const m of this.members.values()) {
       if (!m.seat) continue;
+      const c = this.control[m.seat];
       seats[m.seat] = {
         color: m.seat,
         memberId: m.id,
@@ -280,6 +418,23 @@ export class RoomController {
         isBot: false,
         connected: m.connected,
         offlineSince: m.offlineSince,
+        autoplay: c?.autoplay ?? false,
+        botControlled: c?.botControlled ?? false,
+        timeouts: c?.timeouts ?? 0,
+      };
+    }
+    for (const color of this.bots) {
+      seats[color] = {
+        color,
+        memberId: null,
+        name: BOTS[color].name,
+        avatar: BOTS[color].avatar,
+        isBot: true,
+        connected: true,
+        offlineSince: 0,
+        autoplay: false,
+        botControlled: false,
+        timeouts: 0,
       };
     }
     return {
@@ -324,7 +479,7 @@ export class RoomController {
     if (this.phase !== 'lobby') return fail('WRONG_ROOM_PHASE', 'Seats can only change in the lobby');
     if (!isColor(cmd.color)) return fail('BAD_PAYLOAD', 'Unknown colour');
     if (member.seat === cmd.color) return OK;
-    if (this.seatOwner(cmd.color)) return fail('SEAT_TAKEN', 'That seat is taken');
+    if (this.isSeatTaken(cmd.color)) return fail('SEAT_TAKEN', 'That seat is taken');
     member.seat = cmd.color;
     member.ready = false;
     this.touch();
@@ -382,10 +537,53 @@ export class RoomController {
     const guard = this.hostLobbyGuard(member);
     if (guard) return guard;
     if (!isColor(cmd.color)) return fail('BAD_PAYLOAD', 'Unknown colour');
+    if (this.bots.delete(cmd.color)) {
+      this.touch();
+      return OK;
+    }
     const owner = this.seatOwner(cmd.color);
     if (!owner) return OK;
     owner.seat = null;
     owner.ready = false;
+    this.touch();
+    return OK;
+  }
+
+  private addBot(member: Member, cmd: Extract<Command, { type: 'addBot' }>): CommandResult {
+    const guard = this.hostLobbyGuard(member);
+    if (guard) return guard;
+    if (!isColor(cmd.color)) return fail('BAD_PAYLOAD', 'Unknown colour');
+    if (this.isSeatTaken(cmd.color)) return fail('SEAT_TAKEN', 'That seat is taken');
+    this.bots.add(cmd.color);
+    this.touch();
+    return OK;
+  }
+
+  private setAutoplay(member: Member, cmd: Extract<Command, { type: 'setAutoplay' }>): CommandResult {
+    if (this.phase !== 'playing' || !this.game) return fail('WRONG_ROOM_PHASE', 'No game in progress');
+    if (!member.seat) return fail('NOT_SEATED', 'You are not playing');
+    if (typeof cmd.on !== 'boolean') return fail('BAD_PAYLOAD', 'on must be true or false');
+    const c = this.controlOf(member.seat);
+    c.autoplay = cmd.on;
+    if (!cmd.on) {
+      // "I'm back": control returns right away, with a fresh timer for the current decision.
+      c.timeouts = 0;
+      c.botControlled = false;
+      if (this.game.turn.seat === member.seat) this.decisionAt = this.deps.now();
+    }
+    this.control[member.seat] = c;
+    this.touch();
+    return OK;
+  }
+
+  private hostBotTakeover(member: Member, cmd: Extract<Command, { type: 'hostBotTakeover' }>): CommandResult {
+    if (member.id !== this.hostId) return fail('NOT_HOST', 'Only the host can do that');
+    if (this.phase !== 'playing' || !this.game) return fail('WRONG_ROOM_PHASE', 'No game in progress');
+    if (!isColor(cmd.color)) return fail('BAD_PAYLOAD', 'Unknown colour');
+    const owner = this.seatOwner(cmd.color);
+    if (!owner) return fail('BAD_PAYLOAD', 'That seat has no human player');
+    if (owner.connected) return fail('BAD_PAYLOAD', 'That player is online');
+    this.control[cmd.color] = { ...this.controlOf(cmd.color), botControlled: true };
     this.touch();
     return OK;
   }
@@ -398,7 +596,7 @@ export class RoomController {
     if (notReady.length > 0) {
       return fail('CANNOT_START', `Waiting for ${notReady.map((m) => m.name).join(', ')} to get ready`);
     }
-    const colors = seated.map((m) => m.seat!) as Color[];
+    const colors = [...seated.map((m) => m.seat!), ...this.bots] as Color[];
     const error = validateSetup(this.settings, colors);
     if (error) return fail('CANNOT_START', error);
     return this.beginGame(colors);
@@ -408,6 +606,8 @@ export class RoomController {
     const created = createGame(engineSettings(this.settings), colors, this.deps.rng);
     if (!created.ok) return fail('CANNOT_START', created.error.message);
     this.game = created.state;
+    this.decisionAt = this.deps.now();
+    this.control = {};
     this.stats = Object.fromEntries(created.state.seats.map((c) => [c, emptyStats()]));
     this.phase = 'playing';
     this.endedByHost = false;
@@ -437,11 +637,9 @@ export class RoomController {
         : { type: 'move' as const, seat: member.seat, pieceId: cmd.pieceId, value: cmd.value };
     const result = apply(this.game, action, this.deps.rng);
     if (!result.ok) return fail(result.error.code, result.error.message);
-    this.game = result.state;
-    this.recordStats(result.events);
-    this.emitEvents(result.events);
-    if (this.game.turn.phase.kind === 'gameOver') this.phase = 'finished';
-    this.touch();
+    const c = this.control[member.seat];
+    if (c && c.timeouts > 0) this.control[member.seat] = { ...c, timeouts: 0 };
+    this.afterGameAction(result.state, result.events);
     return OK;
   }
 
@@ -488,9 +686,12 @@ export class RoomController {
       this.notice('memberLeft', member.id);
       if (member.id === this.hostId) this.transferHost();
     } else {
-      // The seat stays in the game; the bot plays it (M3). The member may come back.
+      // The seat stays in the game and the bot plays it. The member may come back.
       member.connected = false;
       member.offlineSince = this.deps.now();
+      if (member.seat && this.phase === 'playing') {
+        this.control[member.seat] = { ...this.controlOf(member.seat), botControlled: true };
+      }
       this.rematchVotes.delete(member.id);
       this.notice('memberLeft', member.id);
     }
@@ -537,7 +738,7 @@ export class RoomController {
     this.outbox.push({ kind: 'notice', payload: memberId ? { code, memberId } : { code } });
   }
 
-  private emitEvents(events: GameEvent[]): void {
+  private emitEvents(events: RoomEvent[]): void {
     if (!this.game || events.length === 0) return;
     this.outbox.push({ kind: 'events', payload: { version: this.game.version, events } });
   }
@@ -554,6 +755,10 @@ export class RoomController {
     if (member.id !== this.hostId) return fail('NOT_HOST', 'Only the host can do that');
     if (this.phase !== 'lobby') return fail('WRONG_ROOM_PHASE', 'Only in the lobby');
     return null;
+  }
+
+  private isSeatTaken(color: Color): boolean {
+    return this.bots.has(color) || this.seatOwner(color) !== undefined;
   }
 
   private seatOwner(color: Color): Member | undefined {
@@ -588,7 +793,7 @@ export class RoomController {
     return typeof value === 'string' && (AVATARS as readonly string[]).includes(value) ? value : fallback;
   }
 
-  private recordStats(events: GameEvent[]): void {
+  private recordStats(events: RoomEvent[]): void {
     const bump = (color: Color, key: keyof PlayerStats, by = 1) => {
       const s = (this.stats[color] ??= emptyStats());
       s[key] += by;
@@ -619,7 +824,8 @@ export class RoomController {
         rollReason: phase.kind === 'awaitRoll' ? phase.reason : null,
         bank: g.turn.bank.map((d) => d.value),
         lastRoll: [...g.turn.lastRoll],
-        deadline: 0,
+        deadline: this.deadline(),
+        takeoverAt: this.takeoverAt(),
       },
       legalMoves: this.phase === 'playing' ? legalMoves(g) : [],
       rankings: [...g.rankings],

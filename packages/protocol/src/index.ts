@@ -90,6 +90,14 @@ export const AVATARS = [
   '👑', '🚀', '⚡', '🔥', '🌙', '⭐', '🍉', '🎲',
 ] as const;
 
+/** Names and avatars for bot seats, by colour. */
+export const BOTS: Readonly<Record<Color, { name: string; avatar: string }>> = {
+  red: { name: 'Bot Rustam', avatar: '🤖' },
+  green: { name: 'Bot Gul', avatar: '🤖' },
+  yellow: { name: 'Bot Zara', avatar: '🤖' },
+  blue: { name: 'Bot Bilal', avatar: '🤖' },
+};
+
 export const REACTIONS = ['👍', '😂', '😮', '😡', '🔥', '😭', '👏', '🙏'] as const;
 
 export const LIMITS = {
@@ -136,6 +144,9 @@ export type Command =
   | { type: 'updateSettings'; settings: Partial<RoomSettings> }
   | { type: 'applyPreset'; preset: PresetId }
   | { type: 'removeSeat'; color: Color }
+  | { type: 'addBot'; color: Color }
+  | { type: 'setAutoplay'; on: boolean }
+  | { type: 'hostBotTakeover'; color: Color }
   | { type: 'startGame' }
   | { type: 'roll'; stateVersion: number }
   | { type: 'move'; stateVersion: number; pieceId: string; value: number }
@@ -199,6 +210,12 @@ export interface SeatView {
   connected: boolean;
   /** Server timestamp when the seat went offline; 0 when online. */
   offlineSince: number;
+  /** The player asked the bot to play (or timed out twice). */
+  autoplay: boolean;
+  /** The bot is playing because the player is offline. */
+  botControlled: boolean;
+  /** Consecutive turn-timer expiries. */
+  timeouts: number;
 }
 
 export interface PlayerStats {
@@ -223,6 +240,8 @@ export interface GameView {
     lastRoll: number[];
     /** Server ms timestamp of the decision deadline; 0 = no timer. */
     deadline: number;
+    /** Server ms timestamp when the bot takes over an offline seat; 0 = n/a. */
+    takeoverAt: number;
   };
   legalMoves: LegalMove[];
   rankings: Color[];
@@ -249,9 +268,20 @@ export interface RoomView {
 // Server → client messages
 // ---------------------------------------------------------------------------
 
+export type BotCause = 'bot' | 'timeout' | 'offline' | 'autoplay';
+
+/** Room-level event: the bot made the next decision for a seat. */
+export interface BotActedEvent {
+  type: 'BotActed';
+  seat: Color;
+  cause: BotCause;
+}
+
+export type RoomEvent = GameEvent | BotActedEvent;
+
 export interface EventsMessage {
   version: number;
-  events: GameEvent[];
+  events: RoomEvent[];
 }
 
 export interface ChatMessage {

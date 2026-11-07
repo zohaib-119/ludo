@@ -191,6 +191,38 @@ describe('connection problems', () => {
   });
 });
 
+describe('bots over the network', () => {
+  it('a bot seat plays on the real clock and its moves reach the client', async () => {
+    const ali = track(await colyseus.sdk.create(ROOM_NAME, opts('Ali')));
+    await must(ali, { type: 'takeSeat', color: 'red' });
+    await must(ali, { type: 'addBot', color: 'yellow' });
+    await must(ali, { type: 'startGame' });
+    await until(ali, (v) => v.game !== null);
+    const botEvents: string[] = [];
+    ali.onMessage('events', (msg: EventsMessage) => {
+      for (const e of msg.events) if (e.type === 'BotActed') botEvents.push(`${e.seat}:${e.cause}`);
+    });
+    // Ali plays until the bot has had at least one full turn and it is Ali's turn again.
+    const deadline = Date.now() + 20_000;
+    while (Date.now() < deadline) {
+      const v = viewOf(ali);
+      const g = v.game!;
+      if (botEvents.length > 0 && g.turn.seat === 'red') break;
+      if (g.turn.seat === 'red') {
+        if (g.turn.phase === 'awaitRoll') await send(ali, { type: 'roll', stateVersion: g.version });
+        else {
+          const m = g.legalMoves[0]!;
+          await send(ali, { type: 'move', stateVersion: g.version, pieceId: m.pieceId, value: m.value });
+        }
+      }
+      await new Promise((r) => setTimeout(r, 50));
+    }
+    expect(botEvents.length).toBeGreaterThan(0);
+    expect(new Set(botEvents)).toEqual(new Set(['yellow:bot']));
+    expect(viewOf(ali).game!.turn.seat).toBe('red');
+  }, 30_000);
+});
+
 describe('http endpoints', () => {
   it('health check and room lookup', async () => {
     const health = await colyseus.http.get('/healthz');

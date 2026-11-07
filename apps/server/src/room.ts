@@ -61,6 +61,9 @@ export class LudoRoom extends Room<{ state: LudoStateType }> {
 
   controller!: RoomController;
   private sessions = new Map<string, Session>();
+  /** Precise wake-up for bot pacing, decision timers and takeovers. */
+  private wakeTimer: { clear(): void } | null = null;
+  private wakeAt: number | null = null;
 
   // Create options come from the client, so nothing in them is trusted here.
   override onCreate() {
@@ -145,8 +148,28 @@ export class LudoRoom extends Room<{ state: LudoStateType }> {
     activeCodes.delete(this.roomId);
   }
 
-  /** Push view changes into the synced state, then send queued messages after the patch. */
+  /** Push view changes into the synced state, send queued messages, and re-arm the wake-up. */
   private flush(): void {
+    this.syncAndSend();
+    this.scheduleWake();
+  }
+
+  private scheduleWake(): void {
+    const at = this.controller.nextWakeAt();
+    if (at === this.wakeAt) return;
+    this.wakeTimer?.clear();
+    this.wakeTimer = null;
+    this.wakeAt = at;
+    if (at === null) return;
+    this.wakeTimer = this.clock.setTimeout(() => {
+      this.wakeTimer = null;
+      this.wakeAt = null;
+      this.controller.tick();
+      this.flush();
+    }, Math.max(0, at - Date.now()));
+  }
+
+  private syncAndSend(): void {
     const revision = this.controller.currentRevision;
     if (revision !== this.state.revision) {
       this.state.view = JSON.stringify(this.controller.view());
