@@ -1,0 +1,31 @@
+import { defineRoom, defineServer, matchMaker } from '@colyseus/core';
+import { ROOM_NAME, parseRoomCode } from '@ludo/protocol';
+import { LudoRoom } from './room';
+
+export function createServer() {
+  return defineServer({
+    greet: false,
+    rooms: { [ROOM_NAME]: defineRoom(LudoRoom) },
+    express: (app) => {
+      app.get('/healthz', (_req, res) => {
+        res.json({ ok: true });
+      });
+      /** Does a room exist, and can a new player still join it? */
+      app.get('/api/rooms/:code', (req, res) => {
+        const code = parseRoomCode(String(req.params.code ?? ''));
+        const room = code ? (matchMaker.getLocalRoomById(code) as unknown as LudoRoom | undefined) : undefined;
+        if (!room?.controller) {
+          res.json({ exists: false });
+          return;
+        }
+        const view = room.controller.view();
+        res.json({
+          exists: true,
+          phase: view.phase,
+          seatsTaken: Object.keys(view.seats).length,
+          members: view.members.length,
+        });
+      });
+    },
+  });
+}
