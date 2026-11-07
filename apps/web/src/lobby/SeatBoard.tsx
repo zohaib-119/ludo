@@ -46,7 +46,10 @@ export function SeatBoard({
 
   return (
     <div
-      className={cx('relative mx-auto grid aspect-square w-full max-w-[340px] grid-cols-2 gap-2.5', className)}
+      className={cx(
+        'relative mx-auto grid aspect-square w-full max-w-[340px] grid-cols-2 grid-rows-2 gap-2.5',
+        className,
+      )}
       data-testid="seat-board"
     >
       {CORNERS.map((color) => (
@@ -99,7 +102,7 @@ function SeatTile({
     <motion.div
       layout
       className={cx(
-        'relative flex flex-col overflow-hidden rounded-2xl border-[3px] p-2.5 sm:p-3',
+        'relative flex min-h-0 min-w-0 flex-col overflow-hidden rounded-2xl border-[3px] p-2.5 sm:p-3',
         empty ? 'border-dashed' : 'border-solid shadow-card',
         mine && 'ring-4 ring-accent/60',
       )}
@@ -136,7 +139,7 @@ function SeatTile({
           {teamMode && <Badge tone="neutral">{teamOf(color) === 'A' ? t('lobby.teamA') : t('lobby.teamB')}</Badge>}
         </div>
       ) : (
-        <div className="flex flex-1 flex-col items-center justify-center gap-1 px-3 py-4 text-center">
+        <div className="flex min-h-0 flex-1 flex-col items-center justify-center gap-1 px-3 text-center">
           <div className="relative">
             <Avatar emoji={seat.avatar} size={36} />
             {!seat.isBot && (
