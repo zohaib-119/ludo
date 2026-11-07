@@ -8,7 +8,13 @@
  * the synced state, so the display is never far behind reality.
  */
 import { type Color, pathBetween } from '@ludo/engine';
-import { ANIMATION_TIMING, type AnimationTiming, type EventsMessage, type GameView, type RoomEvent } from '@ludo/protocol';
+import {
+  ANIMATION_TIMING,
+  type AnimationTiming,
+  type EventsMessage,
+  type GameView,
+  type RoomEvent,
+} from '@ludo/protocol';
 import { createStore } from 'zustand/vanilla';
 import { t } from '../i18n/messages';
 import { type LogLine, describe, ordinal } from './log';

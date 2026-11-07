@@ -19,23 +19,23 @@
 
 ## 2. Tech stack
 
-| Layer | Choice | Notes |
-|---|---|---|
-| Language | TypeScript 5 (strict) | Shared types end to end |
-| Package manager / monorepo | npm workspaces | |
-| Realtime server | **Colyseus 0.18** (`colyseus`, `@colyseus/schema` 5) | Rooms, custom room IDs, reconnection, state sync, room clock |
-| HTTP | Colyseus `defineServer` routes | Health check, room-exists check |
-| Client SDK | `@colyseus/sdk` | Auto-reconnect, typed against the server |
-| UI | React 19 + Vite | |
-| Styling | Tailwind CSS 4 with CSS-variable design tokens | |
-| Animation | Motion (`motion`) | |
-| Client state | Zustand | Local UI state; room state comes from Colyseus |
-| Routing | React Router | |
-| Sound | Howler.js | |
-| Icons | lucide-react | |
-| QR codes | `qrcode` | Lobby share sheet |
-| Tests | Vitest, fast-check (property tests), Playwright (end to end) | |
-| Lint / format | ESLint, Prettier | |
+| Layer                      | Choice                                                       | Notes                                                        |
+| -------------------------- | ------------------------------------------------------------ | ------------------------------------------------------------ |
+| Language                   | TypeScript 5 (strict)                                        | Shared types end to end                                      |
+| Package manager / monorepo | npm workspaces                                               |                                                              |
+| Realtime server            | **Colyseus 0.18** (`colyseus`, `@colyseus/schema` 5)         | Rooms, custom room IDs, reconnection, state sync, room clock |
+| HTTP                       | Colyseus `defineServer` routes                               | Health check, room-exists check                              |
+| Client SDK                 | `@colyseus/sdk`                                              | Auto-reconnect, typed against the server                     |
+| UI                         | React 19 + Vite                                              |                                                              |
+| Styling                    | Tailwind CSS 4 with CSS-variable design tokens               |                                                              |
+| Animation                  | Motion (`motion`)                                            |                                                              |
+| Client state               | Zustand                                                      | Local UI state; room state comes from Colyseus               |
+| Routing                    | React Router                                                 |                                                              |
+| Sound                      | Howler.js                                                    |                                                              |
+| Icons                      | lucide-react                                                 |                                                              |
+| QR codes                   | `qrcode`                                                     | Lobby share sheet                                            |
+| Tests                      | Vitest, fast-check (property tests), Playwright (end to end) |                                                              |
+| Lint / format              | ESLint, Prettier                                             |                                                              |
 
 Pinned in M4: React 19.3, Vite 6.3, React Router 7.18 (7.6 had security advisories), Tailwind 4.1, Motion 12, Zustand 5, `@colyseus/sdk` 0.18, Playwright 1.65. Newer majors (Vite 8, React Router 8, Motion 14) were skipped as too new to rely on.
 
@@ -90,13 +90,14 @@ ludo/
 
 ### 4.3 Reconnection (three layers)
 
-| Layer | Handles | Mechanism |
-|---|---|---|
+| Layer                       | Handles                                               | Mechanism                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                |
+| --------------------------- | ----------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | 1. Transport auto-reconnect | Network blips, Wi-Fi ↔ mobile switches, short sleeps | Colyseus SDK reconnects automatically after an abnormal close (close codes 1001, 1005, 1006, 4010 only). Server `onDrop` marks the seat `connected=false` and calls `allowReconnection(client, 120)`; `onReconnect` marks it connected. State listeners on the client survive. **Client settings:** the SDK defaults are `minUptime` 5 s (no auto-reconnect for younger connections), 15 retries, 5 s max delay; the web client sets `minUptime` to 1 s and raises retries, and falls back to layer 2 when they run out. |
-| 2. Token rejoin | Page refresh, app killed, reconnection window expired | Client stores `{ roomCode, playerToken }` in `localStorage`. On loading `/r/:code` it calls `joinById` with the token; the server rebinds the seat (§4.2). `onLeave` therefore **never frees a seat during a game** — it only marks it offline. |
-| 3. Server restart | Deploys, crashes | v1: games are lost; clients show "server restarted". Milestone M8: room snapshot persisted after every action and restored on boot under the same room code (see roadmap). |
+| 2. Token rejoin             | Page refresh, app killed, reconnection window expired | Client stores `{ roomCode, playerToken }` in `localStorage`. On loading `/r/:code` it calls `joinById` with the token; the server rebinds the seat (§4.2). `onLeave` therefore **never frees a seat during a game** — it only marks it offline.                                                                                                                                                                                                                                                                          |
+| 3. Server restart           | Deploys, crashes                                      | v1: games are lost; clients show "server restarted". Milestone M8: room snapshot persisted after every action and restored on boot under the same room code (see roadmap).                                                                                                                                                                                                                                                                                                                                               |
 
 Extra client behaviour:
+
 - On `visibilitychange` → visible, and on the browser `online` event, the client checks the connection immediately instead of waiting for backoff.
 - While disconnected, all input is disabled; pending clicks are not queued.
 - After any reconnect the client trusts the synced state completely and clears its animation queue.
@@ -173,14 +174,14 @@ apps/web/src/
 
 ## 6. Deployment
 
-| Part | Where | Notes |
-|---|---|---|
-| Server | A single always-on Node container on Fly.io, Railway or a small VPS | WebSockets need a long-running process. One instance is plenty for friends' games. Region close to the players. |
-| Web | Static hosting (Cloudflare Pages / Netlify / Vercel), or served by the same Node server | Single origin is simplest (no CORS) |
-| Domain / TLS | HTTPS + WSS required | Provided by the host |
-| Config | `PORT`, `PUBLIC_URL`, `ALLOWED_ORIGINS`, `LOG_LEVEL` | |
-| Health | `GET /healthz` | Used by the host's health checks |
-| Logs | Structured JSON logs (room code, event, latency). No personal data beyond display names. | |
+| Part         | Where                                                                                    | Notes                                                                                                           |
+| ------------ | ---------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------- |
+| Server       | A single always-on Node container on Fly.io, Railway or a small VPS                      | WebSockets need a long-running process. One instance is plenty for friends' games. Region close to the players. |
+| Web          | Static hosting (Cloudflare Pages / Netlify / Vercel), or served by the same Node server  | Single origin is simplest (no CORS)                                                                             |
+| Domain / TLS | HTTPS + WSS required                                                                     | Provided by the host                                                                                            |
+| Config       | `PORT`, `PUBLIC_URL`, `ALLOWED_ORIGINS`, `LOG_LEVEL`                                     |                                                                                                                 |
+| Health       | `GET /healthz`                                                                           | Used by the host's health checks                                                                                |
+| Logs         | Structured JSON logs (room code, event, latency). No personal data beyond display names. |                                                                                                                 |
 
 Deploys restart the server and (until M8) end live games, so deploys should happen when nobody is playing. The server sends a `server-shutdown` notice to clients before exiting.
 
@@ -203,6 +204,7 @@ Scaling beyond one process (Redis presence + driver) is supported by Colyseus bu
 Confirmed with real servers and SDK clients in tests: custom `roomId` in `onCreate` and `joinById`; `onDrop` → `allowReconnection(client, seconds)` → `onReconnect`; request/reply via `room.request()` with handler return values; `afterNextPatch` ordering of messages after state.
 
 Learned:
+
 - Colyseus calls `process.send()` when it exists (PM2 integration), which breaks Vitest's child-process pool; tests run with `pool: 'threads'`.
 - `express` must be a direct server dependency (it is only an optional peer of `@colyseus/core`).
 - Schema 5 `t.number()` has no default (undefined) unless `.default(0)` is given.

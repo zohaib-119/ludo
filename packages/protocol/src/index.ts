@@ -2,14 +2,7 @@
  * Client–server contract. See docs/05-protocol.md.
  * Shared by apps/server and apps/web.
  */
-import type {
-  Color,
-  GameEvent,
-  LegalMove,
-  Piece,
-  RollReason,
-  Settings,
-} from '@ludo/engine';
+import type { Color, GameEvent, LegalMove, Piece, RollReason, Settings } from '@ludo/engine';
 import { DEFAULT_SETTINGS } from '@ludo/engine';
 
 export const ROOM_NAME = 'ludo';
@@ -96,9 +89,30 @@ export function presetOf(s: Settings): PresetId | 'custom' {
 // ---------------------------------------------------------------------------
 
 export const AVATARS = [
-  '🦁', '🐯', '🐼', '🦊', '🐸', '🐵', '🦄', '🐙',
-  '🦉', '🐧', '🐢', '🐝', '🦋', '🐳', '🦖', '🐲',
-  '👑', '🚀', '⚡', '🔥', '🌙', '⭐', '🍉', '🎲',
+  '🦁',
+  '🐯',
+  '🐼',
+  '🦊',
+  '🐸',
+  '🐵',
+  '🦄',
+  '🐙',
+  '🦉',
+  '🐧',
+  '🐢',
+  '🐝',
+  '🦋',
+  '🐳',
+  '🦖',
+  '🐲',
+  '👑',
+  '🚀',
+  '⚡',
+  '🔥',
+  '🌙',
+  '⭐',
+  '🍉',
+  '🎲',
 ] as const;
 
 /** Names and avatars for bot seats, by colour. */
@@ -241,7 +255,9 @@ export interface GameView {
   version: number;
   seats: Color[];
   pieces: Piece[];
-  players: Partial<Record<Color, { hasKilled: boolean; finishedRank: number | null; handoverDelayLeft: number; eliminated: boolean }>>;
+  players: Partial<
+    Record<Color, { hasKilled: boolean; finishedRank: number | null; handoverDelayLeft: number; eliminated: boolean }>
+  >;
   turn: {
     seat: Color;
     controls: Color;

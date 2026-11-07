@@ -329,14 +329,29 @@ export function Avatar({ emoji, color, size = 40 }: { emoji: string; color?: Col
   );
 }
 
-export function Badge({ children, tone = 'neutral' }: { children: ReactNode; tone?: 'neutral' | 'accent' | 'success' | 'warning' }) {
+export function Badge({
+  children,
+  tone = 'neutral',
+}: {
+  children: ReactNode;
+  tone?: 'neutral' | 'accent' | 'success' | 'warning';
+}) {
   const toneClass = {
     neutral: 'bg-surface-2 text-muted',
     accent: 'bg-accent-soft text-accent',
     success: 'bg-success-soft text-success',
     warning: 'bg-warning-soft text-warning',
   }[tone];
-  return <span className={cx('inline-flex h-5 items-center rounded-full px-2 text-[11px] font-bold uppercase tracking-wide', toneClass)}>{children}</span>;
+  return (
+    <span
+      className={cx(
+        'inline-flex h-5 items-center rounded-full px-2 text-[11px] font-bold uppercase tracking-wide',
+        toneClass,
+      )}
+    >
+      {children}
+    </span>
+  );
 }
 
 export function Dot({ tone }: { tone: 'online' | 'offline' | 'reconnecting' }) {
@@ -350,7 +365,13 @@ export function Logo({ size = 56 }: { size?: number }) {
     <motion.span
       key={c}
       className="piece absolute"
-      style={{ ['--piece' as string]: colorVar[c], width: size * 0.36, height: size * 0.36, left: x * size, top: y * size }}
+      style={{
+        ['--piece' as string]: colorVar[c],
+        width: size * 0.36,
+        height: size * 0.36,
+        left: x * size,
+        top: y * size,
+      }}
       initial={{ scale: 0, opacity: 0 }}
       animate={{ scale: 1, opacity: 1 }}
       transition={{ delay: 0.05 * i, type: 'spring', stiffness: 500, damping: 22 }}

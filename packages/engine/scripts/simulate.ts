@@ -40,6 +40,6 @@ for (const { name, settings, seats } of configs) {
   console.log(
     `${name.padEnd(30)} games=${games} unfinished=${unfinished} ` +
       `actions median=${lengths[Math.floor(games / 2)]} p95=${lengths[Math.floor(games * 0.95)]} ` +
-      `max=${lengths.at(-1)}  ${(ms / total * 1000).toFixed(1)}µs/action`,
+      `max=${lengths.at(-1)}  ${((ms / total) * 1000).toFixed(1)}µs/action`,
   );
 }

@@ -111,7 +111,10 @@ export function Results() {
               <tr className="text-xs uppercase tracking-wider text-muted">
                 <th className="px-3 py-2 text-left font-bold" />
                 {STAT_KEYS.map((k) => (
-                  <th key={k} className={cx('px-2 py-2 text-right font-bold', WIDE_ONLY.has(k) && 'hidden sm:table-cell')}>
+                  <th
+                    key={k}
+                    className={cx('px-2 py-2 text-right font-bold', WIDE_ONLY.has(k) && 'hidden sm:table-cell')}
+                  >
                     {t(`results.stats.${k}`)}
                   </th>
                 ))}
@@ -123,12 +126,17 @@ export function Results() {
                   <td className="px-3 py-2">
                     <span className="flex items-center gap-2 font-semibold">
                       <span className="size-2.5 shrink-0 rounded-full" style={{ background: pieceColor(c) }} />
-                      {!game.winningTeam && game.rankings.includes(c) && <span className="text-muted">{ordinal(i + 1)}</span>}
+                      {!game.winningTeam && game.rankings.includes(c) && (
+                        <span className="text-muted">{ordinal(i + 1)}</span>
+                      )}
                       <span className="truncate">{name(c)}</span>
                     </span>
                   </td>
                   {STAT_KEYS.map((k) => (
-                    <td key={k} className={cx('px-2 py-2 text-right tabular-nums', WIDE_ONLY.has(k) && 'hidden sm:table-cell')}>
+                    <td
+                      key={k}
+                      className={cx('px-2 py-2 text-right tabular-nums', WIDE_ONLY.has(k) && 'hidden sm:table-cell')}
+                    >
                       {game.stats[c]?.[k] ?? 0}
                     </td>
                   ))}
@@ -152,11 +160,18 @@ export function Results() {
             </Button>
           )}
           {view.rematchVotes.length > 0 && (
-            <p className="text-center text-sm text-muted">{t('results.votes', { n: view.rematchVotes.length, total: voters.length })}</p>
+            <p className="text-center text-sm text-muted">
+              {t('results.votes', { n: view.rematchVotes.length, total: voters.length })}
+            </p>
           )}
           <div className="flex gap-2">
             {host && (
-              <Button variant="secondary" full icon={<Undo2 className="size-4" />} onClick={() => void sendCommand({ type: 'backToLobby' })}>
+              <Button
+                variant="secondary"
+                full
+                icon={<Undo2 className="size-4" />}
+                onClick={() => void sendCommand({ type: 'backToLobby' })}
+              >
                 {t('results.backToLobby')}
               </Button>
             )}

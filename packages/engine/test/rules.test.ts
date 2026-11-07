@@ -162,7 +162,11 @@ describe('Movement', () => {
   it('M6 a move is refused if it would leave the rest of the bank unplayable', () => {
     // With a free piece on the track, every single-legal move keeps the bank playable.
     const s = position({ pieces: { red: [50, 40, H, H], yellow: [] }, bank: [6, 1] });
-    expect(legalMoves(s).map((m) => [m.pieceId, m.value]).sort()).toEqual([
+    expect(
+      legalMoves(s)
+        .map((m) => [m.pieceId, m.value])
+        .sort(),
+    ).toEqual([
       ['red-0', 1],
       ['red-0', 6],
       ['red-1', 1],
@@ -171,7 +175,11 @@ describe('Movement', () => {
     // Pieces at 50 and 55 with (6,1): only 6 → red-0 and 1 → red-1 work together.
     // red-0 taking the 1 (→ 51) would leave a 6 nobody can use.
     const t = position({ pieces: { red: [50, 55, H, H], yellow: [] }, bank: [6, 1] });
-    expect(legalMoves(t).map((m) => [m.pieceId, m.value]).sort()).toEqual([
+    expect(
+      legalMoves(t)
+        .map((m) => [m.pieceId, m.value])
+        .sort(),
+    ).toEqual([
       ['red-0', 6],
       ['red-1', 1],
     ]);
@@ -710,11 +718,7 @@ describe('Game flow and setup', () => {
   });
 
   it('G2 FFA: rankings and the game ends when one player is left', () => {
-    let r = move(
-      position({ pieces: { red: [55, H, H, H], green: [54, H, H, H], yellow: [] }, bank: [1] }),
-      'red-0',
-      1,
-    );
+    let r = move(position({ pieces: { red: [55, H, H, H], green: [54, H, H, H], yellow: [] }, bank: [1] }), 'red-0', 1);
     expect(r.events).toContainEqual({ type: 'PlayerFinished', color: 'red', rank: 1 });
     expect(r.state.turn.seat).toBe('green');
     r = roll(r.state, 2); // Rule A: 1 die

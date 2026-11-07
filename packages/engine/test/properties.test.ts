@@ -81,7 +81,12 @@ function checkInvariants(before: GameState, after: GameState): void {
     // P2: the bank is always fully playable.
     assert(turn.bank.length > 0, 'awaitMove has dice');
     assert(
-      canPlayAll(after.settings, simFromState(after), turn.controls, turn.bank.map((d) => d.value)),
+      canPlayAll(
+        after.settings,
+        simFromState(after),
+        turn.controls,
+        turn.bank.map((d) => d.value),
+      ),
       'bank is fully playable',
     );
     // P7: legal moves exist.
@@ -112,9 +117,18 @@ function checkInvariants(before: GameState, after: GameState): void {
   for (const color of after.seats) {
     const pl = after.players[color]!;
     if (pl.eliminated) {
-      assert(after.pieces.every((p) => p.color !== color || p.progress === -1), `${color} is out: pieces in the yard`);
-      if (after.turn.phase.kind !== 'gameOver') assert(after.turn.seat !== color && after.turn.controls !== color, `${color} is out: never acts`);
-    } else if (after.settings.killRequiredToEnterColumn && pl.finishedRank === null && !pl.hasKilled && after.turn.phase.kind !== 'gameOver') {
+      assert(
+        after.pieces.every((p) => p.color !== color || p.progress === -1),
+        `${color} is out: pieces in the yard`,
+      );
+      if (after.turn.phase.kind !== 'gameOver')
+        assert(after.turn.seat !== color && after.turn.controls !== color, `${color} is out: never acts`);
+    } else if (
+      after.settings.killRequiredToEnterColumn &&
+      pl.finishedRank === null &&
+      !pl.hasKilled &&
+      after.turn.phase.kind !== 'gameOver'
+    ) {
       const target = after.pieces.some(
         (p) => isEnemy(after.settings, color, p.color) && !after.players[p.color]!.eliminated && p.progress <= 50,
       );

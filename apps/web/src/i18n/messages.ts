@@ -118,12 +118,14 @@ const en = {
   'rules.extraTurnOnFinish': 'Bonus roll for reaching home',
   'rules.extraTurnOnFinish.help': 'Getting a piece home gives you an extra roll straight away.',
   'rules.singleDieWhenAllInColumn': 'One die when all pieces are in the home column',
-  'rules.singleDieWhenAllInColumn.help': 'Once all your remaining pieces are in the coloured home column, roll just one die.',
+  'rules.singleDieWhenAllInColumn.help':
+    'Once all your remaining pieces are in the coloured home column, roll just one die.',
   'rules.killRequiredToEnterColumn': 'Capture before entering home column',
   'rules.killRequiredToEnterColumn.help':
     'Capture an enemy piece first, or your pieces wait at the entrance. If nothing is left to capture, you are out.',
   'rules.teamMode': 'Team mode',
-  'rules.teamMode.help': 'Red + Yellow against Green + Blue. Team-mates never capture each other; both must finish to win.',
+  'rules.teamMode.help':
+    'Red + Yellow against Green + Blue. Team-mates never capture each other; both must finish to win.',
   'rules.teamHandover': 'When a player finishes',
   'rules.teamHandover.immediate': 'Help team-mate now',
   'rules.teamHandover.delayed': 'Wait first',
@@ -136,7 +138,8 @@ const en = {
   'rules.never': 'Never',
   'rules.seconds': '{n}s',
   'rules.disconnectTakeover': 'Bot plays for offline players after',
-  'rules.disconnectTakeover.help': 'If someone is disconnected on their turn, the bot plays for them until they are back.',
+  'rules.disconnectTakeover.help':
+    'If someone is disconnected on their turn, the bot plays for them until they are back.',
 
   // Game
   'game.roll': 'Roll',

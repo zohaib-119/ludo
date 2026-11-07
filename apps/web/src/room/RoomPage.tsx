@@ -130,7 +130,11 @@ function useRoomNotices() {
 }
 
 function Centered({ children }: { children: ReactNode }) {
-  return <main className="mx-auto flex min-h-dvh max-w-sm flex-col items-center justify-center gap-4 px-4 text-center">{children}</main>;
+  return (
+    <main className="mx-auto flex min-h-dvh max-w-sm flex-col items-center justify-center gap-4 px-4 text-center">
+      {children}
+    </main>
+  );
 }
 
 const FAILURE_TEXT: Record<FailReason, [MessageKey, MessageKey]> = {
@@ -158,7 +162,12 @@ function Failure({ reason }: { reason: FailReason }) {
             onClick={() => {
               const p = loadProfile();
               const code = parseRoomCode(params.code ?? '');
-              if (code) void getConnection().connect(code, { playerToken: playerToken(), name: p.name.trim(), avatar: p.avatar });
+              if (code)
+                void getConnection().connect(code, {
+                  playerToken: playerToken(),
+                  name: p.name.trim(),
+                  avatar: p.avatar,
+                });
             }}
           >
             {t('room.tryAgain')}
@@ -186,7 +195,10 @@ function Kicked({ reason }: { reason: 'otherTab' | 'removedByHost' | 'roomClosed
       <p className="text-muted">{t(body)}</p>
       <div className="flex gap-2">
         {reason === 'otherTab' && <Button onClick={() => void getConnection().useHere()}>{t('room.useHere')}</Button>}
-        <Link to="/" className="inline-flex h-11 items-center rounded-xl px-4 font-semibold text-accent hover:bg-surface-2">
+        <Link
+          to="/"
+          className="inline-flex h-11 items-center rounded-xl px-4 font-semibold text-accent hover:bg-surface-2"
+        >
           {t('room.home')}
         </Link>
       </div>

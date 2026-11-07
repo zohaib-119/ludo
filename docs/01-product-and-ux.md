@@ -10,12 +10,12 @@ A browser Ludo game for playing with friends. Someone creates a room, shares a c
 
 ## 2. Routes
 
-| Route | Screen |
-|---|---|
-| `/` | Home |
-| `/r/:code` | Room. Shows the lobby, the game or the results depending on room phase |
-| `/how-to-play` | Rules explainer, including every house-rule toggle |
-| `*` | Not found |
+| Route          | Screen                                                                 |
+| -------------- | ---------------------------------------------------------------------- |
+| `/`            | Home                                                                   |
+| `/r/:code`     | Room. Shows the lobby, the game or the results depending on room phase |
+| `/how-to-play` | Rules explainer, including every house-rule toggle                     |
+| `*`            | Not found                                                              |
 
 Links like `https://<site>/r/K7QX9M` are the main way to invite people.
 
@@ -42,18 +42,21 @@ Links like `https://<site>/r/K7QX9M` are the main way to invite people.
 **Top:** room code in large type with **Copy code**, **Copy link**, **Share** (Web Share API where available), and a **QR code** button that opens a sheet with a scannable code.
 
 **Seat picker:** a miniature board showing the four corners. Each corner shows its occupant (avatar, name, connection dot, "Host" badge, "Bot" badge) or "Empty — tap to sit".
+
 - Players tap an empty corner to take or change seat.
 - 2-player rooms: only opposite pairs are allowed. Choosing red disables green and blue and the second player must take yellow, and so on. The UI explains why the other corners are greyed out.
 - Team mode: corners are tinted by team (red+yellow vs green+blue) and labelled "Team A" / "Team B".
 - Host can remove a player or bot from a seat (with confirmation) and **Add bot** to an empty seat.
 
 **Rules panel:**
+
 - Host sees editable controls; everyone else sees a read-only summary that updates live with a short highlight when something changes.
 - **Presets** at the top (one tap sets everything): "Classic (1 die)", "Two Dice", "Two Dice — Hardcore" (kill-to-enter on, no bonuses), "Custom" (selected automatically when anything is edited).
 - Controls grouped as: Dice, Bonuses, Endgame, Kill-to-enter, Teams, Time & bots. Each control has an info icon that opens a one-paragraph explanation with a small illustration.
 - Invalid combinations are prevented, not reported. Team options only appear with 4 seats filled in team mode; handover delay only appears when "delayed" is selected.
 
 **Ready and start:**
+
 - Each non-host player has a **Ready** toggle.
 - Host's **Start game** button is enabled when: 2–4 seats filled, the seat arrangement is valid for the player count and mode, and all humans are ready. When disabled, the button says why ("Waiting for Sara to get ready").
 - Rule changes by the host un-ready everyone, so nobody starts with rules they didn't see.
@@ -86,6 +89,7 @@ Landscape and desktop place the player panels on either side of the board and th
 **Board orientation:** the board is rotated so the local player's colour is always in the bottom-left corner. Reconnecting does not change this.
 
 **Player panel** (one per seat):
+
 - Avatar, name, colour band.
 - Pieces finished (four small pips that fill in).
 - Kill-to-enter status when that rule is on: a lock icon (needs a kill) or open lock (unlocked). Tooltip explains.
@@ -95,16 +99,17 @@ Landscape and desktop place the player panels on either side of the board and th
 
 **Action area (your turn):**
 
-1. *Awaiting roll:* a large **Roll** button with a gentle pulse. Tapping it (or Space/Enter) sends the roll. The button shows a spinner state until the server answers, so double taps do nothing.
-2. *Rolling:* dice tumble in the dice tray (~700 ms), then land on the server values.
-3. *Re-roll earned:* banner "Double six! Roll again" and the Roll button returns. Rolled dice slide into the **bank**.
-4. *Awaiting move:* the bank shows every unplayed die value as a chip. Legal pieces pulse and lift slightly. See "Moving pieces" below.
-5. *Bonus roll earned* (capture / finish): banner "Capture! Bonus roll", Roll button returns, other moves are paused until the bonus is rolled.
-6. *Void:* the dice shake and grey out, with the message "Not all dice can be played — roll void" (or "Bonus roll void" when only the bonus dice are dropped). Turn passes after ~1.5 s.
+1. _Awaiting roll:_ a large **Roll** button with a gentle pulse. Tapping it (or Space/Enter) sends the roll. The button shows a spinner state until the server answers, so double taps do nothing.
+2. _Rolling:_ dice tumble in the dice tray (~700 ms), then land on the server values.
+3. _Re-roll earned:_ banner "Double six! Roll again" and the Roll button returns. Rolled dice slide into the **bank**.
+4. _Awaiting move:_ the bank shows every unplayed die value as a chip. Legal pieces pulse and lift slightly. See "Moving pieces" below.
+5. _Bonus roll earned_ (capture / finish): banner "Capture! Bonus roll", Roll button returns, other moves are paused until the bonus is rolled.
+6. _Void:_ the dice shake and grey out, with the message "Not all dice can be played — roll void" (or "Bonus roll void" when only the bonus dice are dropped). Turn passes after ~1.5 s.
 
 When it is not your turn, the action area shows whose turn it is ("Sara is moving…") and their dice, at reduced size.
 
 **Moving pieces:**
+
 - The client only offers moves the server says are legal (the legal move list is part of synced state, see 05-protocol). A move is legal only if the rest of the bank can still be fully played afterwards.
 - **Tap a piece:**
   - If only one die value can move it, a ghost of the piece appears at the destination and the move is sent on a second tap on the piece or the ghost. With "Quick move" on (personal setting, default on) the move is sent on the first tap.
@@ -141,18 +146,18 @@ Illustrated explanation of the base game and every toggle in RULES.md, written f
 
 ## 5. Connection states the UI must handle
 
-| Situation | What the user sees |
-|---|---|
-| Brief network drop | Small amber pill "Reconnecting…" at top. Board stays visible but input is disabled. No modal. |
-| Drop longer than ~10 s | The pill becomes a dimmed overlay with "Still trying to reconnect…" and a **Retry now** button |
-| Reconnected | Pill turns green "Back online" for 1.5 s, the board snaps to current state without replaying missed animations, and a toast summarises what happened ("While you were away: Sara captured your piece") |
-| Page refresh / app reopened | Room screen loads with a skeleton, rejoins with the stored token, and continues |
-| Tab in background (mobile) | On return, the client checks the connection immediately and reconnects if needed |
-| Same token opens the room in a second tab | Newest tab takes the seat; the older one shows "This game is open in another tab" with **Use here** |
-| Another player is offline | Their panel shows the grey dot and timer; when it is their turn the centre of the board shows "Waiting for Ali (offline) — bot plays in 0:24" or, with takeover off, "Waiting for Ali" and a host-only **Let bot play** button |
-| Room not found | Friendly page: "This room doesn't exist or has ended" with Create / Join buttons |
-| Room full / game started and you have no seat | "This game has already started" (spectating is out of scope for v1) |
-| Server restarting | "The server is restarting — your game could not be saved" (until persistence is added) |
+| Situation                                     | What the user sees                                                                                                                                                                                                             |
+| --------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Brief network drop                            | Small amber pill "Reconnecting…" at top. Board stays visible but input is disabled. No modal.                                                                                                                                  |
+| Drop longer than ~10 s                        | The pill becomes a dimmed overlay with "Still trying to reconnect…" and a **Retry now** button                                                                                                                                 |
+| Reconnected                                   | Pill turns green "Back online" for 1.5 s, the board snaps to current state without replaying missed animations, and a toast summarises what happened ("While you were away: Sara captured your piece")                         |
+| Page refresh / app reopened                   | Room screen loads with a skeleton, rejoins with the stored token, and continues                                                                                                                                                |
+| Tab in background (mobile)                    | On return, the client checks the connection immediately and reconnects if needed                                                                                                                                               |
+| Same token opens the room in a second tab     | Newest tab takes the seat; the older one shows "This game is open in another tab" with **Use here**                                                                                                                            |
+| Another player is offline                     | Their panel shows the grey dot and timer; when it is their turn the centre of the board shows "Waiting for Ali (offline) — bot plays in 0:24" or, with takeover off, "Waiting for Ali" and a host-only **Let bot play** button |
+| Room not found                                | Friendly page: "This room doesn't exist or has ended" with Create / Join buttons                                                                                                                                               |
+| Room full / game started and you have no seat | "This game has already started" (spectating is out of scope for v1)                                                                                                                                                            |
+| Server restarting                             | "The server is restarting — your game could not be saved" (until persistence is added)                                                                                                                                         |
 
 ## 6. Personal settings (stored locally)
 

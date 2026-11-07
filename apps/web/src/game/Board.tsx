@@ -21,14 +21,24 @@ import { motion } from 'motion/react';
 import { memo, useMemo } from 'react';
 import { placePieces, rotatePoint } from './geometry';
 
-const BASE: Record<Color, string> = { red: 'var(--red)', green: 'var(--green)', yellow: 'var(--yellow)', blue: 'var(--blue)' };
+const BASE: Record<Color, string> = {
+  red: 'var(--red)',
+  green: 'var(--green)',
+  yellow: 'var(--yellow)',
+  blue: 'var(--blue)',
+};
 const LIGHT: Record<Color, string> = {
   red: 'var(--red-light)',
   green: 'var(--green-light)',
   yellow: 'var(--yellow-light)',
   blue: 'var(--blue-light)',
 };
-const DARK: Record<Color, string> = { red: 'var(--red-dark)', green: 'var(--green-dark)', yellow: 'var(--yellow-dark)', blue: 'var(--blue-dark)' };
+const DARK: Record<Color, string> = {
+  red: 'var(--red-dark)',
+  green: 'var(--green-dark)',
+  yellow: 'var(--yellow-dark)',
+  blue: 'var(--blue-dark)',
+};
 const GLYPH: Record<Color, string> = { red: '●', green: '▲', yellow: '■', blue: '◆' };
 
 export interface BoardProps {
@@ -134,7 +144,15 @@ export function Board(props: BoardProps) {
                 data-testid={`choice-${m.value}`}
               >
                 <circle cx={bx} cy={by} r={0.42} fill="var(--text)" />
-                <text x={bx} y={by + 0.15} textAnchor="middle" fontSize={0.48} fontWeight={800} fill="var(--bg)" fontFamily="var(--font-display)">
+                <text
+                  x={bx}
+                  y={by + 0.15}
+                  textAnchor="middle"
+                  fontSize={0.48}
+                  fontWeight={800}
+                  fill="var(--bg)"
+                  fontFamily="var(--font-display)"
+                >
                   {m.value}
                 </text>
               </motion.g>
@@ -150,7 +168,13 @@ export function Board(props: BoardProps) {
 // Static art (memoised: only changes with rotation / active colour)
 // ---------------------------------------------------------------------------
 
-const StaticBoard = memo(function StaticBoard({ rotation, activeColor }: { rotation: number; activeColor: Color | null }) {
+const StaticBoard = memo(function StaticBoard({
+  rotation,
+  activeColor,
+}: {
+  rotation: number;
+  activeColor: Color | null;
+}) {
   return (
     <g transform={`rotate(${rotation} 7.5 7.5)`}>
       <rect x={-0.25} y={-0.25} width={15.5} height={15.5} rx={0.6} fill="var(--surface)" />
@@ -197,7 +221,16 @@ const StaticBoard = memo(function StaticBoard({ rotation, activeColor }: { rotat
       {/* Home columns */}
       {COLORS.map((col) =>
         COLUMN_CELLS[col].map((c, i) => (
-          <rect key={`${col}-col-${i}`} x={c.x - 0.47} y={c.y - 0.47} width={0.94} height={0.94} rx={0.14} fill={BASE[col]} opacity={0.88} />
+          <rect
+            key={`${col}-col-${i}`}
+            x={c.x - 0.47}
+            y={c.y - 0.47}
+            width={0.94}
+            height={0.94}
+            rx={0.14}
+            fill={BASE[col]}
+            opacity={0.88}
+          />
         )),
       )}
       {/* Centre: home triangles */}
@@ -230,7 +263,9 @@ const StaticBoard = memo(function StaticBoard({ rotation, activeColor }: { rotat
             <rect x={o.x + 0.9} y={o.y + 0.9} width={4.2} height={4.2} rx={0.6} fill="var(--surface)" />
             {[0, 1, 2, 3].map((i) => {
               const s = yardSlot(col, i);
-              return <circle key={i} cx={s.x} cy={s.y} r={0.5} fill={LIGHT[col]} stroke={BASE[col]} strokeWidth={0.06} />;
+              return (
+                <circle key={i} cx={s.x} cy={s.y} r={0.5} fill={LIGHT[col]} stroke={BASE[col]} strokeWidth={0.06} />
+              );
             })}
           </g>
         );
@@ -257,7 +292,12 @@ function Padlock({ x, y, color }: { x: number; y: number; color: string }) {
   return (
     <g transform={`translate(${x} ${y})`} pointerEvents="none">
       <circle r={0.36} fill="var(--surface)" opacity={0.92} />
-      <path d="M -0.11 -0.02 L -0.11 -0.12 A 0.11 0.11 0 0 1 0.11 -0.12 L 0.11 -0.02" fill="none" stroke={color} strokeWidth={0.05} />
+      <path
+        d="M -0.11 -0.02 L -0.11 -0.12 A 0.11 0.11 0 0 1 0.11 -0.12 L 0.11 -0.02"
+        fill="none"
+        stroke={color}
+        strokeWidth={0.05}
+      />
       <rect x={-0.16} y={-0.03} width={0.32} height={0.22} rx={0.04} fill={color} />
       <title>Needs a capture to enter</title>
     </g>
@@ -273,7 +313,16 @@ function Preview({ move, piece, rotation }: { move: LegalMove; piece: Piece; rot
         const c = rotatePoint(pointFor(piece.color, p, 0), rotation);
         return <circle key={p} cx={c.x} cy={c.y} r={0.12} fill={BASE[piece.color]} opacity={0.45} />;
       })}
-      <circle cx={dest.x} cy={dest.y} r={0.36} fill={BASE[piece.color]} opacity={0.35} stroke={DARK[piece.color]} strokeWidth={0.05} strokeDasharray="0.12 0.08" />
+      <circle
+        cx={dest.x}
+        cy={dest.y}
+        r={0.36}
+        fill={BASE[piece.color]}
+        opacity={0.35}
+        stroke={DARK[piece.color]}
+        strokeWidth={0.05}
+        strokeDasharray="0.12 0.08"
+      />
       {move.captures.length > 0 && (
         <text x={dest.x} y={dest.y + 0.14} textAnchor="middle" fontSize={0.4}>
           ⚔
@@ -349,7 +398,13 @@ const PieceView = memo(function PieceView({
       >
         <ellipse cx={0.03} cy={r * 0.75} rx={r * 0.9} ry={r * 0.35} fill="black" opacity={0.2} />
         {movable && (
-          <circle r={r + 0.12} fill="none" stroke={selected ? 'var(--text)' : 'white'} strokeWidth={0.07} className={selected ? undefined : 'animate-pulse'} />
+          <circle
+            r={r + 0.12}
+            fill="none"
+            stroke={selected ? 'var(--text)' : 'white'}
+            strokeWidth={0.07}
+            className={selected ? undefined : 'animate-pulse'}
+          />
         )}
         <circle r={r} fill={`url(#piece-${piece.color})`} stroke={DARK[piece.color]} strokeWidth={0.05} />
         <circle r={r * 0.42} fill="white" opacity={0.28} />
@@ -364,4 +419,3 @@ const PieceView = memo(function PieceView({
     </motion.g>
   );
 });
-

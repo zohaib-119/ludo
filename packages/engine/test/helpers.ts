@@ -111,8 +111,7 @@ export function err(state: GameState, action: Action, dice: number[] = []): stri
   return result.error.code;
 }
 
-export const progressOf = (state: GameState, id: string): number =>
-  state.pieces.find((p) => p.id === id)!.progress;
+export const progressOf = (state: GameState, id: string): number => state.pieces.find((p) => p.id === id)!.progress;
 
 export const types = (events: GameEvent[]): string[] => events.map((e) => e.type);
 

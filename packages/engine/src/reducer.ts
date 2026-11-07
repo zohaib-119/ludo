@@ -3,16 +3,7 @@
  */
 import { type Color, HOME, LAST_TRACK, OPPOSITE, PIECES_PER_PLAYER, TEAM, TURN_ORDER, YARD } from './board';
 import { canPlayAll, diceCountFor, isEnemy, legalMoves, resolveMove, simFromState } from './moves';
-import type {
-  Action,
-  EngineError,
-  EngineErrorCode,
-  GameEvent,
-  GameState,
-  Result,
-  Rng,
-  Settings,
-} from './types';
+import type { Action, EngineError, EngineErrorCode, GameEvent, GameState, Result, Rng, Settings } from './types';
 
 const fail = (code: EngineErrorCode, message: string): Result => ({
   ok: false,
@@ -61,7 +52,10 @@ export function createGame(settings: Settings, seats: Color[], rng: Rng): Result
     settings: { ...settings },
     seats: ordered,
     players: Object.fromEntries(
-      ordered.map((color) => [color, { color, hasKilled: false, finishedRank: null, handoverDelayLeft: 0, eliminated: false }]),
+      ordered.map((color) => [
+        color,
+        { color, hasKilled: false, finishedRank: null, handoverDelayLeft: 0, eliminated: false },
+      ]),
     ),
     pieces: ordered.flatMap((color) =>
       Array.from({ length: PIECES_PER_PLAYER }, (_, i) => ({ id: `${color}-${i}`, color, progress: YARD })),
@@ -144,11 +138,7 @@ function doRoll(state: GameState, events: GameEvent[], rng: Rng): Result | null 
   return null;
 }
 
-function doMove(
-  state: GameState,
-  events: GameEvent[],
-  action: Extract<Action, { type: 'move' }>,
-): Result | null {
+function doMove(state: GameState, events: GameEvent[], action: Extract<Action, { type: 'move' }>): Result | null {
   const { turn, settings } = state;
   if (turn.phase.kind !== 'awaitMove') return fail('WRONG_PHASE', 'You must roll first');
   const piece = state.pieces.find((p) => p.id === action.pieceId);
@@ -247,7 +237,9 @@ function gameOver(state: GameState, events: GameEvent[]): void {
   state.turn.bank = [];
   if (!state.settings.teamMode) {
     // Finishers took ranks from the top, eliminated players from the bottom.
-    state.rankings = [...state.seats].sort((a, b) => (player(state, a).finishedRank ?? 99) - (player(state, b).finishedRank ?? 99));
+    state.rankings = [...state.seats].sort(
+      (a, b) => (player(state, a).finishedRank ?? 99) - (player(state, b).finishedRank ?? 99),
+    );
   }
   events.push({ type: 'GameOver', rankings: [...state.rankings], winningTeam: state.winningTeam });
 }

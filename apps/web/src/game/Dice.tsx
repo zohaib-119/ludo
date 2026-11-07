@@ -92,7 +92,12 @@ export function Die({
           >
             {Array.from({ length: 9 }, (_, i) => (
               <span key={i} className="flex items-center justify-center">
-                {PIPS[f.value]!.includes(i) && <span className="block rounded-full" style={{ width: size * 0.16, height: size * 0.16, background: pip }} />}
+                {PIPS[f.value]!.includes(i) && (
+                  <span
+                    className="block rounded-full"
+                    style={{ width: size * 0.16, height: size * 0.16, background: pip }}
+                  />
+                )}
               </span>
             ))}
           </div>

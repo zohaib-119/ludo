@@ -27,15 +27,22 @@ export function LobbyPage() {
         <div className="space-y-4">
           <ShareCard code={view.code} />
           <Card>
-            <SectionTitle aside={<span className="text-sm font-semibold text-muted">{seatedCount}/4</span>}>{t('lobby.seats')}</SectionTitle>
+            <SectionTitle aside={<span className="text-sm font-semibold text-muted">{seatedCount}/4</span>}>
+              {t('lobby.seats')}
+            </SectionTitle>
             <SeatBoard view={view} memberId={memberId} />
-            {!view.settings.teamMode && seatedCount <= 2 && <p className="mt-3 text-center text-sm text-muted">{t('lobby.twoPlayerHint')}</p>}
+            {!view.settings.teamMode && seatedCount <= 2 && (
+              <p className="mt-3 text-center text-sm text-muted">{t('lobby.twoPlayerHint')}</p>
+            )}
             {watchers.length > 0 && (
               <div className="mt-4 border-t border-line pt-3">
                 <p className="mb-2 text-xs font-bold uppercase tracking-[0.14em] text-muted">{t('lobby.watching')}</p>
                 <ul className="flex flex-wrap gap-2">
                   {watchers.map((m) => (
-                    <li key={m.id} className="flex items-center gap-2 rounded-full bg-surface-2 py-1 pl-1 pr-3 text-sm font-medium">
+                    <li
+                      key={m.id}
+                      className="flex items-center gap-2 rounded-full bg-surface-2 py-1 pl-1 pr-3 text-sm font-medium"
+                    >
                       <Avatar emoji={m.avatar} size={26} />
                       {m.name}
                       {m.id === memberId && <Badge tone="accent">{t('lobby.you')}</Badge>}
@@ -115,11 +122,7 @@ function ActionBar({ host, seated, ready }: { host: boolean; seated: boolean; re
     >
       <div className="mx-auto flex w-full max-w-5xl flex-col gap-2 px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
         <p className="text-center text-sm text-muted sm:text-left" data-testid="lobby-status">
-          {host
-            ? (blocker ?? ' ')
-            : seated
-              ? t('lobby.waitingForHost', { name: hostName })
-              : t('lobby.sitToPlay')}
+          {host ? (blocker ?? ' ') : seated ? t('lobby.waitingForHost', { name: hostName }) : t('lobby.sitToPlay')}
         </p>
         <div className="flex gap-2 sm:w-auto">
           {seated && (

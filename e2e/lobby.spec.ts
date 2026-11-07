@@ -5,7 +5,8 @@ const phone = { viewport: { width: 390, height: 844 }, isMobile: true, hasTouch:
 async function player(browser: Browser, name: string, mobile = false): Promise<{ ctx: BrowserContext; page: Page }> {
   const ctx = await browser.newContext(mobile ? phone : {});
   await ctx.addInitScript((n) => {
-    if (!localStorage.getItem('dodice.profile')) localStorage.setItem('dodice.profile', JSON.stringify({ name: n, avatar: '🦊' }));
+    if (!localStorage.getItem('dodice.profile'))
+      localStorage.setItem('dodice.profile', JSON.stringify({ name: n, avatar: '🦊' }));
   }, name);
   return { ctx, page: await ctx.newPage() };
 }
@@ -18,7 +19,10 @@ async function createRoom(page: Page): Promise<string> {
 }
 
 const seat = (page: Page, color: string) => page.getByTestId(`seat-${color}`);
-const sit = (page: Page, color: string) => seat(page, color).getByRole('button', { name: /Tap to sit/ }).click();
+const sit = (page: Page, color: string) =>
+  seat(page, color)
+    .getByRole('button', { name: /Tap to sit/ })
+    .click();
 
 test('four players: create, join by link, seats, rules un-ready everyone, start', async ({ browser }) => {
   const host = await player(browser, 'Zohaib', true);
@@ -89,7 +93,9 @@ test('clear messages for unknown rooms and started games', async ({ browser }) =
   const host = await player(browser, 'Zohaib');
   const code = await createRoom(host.page);
   await sit(host.page, 'red');
-  await seat(host.page, 'yellow').getByRole('button', { name: /Add bot/ }).click();
+  await seat(host.page, 'yellow')
+    .getByRole('button', { name: /Add bot/ })
+    .click();
   await host.page.getByRole('button', { name: 'Start game' }).click();
   await expect(host.page.getByTestId('action-area')).toBeVisible();
   const late = await player(browser, 'Late');

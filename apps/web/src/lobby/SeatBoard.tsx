@@ -38,7 +38,10 @@ export function SeatBoard({ view, memberId }: { view: RoomView; memberId: string
   const mySeat = view.members.find((m) => m.id === memberId)?.seat ?? null;
 
   return (
-    <div className="relative mx-auto grid aspect-square w-full max-w-[420px] grid-cols-2 gap-2.5 sm:gap-3" data-testid="seat-board">
+    <div
+      className="relative mx-auto grid aspect-square w-full max-w-[420px] grid-cols-2 gap-2.5 sm:gap-3"
+      data-testid="seat-board"
+    >
       {CORNERS.map((color) => (
         <SeatTile
           key={color}
@@ -102,7 +105,11 @@ function SeatTile({
     >
       {/* Colour marker (and team) in the tile's outer corner, away from the board centre. */}
       <div className={cx('absolute flex items-center gap-1.5', OUTER_CORNER[color])}>
-        <span className="piece size-4 shrink-0 sm:size-5" style={{ ['--piece' as string]: pieceColor(color) }} aria-hidden />
+        <span
+          className="piece size-4 shrink-0 sm:size-5"
+          style={{ ['--piece' as string]: pieceColor(color) }}
+          aria-hidden
+        />
         {teamMode && <Badge tone="neutral">{teamOf(color) === 'A' ? t('lobby.teamA') : t('lobby.teamB')}</Badge>}
       </div>
 
@@ -137,7 +144,10 @@ function SeatTile({
               </span>
             )}
           </div>
-          <p className="w-full truncate px-1 font-display text-[15px] font-bold leading-tight sm:text-base" title={seat.name}>
+          <p
+            className="w-full truncate px-1 font-display text-[15px] font-bold leading-tight sm:text-base"
+            title={seat.name}
+          >
             {seat.name}
           </p>
           <div className="flex flex-wrap justify-center gap-1">

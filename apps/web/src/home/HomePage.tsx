@@ -72,7 +72,11 @@ export function HomePage() {
   return (
     <main className="mx-auto flex min-h-dvh w-full max-w-md flex-col px-4 pb-10 pt-10 sm:pt-16">
       <header className="mb-8 flex flex-col items-center text-center">
-        <motion.div initial={{ rotate: -45 }} animate={{ rotate: 0 }} transition={{ type: 'spring', stiffness: 180, damping: 14 }}>
+        <motion.div
+          initial={{ rotate: -45 }}
+          animate={{ rotate: 0 }}
+          transition={{ type: 'spring', stiffness: 180, damping: 14 }}
+        >
           <Logo size={72} />
         </motion.div>
         <h1 className="mt-4 font-display text-4xl font-extrabold tracking-tight">
@@ -162,10 +166,15 @@ export function HomePage() {
         {codeError && <p className="-mt-3 text-xs text-danger">{codeError}</p>}
       </Card>
 
-      {!persists && <p className="mt-4 rounded-xl bg-warning-soft px-4 py-3 text-sm text-warning">{t('home.storageWarning')}</p>}
+      {!persists && (
+        <p className="mt-4 rounded-xl bg-warning-soft px-4 py-3 text-sm text-warning">{t('home.storageWarning')}</p>
+      )}
 
       <footer className="mt-auto flex flex-col items-center gap-4 pt-10">
-        <Link to="/how-to-play" className="inline-flex items-center gap-1.5 font-semibold text-accent underline-offset-4 hover:underline">
+        <Link
+          to="/how-to-play"
+          className="inline-flex items-center gap-1.5 font-semibold text-accent underline-offset-4 hover:underline"
+        >
           <BookOpen className="size-4" /> {t('help.link')}
         </Link>
         <ThemeSwitch />

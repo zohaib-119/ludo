@@ -68,7 +68,13 @@ export function placePieces(pieces: Piece[], progress: Record<string, number>, d
     members.forEach((idx, k) => {
       const b = base[idx]!;
       const [ox, oy] = stackOffset(n, k);
-      out[idx] = { piece: b.piece, x: b.point.x + ox, y: b.point.y + oy, scale: n === 1 ? 1 : n === 2 ? 0.78 : 0.62, stackSize: n };
+      out[idx] = {
+        piece: b.piece,
+        x: b.point.x + ox,
+        y: b.point.y + oy,
+        scale: n === 1 ? 1 : n === 2 ? 0.78 : 0.62,
+        stackSize: n,
+      };
     });
   }
   return out;

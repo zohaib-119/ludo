@@ -27,13 +27,13 @@ Teams: `red + yellow` vs `green + blue`. In 2-player games the two seats must be
 
 Each piece stores a **progress** value relative to its own colour:
 
-| Progress | Meaning |
-|---|---|
-| `-1` | In the yard |
-| `0` | Own start square |
-| `0..50` | On the shared track |
+| Progress | Meaning                                        |
+| -------- | ---------------------------------------------- |
+| `-1`     | In the yard                                    |
+| `0`      | Own start square                               |
+| `0..50`  | On the shared track                            |
 | `51..55` | In own finishing column (private, no captures) |
-| `56` | Home (finished) |
+| `56`     | Home (finished)                                |
 
 Track square (absolute index 0–51) for progress `p ≤ 50`: `(START[color] + p) % 52`.
 
@@ -56,20 +56,27 @@ interface Settings {
   killRequiredToEnterColumn: boolean;
   teamMode: boolean;
   teamHandover: 'immediate' | 'delayed';
-  teamHandoverDelayRounds: number;      // 1..10, default 4
+  teamHandoverDelayRounds: number; // 1..10, default 4
   // turnTimer and disconnectTakeover are server settings, not engine settings
 }
 
-interface Piece { id: string; color: Color; progress: number }  // id like "red-2"
+interface Piece {
+  id: string;
+  color: Color;
+  progress: number;
+} // id like "red-2"
 
 interface PlayerState {
   color: Color;
-  hasKilled: boolean;          // kill-to-enter credit
+  hasKilled: boolean; // kill-to-enter credit
   finishedRank: number | null; // FFA: 1, 2, 3...; teams: order of finishing
-  handoverDelayLeft: number;   // team mode, delayed handover
+  handoverDelayLeft: number; // team mode, delayed handover
 }
 
-interface Die { value: 1|2|3|4|5|6; chain: 'main' | `bonus-${number}` }
+interface Die {
+  value: 1 | 2 | 3 | 4 | 5 | 6;
+  chain: 'main' | `bonus-${number}`;
+}
 
 type Phase =
   | { kind: 'awaitRoll'; reason: 'turn' | 'reroll' | 'bonus' | 'bonusReroll'; chain: Die['chain'] }
@@ -77,19 +84,19 @@ type Phase =
   | { kind: 'gameOver' };
 
 interface GameState {
-  version: number;             // increments on every successful action
+  version: number; // increments on every successful action
   settings: Settings;
-  seats: Color[];              // colours in play, in turn order
+  seats: Color[]; // colours in play, in turn order
   players: Record<Color, PlayerState>;
   pieces: Piece[];
   turn: {
-    seat: Color;               // whose turn it is (who acts)
-    controls: Color;           // whose pieces are moved (differs during team handover)
+    seat: Color; // whose turn it is (who acts)
+    controls: Color; // whose pieces are moved (differs during team handover)
     phase: Phase;
-    bank: Die[];               // rolled, unplayed dice
+    bank: Die[]; // rolled, unplayed dice
     nextBonusId: number;
   };
-  rankings: Color[];           // FFA finishing order
+  rankings: Color[]; // FFA finishing order
   winningTeam: [Color, Color] | null;
   turnNumber: number;
 }
@@ -98,9 +105,7 @@ interface GameState {
 ## 3. Actions
 
 ```ts
-type Action =
-  | { type: 'roll'; seat: Color }
-  | { type: 'move'; seat: Color; pieceId: string; value: number };
+type Action = { type: 'roll'; seat: Color } | { type: 'move'; seat: Color; pieceId: string; value: number };
 ```
 
 Server-only concerns (timers, bot takeover, autoplay, host controls, chat) are not engine actions. The bot produces ordinary `roll` / `move` actions.
@@ -177,12 +182,12 @@ otherwise → 2
 
 A move of piece `p` (colour = `controls`) by `v` (a value present in the bank) is **single-legal** when:
 
-| Piece state | Rule |
-|---|---|
-| Yard (`-1`) | Only `v == 6`; destination progress `0` |
-| Track / column | Destination `p.progress + v ≤ 56` (exact finish) |
-| Kill-to-enter on and player can't enter column | Destination must be `≤ 50` |
-| Home (`56`) | Never |
+| Piece state                                    | Rule                                             |
+| ---------------------------------------------- | ------------------------------------------------ |
+| Yard (`-1`)                                    | Only `v == 6`; destination progress `0`          |
+| Track / column                                 | Destination `p.progress + v ≤ 56` (exact finish) |
+| Kill-to-enter on and player can't enter column | Destination must be `≤ 50`                       |
+| Home (`56`)                                    | Never                                            |
 
 A player **can enter the column** when the rule is off, or `players[controls].hasKilled` is true. (A piece already in the column implies this was true, so it stays satisfied.)
 
@@ -209,6 +214,7 @@ Let `S` be the destination track square, `mover` the moved piece's colour.
 **Free-for-all:** every piece of another colour on `S` is captured (all of one owner, since two different owners can only share safe squares). Credit goes to `mover`.
 
 **Team mode:** enemies are pieces of the other team on `S`.
+
 - No enemies → nothing.
 - Enemies all from one owner (single piece or same-owner stack) → all captured. Credit: `mover`.
 - Enemies from both enemy players (a **mixed stack**) → captured only if, after landing, `S` holds pieces of **both** attacking players (the mover plus at least one piece of the mover's teammate already sitting there). Then all enemy pieces on `S` are captured; credit goes to **both** attacking players; the bonus (if enabled) goes to the acting seat only. Otherwise the mover just sits on `S`.
@@ -228,6 +234,7 @@ After any capture, for each victim colour: if all four of its pieces are in the 
 ### 7.1 Next seat
 
 Go clockwise from the current seat through `seats`, skipping:
+
 - FFA: players who have finished.
 - Teams: a finished player whose teammate has also finished (game is over anyway); a finished player with `handoverDelayLeft > 0` (decrement it and emit `TurnSkipped { reason: 'handoverDelay' }`).
 
@@ -267,21 +274,21 @@ Depth-first search: if `values` is empty → true. Otherwise for each **distinct
 
 Events describe what happened, in order, for animations and the game log.
 
-| Event | Payload |
-|---|---|
-| `TurnStarted` | seat, controls |
-| `Rolled` | seat, values, diceCount, reason |
-| `RerollGranted` | seat |
-| `RollVoided` | seat, scope (`turn` / `bonus`), values |
-| `Moved` | pieceId, from, to, value, path |
-| `Captured` | victims[], at, creditedTo[], kind (`landing` / `leftover`) |
-| `KillUnlocked` / `KillReset` | color |
-| `PieceFinished` | pieceId |
-| `BonusGranted` | seat, reason (`capture` / `finish`) |
-| `PlayerFinished` | color, rank |
-| `HandoverStarted` | seat, controls, delay |
-| `TurnSkipped` | seat, reason |
-| `GameOver` | rankings / winningTeam |
+| Event                        | Payload                                                    |
+| ---------------------------- | ---------------------------------------------------------- |
+| `TurnStarted`                | seat, controls                                             |
+| `Rolled`                     | seat, values, diceCount, reason                            |
+| `RerollGranted`              | seat                                                       |
+| `RollVoided`                 | seat, scope (`turn` / `bonus`), values                     |
+| `Moved`                      | pieceId, from, to, value, path                             |
+| `Captured`                   | victims[], at, creditedTo[], kind (`landing` / `leftover`) |
+| `KillUnlocked` / `KillReset` | color                                                      |
+| `PieceFinished`              | pieceId                                                    |
+| `BonusGranted`               | seat, reason (`capture` / `finish`)                        |
+| `PlayerFinished`             | color, rank                                                |
+| `HandoverStarted`            | seat, controls, delay                                      |
+| `TurnSkipped`                | seat, reason                                               |
+| `GameOver`                   | rankings / winningTeam                                     |
 
 ## 10. Errors
 

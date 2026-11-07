@@ -29,7 +29,10 @@ export function describe(e: RoomEvent, nameOf: (c: Color) => string): { color: C
         : { color: e.color, text: t('log.moved', { name: nameOf(e.color), from: e.from, to: e.to }) };
     case 'Captured': {
       const victims = [...new Set(e.victims.map((id) => id.split('-')[0] as Color))].map(nameOf).join(' & ');
-      return { color: e.creditedTo[0] ?? null, text: t('log.captured', { name: e.creditedTo.map(nameOf).join(' & '), victims }) };
+      return {
+        color: e.creditedTo[0] ?? null,
+        text: t('log.captured', { name: e.creditedTo.map(nameOf).join(' & '), victims }),
+      };
     }
     case 'PieceFinished':
       return { color: e.color, text: t('log.pieceHome', { name: nameOf(e.color) }) };

@@ -28,7 +28,9 @@ import { useGameSounds } from './useGameSounds';
 import { formatSeconds, useNow } from './useNow';
 
 function usePrefersReducedMotion(): boolean {
-  const [reduced, setReduced] = useState(() => typeof window !== 'undefined' && window.matchMedia?.('(prefers-reduced-motion: reduce)').matches);
+  const [reduced, setReduced] = useState(
+    () => typeof window !== 'undefined' && window.matchMedia?.('(prefers-reduced-motion: reduce)').matches,
+  );
   useEffect(() => {
     const mq = window.matchMedia?.('(prefers-reduced-motion: reduce)');
     if (!mq) return;
@@ -105,7 +107,8 @@ export function GameScreen() {
 
   const movable = useMemo(() => movablePieceIds(moves, chosenValue), [moves, chosenValue]);
   const optionsFor = useCallback(
-    (pieceId: string) => valuesForPiece(moves, game.pieces, pieceId).filter((m) => chosenValue === null || m.value === chosenValue),
+    (pieceId: string) =>
+      valuesForPiece(moves, game.pieces, pieceId).filter((m) => chosenValue === null || m.value === chosenValue),
     [moves, game.pieces, chosenValue],
   );
   const options = selected ? optionsFor(selected) : [];
@@ -156,7 +159,9 @@ export function GameScreen() {
     return out;
   }, [game.seats, rotation]);
   const locked = view.settings.killRequiredToEnterColumn
-    ? game.seats.filter((c) => !game.players[c]?.hasKilled && game.players[c]?.finishedRank == null && !game.players[c]?.eliminated)
+    ? game.seats.filter(
+        (c) => !game.players[c]?.hasKilled && game.players[c]?.finishedRank == null && !game.players[c]?.eliminated,
+      )
     : [];
 
   const [menuOpen, setMenuOpen] = useState(false);
@@ -213,7 +218,10 @@ export function GameScreen() {
         <div style={{ gridArea: 'bl' }}>{panel('bottom-left')}</div>
         <div style={{ gridArea: 'br' }}>{panel('bottom-right')}</div>
 
-        <div style={{ gridArea: 'board' }} className="relative mx-auto aspect-square w-full max-w-[min(100%,calc(100dvh-330px))] lg:max-w-none">
+        <div
+          style={{ gridArea: 'board' }}
+          className="relative mx-auto aspect-square w-full max-w-[min(100%,calc(100dvh-330px))] lg:max-w-none"
+        >
           <div className="size-full overflow-hidden rounded-[1.4rem] shadow-lift ring-1 ring-line">
             <Board
               pieces={game.pieces}
@@ -343,7 +351,8 @@ function ActionArea({
   let status = '';
   if (playing && !myTurn) {
     const name = seatView?.name ?? seat;
-    if (seatView && !seatView.isBot && (seatView.botControlled || seatView.autoplay)) status = t('game.botPlaying', { name });
+    if (seatView && !seatView.isBot && (seatView.botControlled || seatView.autoplay))
+      status = t('game.botPlaying', { name });
     else status = game.turn.phase === 'awaitRoll' ? t('game.isRolling', { name }) : t('game.isMoving', { name });
   } else if (awaitingMove) {
     status = new Set(game.turn.bank).size > 1 ? t('game.pickValue') : t('game.tapPiece');
@@ -371,13 +380,24 @@ function ActionArea({
                 onClick={() => interactive && onChooseValue(d.value)}
                 aria-pressed={interactive ? chosen : undefined}
                 aria-label={`Die ${d.value}`}
-                className={cx('rounded-[22%] disabled:cursor-default', chosen && 'ring-4 ring-text ring-offset-2 ring-offset-bg')}
+                className={cx(
+                  'rounded-[22%] disabled:cursor-default',
+                  chosen && 'ring-4 ring-text ring-offset-2 ring-offset-bg',
+                )}
                 initial={{ opacity: 0, scale: 0.5, y: 8 }}
                 animate={{ opacity: 1, scale: 1, y: chosen ? -6 : 0 }}
                 exit={{ opacity: 0, scale: 0.4, y: -14, transition: { duration: reduced ? 0 : 0.22 } }}
                 transition={{ type: 'spring', stiffness: 520, damping: 30 }}
               >
-                <Die id={d.id} value={d.value} rolling={d.rolling} color={traySeat} voided={d.void} reducedMotion={reduced} size={size} />
+                <Die
+                  id={d.id}
+                  value={d.value}
+                  rolling={d.rolling}
+                  color={traySeat}
+                  voided={d.void}
+                  reducedMotion={reduced}
+                  size={size}
+                />
               </motion.button>
             );
           })}
@@ -387,11 +407,24 @@ function ActionArea({
       <div className="flex h-14 items-center justify-center">
         {awaitingRoll ? (
           <div className="flex items-center gap-3">
-            <Button size="lg" className="min-w-44 animate-[pulse_2.2s_ease-in-out_infinite]" onClick={onRoll} loading={pending} data-testid="roll-button">
+            <Button
+              size="lg"
+              className="min-w-44 animate-[pulse_2.2s_ease-in-out_infinite]"
+              onClick={onRoll}
+              loading={pending}
+              data-testid="roll-button"
+            >
               {rollLabel}
             </Button>
             {deadline > 0 && (
-              <span className={cx('font-display text-lg font-bold tabular-nums', left < 5000 ? 'text-danger' : 'text-muted')}>{formatSeconds(left)}</span>
+              <span
+                className={cx(
+                  'font-display text-lg font-bold tabular-nums',
+                  left < 5000 ? 'text-danger' : 'text-muted',
+                )}
+              >
+                {formatSeconds(left)}
+              </span>
             )}
           </div>
         ) : (
@@ -411,17 +444,27 @@ function OfflineNotice() {
   const clockOffset = useConnection((s) => s.clockOffset);
   const game = view.game!;
   const seat = view.seats[game.turn.seat];
-  const show = view.phase === 'playing' && seat && !seat.isBot && !seat.connected && !seat.botControlled && !seat.autoplay;
+  const show =
+    view.phase === 'playing' && seat && !seat.isBot && !seat.connected && !seat.botControlled && !seat.autoplay;
   const takeoverAt = game.turn.takeoverAt;
   const now = useNow(500, Boolean(show && takeoverAt)) + clockOffset;
   if (!show) return null;
   const host = view.hostId === memberId;
   return (
-    <div className="absolute inset-x-3 bottom-3 z-10 flex flex-col items-center gap-2 rounded-2xl bg-surface/95 p-3 text-center shadow-lift backdrop-blur" role="status">
+    <div
+      className="absolute inset-x-3 bottom-3 z-10 flex flex-col items-center gap-2 rounded-2xl bg-surface/95 p-3 text-center shadow-lift backdrop-blur"
+      role="status"
+    >
       <p className="text-sm font-semibold">{t('game.waitingOffline', { name: seat.name })}</p>
-      {takeoverAt > 0 && <p className="text-xs text-muted">{t('game.botIn', { time: formatSeconds(takeoverAt - now) })}</p>}
+      {takeoverAt > 0 && (
+        <p className="text-xs text-muted">{t('game.botIn', { time: formatSeconds(takeoverAt - now) })}</p>
+      )}
       {host && (
-        <Button size="sm" variant="secondary" onClick={() => void sendCommand({ type: 'hostBotTakeover', color: game.turn.seat })}>
+        <Button
+          size="sm"
+          variant="secondary"
+          onClick={() => void sendCommand({ type: 'hostBotTakeover', color: game.turn.seat })}
+        >
           {t('game.hostLetBot')}
         </Button>
       )}

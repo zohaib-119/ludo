@@ -15,7 +15,8 @@ export function GameMenu({ open, onClose }: { open: boolean; onClose: () => void
   const memberId = useConnection((s) => s.memberId);
   const navigate = useNavigate();
   const settings = useSettings();
-  const reducedBySystem = typeof window !== 'undefined' && window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
+  const reducedBySystem =
+    typeof window !== 'undefined' && window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
   const [sub, setSub] = useState<'none' | 'rules' | 'leave' | 'end'>('none');
   const host = view.hostId === memberId;
   const mySeat = view.members.find((m) => m.id === memberId)?.seat ?? null;
@@ -51,14 +52,22 @@ export function GameMenu({ open, onClose }: { open: boolean; onClose: () => void
                 <span className="block font-medium">{t('game.quickMove')}</span>
                 <span className="mt-0.5 block text-[13px] leading-snug text-muted">{t('game.quickMove.help')}</span>
               </span>
-              <Switch label={t('game.quickMove')} checked={settings.quickMove} onChange={(v) => settings.update({ quickMove: v })} />
+              <Switch
+                label={t('game.quickMove')}
+                checked={settings.quickMove}
+                onChange={(v) => settings.update({ quickMove: v })}
+              />
             </label>
             <label className="flex items-center justify-between gap-3 py-3">
               <span className="min-w-0">
                 <span className="block font-medium">{t('game.autoMove')}</span>
                 <span className="mt-0.5 block text-[13px] leading-snug text-muted">{t('game.autoMove.help')}</span>
               </span>
-              <Switch label={t('game.autoMove')} checked={settings.autoMove} onChange={(v) => settings.update({ autoMove: v })} />
+              <Switch
+                label={t('game.autoMove')}
+                checked={settings.autoMove}
+                onChange={(v) => settings.update({ autoMove: v })}
+              />
             </label>
             <ToggleRow
               title={t('settings.sound')}
@@ -82,7 +91,12 @@ export function GameMenu({ open, onClose }: { open: boolean; onClose: () => void
                 />
               </label>
             )}
-            <ToggleRow title={t('settings.haptics')} help={t('settings.haptics.help')} checked={settings.haptics} onChange={(v) => settings.update({ haptics: v })} />
+            <ToggleRow
+              title={t('settings.haptics')}
+              help={t('settings.haptics.help')}
+              checked={settings.haptics}
+              onChange={(v) => settings.update({ haptics: v })}
+            />
             <ToggleRow
               title={t('settings.colorBlind')}
               help={t('settings.colorBlind.help')}
@@ -101,7 +115,10 @@ export function GameMenu({ open, onClose }: { open: boolean; onClose: () => void
                 size="sm"
                 value={settings.theme}
                 onChange={(v) => settings.update({ theme: v })}
-                options={(['system', 'light', 'dark'] as Theme[]).map((v) => ({ value: v, label: t(`settings.theme.${v}`) }))}
+                options={(['system', 'light', 'dark'] as Theme[]).map((v) => ({
+                  value: v,
+                  label: t(`settings.theme.${v}`),
+                }))}
               />
             </div>
           </div>
@@ -183,7 +200,17 @@ export function GameMenu({ open, onClose }: { open: boolean; onClose: () => void
   );
 }
 
-function ToggleRow({ title, help, checked, onChange }: { title: string; help: string; checked: boolean; onChange: (v: boolean) => void }) {
+function ToggleRow({
+  title,
+  help,
+  checked,
+  onChange,
+}: {
+  title: string;
+  help: string;
+  checked: boolean;
+  onChange: (v: boolean) => void;
+}) {
   return (
     <label className="flex items-center justify-between gap-3 py-3">
       <span className="min-w-0">

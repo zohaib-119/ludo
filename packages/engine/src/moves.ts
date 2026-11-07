@@ -38,9 +38,9 @@ export interface MoveOutcome {
 
 export const simFromState = (state: GameState): Sim => ({
   pieces: state.pieces.map((p) => ({ ...p })),
-  hasKilled: Object.fromEntries(
-    Object.values(state.players).map((p) => [p!.color, p!.hasKilled]),
-  ) as Partial<Record<Color, boolean>>,
+  hasKilled: Object.fromEntries(Object.values(state.players).map((p) => [p!.color, p!.hasKilled])) as Partial<
+    Record<Color, boolean>
+  >,
 });
 
 const cloneSim = (sim: Sim): Sim => ({
@@ -51,8 +51,7 @@ const cloneSim = (sim: Sim): Sim => ({
 export const isTeammate = (settings: Settings, a: Color, b: Color): boolean =>
   settings.teamMode && a !== b && TEAM[a] === TEAM[b];
 
-export const isEnemy = (settings: Settings, a: Color, b: Color): boolean =>
-  a !== b && !isTeammate(settings, a, b);
+export const isEnemy = (settings: Settings, a: Color, b: Color): boolean => a !== b && !isTeammate(settings, a, b);
 
 export const canEnterColumn = (settings: Settings, sim: Sim, color: Color): boolean =>
   !settings.killRequiredToEnterColumn || sim.hasKilled[color] === true;

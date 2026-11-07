@@ -25,7 +25,13 @@ import {
 } from '@ludo/protocol';
 
 export type ConnStatus = 'idle' | 'connecting' | 'connected' | 'reconnecting' | 'failed' | 'kicked';
-export type FailReason = 'ROOM_NOT_FOUND' | 'GAME_IN_PROGRESS' | 'ROOM_FULL' | 'NAME_INVALID' | 'ROOM_CLOSED' | 'NETWORK';
+export type FailReason =
+  | 'ROOM_NOT_FOUND'
+  | 'GAME_IN_PROGRESS'
+  | 'ROOM_FULL'
+  | 'NAME_INVALID'
+  | 'ROOM_CLOSED'
+  | 'NETWORK';
 
 export interface ConnectionState {
   status: ConnStatus;
@@ -128,9 +134,7 @@ export class Connection {
     this.kickReason = null;
     this.store.setState({ ...INITIAL, status: 'connecting', code });
     try {
-      const room = code
-        ? await this.client.joinById(code, options)
-        : await this.client.create(ROOM_NAME, options);
+      const room = code ? await this.client.joinById(code, options) : await this.client.create(ROOM_NAME, options);
       this.attach(room);
     } catch (error) {
       this.store.setState({ status: 'failed', failure: joinFailure(error) });

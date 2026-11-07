@@ -41,8 +41,7 @@ export const SAFE_SQUARES: ReadonlySet<number> = new Set([0, 8, 13, 21, 26, 34, 
 
 export const isInYard = (progress: number): boolean => progress === YARD;
 export const isOnTrack = (progress: number): boolean => progress >= 0 && progress <= LAST_TRACK;
-export const isInColumn = (progress: number): boolean =>
-  progress >= COLUMN_FIRST && progress <= COLUMN_LAST;
+export const isInColumn = (progress: number): boolean => progress >= COLUMN_FIRST && progress <= COLUMN_LAST;
 export const isHome = (progress: number): boolean => progress === HOME;
 
 /** Absolute track index for a piece on the shared track, or null when it is not on the track. */

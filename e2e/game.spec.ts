@@ -3,7 +3,8 @@ import { type Browser, type Page, expect, test } from '@playwright/test';
 async function player(browser: Browser, name: string) {
   const ctx = await browser.newContext();
   await ctx.addInitScript((n) => {
-    if (!localStorage.getItem('dodice.profile')) localStorage.setItem('dodice.profile', JSON.stringify({ name: n, avatar: '🦊' }));
+    if (!localStorage.getItem('dodice.profile'))
+      localStorage.setItem('dodice.profile', JSON.stringify({ name: n, avatar: '🦊' }));
   }, name);
   return { ctx, page: await ctx.newPage() };
 }
@@ -13,7 +14,10 @@ async function hostWithBots(browser: Browser, mySeat: string, bots: string[], ru
   await host.page.goto('/');
   await host.page.getByRole('button', { name: 'Create game' }).click();
   await expect(host.page.getByTestId('seat-board')).toBeVisible();
-  await host.page.getByTestId(`seat-${mySeat}`).getByRole('button', { name: /Tap to sit/ }).click();
+  await host.page
+    .getByTestId(`seat-${mySeat}`)
+    .getByRole('button', { name: /Tap to sit/ })
+    .click();
   for (const c of bots) await host.page.getByTestId(`add-bot-${c}`).click();
   if (rules) await rules(host.page);
   await host.page.getByRole('button', { name: 'Start game' }).click();
@@ -100,12 +104,21 @@ test('when a player drops, others see who we wait for, and the host can let the 
   await host.page.getByRole('button', { name: 'Create game' }).click();
   await expect(host.page.getByTestId('seat-board')).toBeVisible();
   const code = host.page.url().split('/r/')[1]!;
-  await host.page.getByTestId('seat-red').getByRole('button', { name: /Tap to sit/ }).click();
+  await host.page
+    .getByTestId('seat-red')
+    .getByRole('button', { name: /Tap to sit/ })
+    .click();
   // Takeover "never": the game must wait for Sara until the host steps in.
-  await host.page.getByRole('radiogroup', { name: 'Bot plays for offline players after' }).getByRole('radio', { name: 'Never' }).click();
+  await host.page
+    .getByRole('radiogroup', { name: 'Bot plays for offline players after' })
+    .getByRole('radio', { name: 'Never' })
+    .click();
   const guest = await player(browser, 'Sara');
   await guest.page.goto(`/r/${code}`);
-  await guest.page.getByTestId('seat-yellow').getByRole('button', { name: /Tap to sit/ }).click();
+  await guest.page
+    .getByTestId('seat-yellow')
+    .getByRole('button', { name: /Tap to sit/ })
+    .click();
   await guest.page.getByTestId('ready-button').click();
   await host.page.getByRole('button', { name: 'Start game' }).click();
   await expect(guest.page.getByTestId('action-area')).toBeVisible();

@@ -74,12 +74,7 @@ const isTeamOf = (settings: Settings, me: Color, other: Color): boolean =>
   other === me || (settings.teamMode && TEAM[other] === TEAM[me]);
 
 /** Score gained by one resolved move for the side `me` belongs to. */
-function moveBonus(
-  settings: Settings,
-  me: Color,
-  outcome: ReturnType<typeof resolveMove>,
-  w: Weights,
-): number {
+function moveBonus(settings: Settings, me: Color, outcome: ReturnType<typeof resolveMove>, w: Weights): number {
   let score = 0;
   for (const c of outcome.captures) {
     const ours = c.creditedTo.some((col) => isTeamOf(settings, me, col));
@@ -183,13 +178,20 @@ export function evaluate(settings: Settings, sim: Sim, me: Color, w: Weights = W
         if (isSafeSquare(sq)) v += w.safeSquare;
         else if (
           settings.teamMode &&
-          sim.pieces.some((o) => o.color !== p.color && isTeamOf(settings, me, o.color) && trackSquare(o.color, o.progress) === sq)
+          sim.pieces.some(
+            (o) => o.color !== p.color && isTeamOf(settings, me, o.color) && trackSquare(o.color, o.progress) === sq,
+          )
         ) {
           v += w.teamStack;
         }
         v -= (w.dangerBase + w.dangerPerProgress * p.progress) * danger(settings, sim, me, idx);
       }
-      if (settings.killRequiredToEnterColumn && !sim.hasKilled[p.color] && p.progress >= LAST_TRACK - 6 && p.progress <= LAST_TRACK) {
+      if (
+        settings.killRequiredToEnterColumn &&
+        !sim.hasKilled[p.color] &&
+        p.progress >= LAST_TRACK - 6 &&
+        p.progress <= LAST_TRACK
+      ) {
         v -= w.stuckWithoutKill;
       }
     }

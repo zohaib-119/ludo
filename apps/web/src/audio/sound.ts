@@ -36,7 +36,11 @@ class SoundEngine {
 
   /** Browsers only allow audio after a user gesture: call this on the first tap/key. */
   unlock(): void {
-    const AC = typeof window !== 'undefined' ? (window.AudioContext ?? (window as unknown as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext) : undefined;
+    const AC =
+      typeof window !== 'undefined'
+        ? (window.AudioContext ??
+          (window as unknown as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext)
+        : undefined;
     if (!AC) return;
     if (!this.ctx) {
       this.ctx = new AC();
@@ -59,7 +63,8 @@ class SoundEngine {
     const p = opts.pitch ?? 1;
     switch (name) {
       case 'shake':
-        for (let i = 0; i < 5; i++) this.knock(t + i * 0.055 + Math.random() * 0.02, 2400 + Math.random() * 1200, 0.035, 0.25);
+        for (let i = 0; i < 5; i++)
+          this.knock(t + i * 0.055 + Math.random() * 0.02, 2400 + Math.random() * 1200, 0.035, 0.25);
         break;
       case 'land':
         this.knock(t, 1400, 0.06, 0.55);
@@ -98,7 +103,9 @@ class SoundEngine {
         this.knock(t, 2800, 0.015, 0.3);
         break;
       case 'win':
-        [523.25, 659.25, 783.99, 1046.5].forEach((f, i) => this.tone(t + i * 0.12, f, i === 3 ? 0.6 : 0.2, 0.25, 'triangle'));
+        [523.25, 659.25, 783.99, 1046.5].forEach((f, i) =>
+          this.tone(t + i * 0.12, f, i === 3 ? 0.6 : 0.2, 0.25, 'triangle'),
+        );
         break;
       case 'out':
         [392, 329.63, 261.63].forEach((f, i) => this.tone(t + i * 0.14, f, 0.25, 0.22, 'triangle'));

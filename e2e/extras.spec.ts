@@ -3,7 +3,8 @@ import { type Browser, expect, test } from '@playwright/test';
 async function player(browser: Browser, name: string) {
   const ctx = await browser.newContext();
   await ctx.addInitScript((n) => {
-    if (!localStorage.getItem('dodice.profile')) localStorage.setItem('dodice.profile', JSON.stringify({ name: n, avatar: '🦊' }));
+    if (!localStorage.getItem('dodice.profile'))
+      localStorage.setItem('dodice.profile', JSON.stringify({ name: n, avatar: '🦊' }));
   }, name);
   return { ctx, page: await ctx.newPage() };
 }
@@ -32,8 +33,14 @@ test('chat and reactions reach the other players, in the lobby and in the game',
   await guest.page.keyboard.press('Escape');
 
   // Start a game and chat again: the message shows as a bubble on the sender's panel.
-  await host.page.getByTestId('seat-red').getByRole('button', { name: /Tap to sit/ }).click();
-  await guest.page.getByTestId('seat-yellow').getByRole('button', { name: /Tap to sit/ }).click();
+  await host.page
+    .getByTestId('seat-red')
+    .getByRole('button', { name: /Tap to sit/ })
+    .click();
+  await guest.page
+    .getByTestId('seat-yellow')
+    .getByRole('button', { name: /Tap to sit/ })
+    .click();
   await guest.page.getByTestId('ready-button').click();
   await host.page.getByRole('button', { name: 'Start game' }).click();
   await expect(guest.page.getByTestId('action-area')).toBeVisible();
@@ -81,7 +88,10 @@ test('screen readers hear when it is your turn', async ({ browser }) => {
   const host = await player(browser, 'Zohaib');
   await host.page.goto('/');
   await host.page.getByRole('button', { name: 'Create game' }).click();
-  await host.page.getByTestId('seat-red').getByRole('button', { name: /Tap to sit/ }).click();
+  await host.page
+    .getByTestId('seat-red')
+    .getByRole('button', { name: /Tap to sit/ })
+    .click();
   await host.page.getByTestId('add-bot-yellow').click();
   await host.page.getByRole('button', { name: 'Start game' }).click();
   // The first player is random; once it is our turn (by the start or after the bot), we hear it.

@@ -73,7 +73,9 @@ export function ShareCard({ code }: { code: string }) {
             variant="secondary"
             size="sm"
             icon={<Share2 className="size-4" />}
-            onClick={() => navigator.share({ title: t('appName'), text: t('lobby.shareText', { code }), url: link }).catch(() => {})}
+            onClick={() =>
+              navigator.share({ title: t('appName'), text: t('lobby.shareText', { code }), url: link }).catch(() => {})
+            }
           >
             {t('lobby.share')}
           </Button>

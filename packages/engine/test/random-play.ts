@@ -1,13 +1,5 @@
 /** Shared random-game driver for property tests and the simulation script. */
-import {
-  type Color,
-  type GameState,
-  type Rng,
-  type Settings,
-  apply,
-  createGame,
-  legalMoves,
-} from '../src';
+import { type Color, type GameState, type Rng, type Settings, apply, createGame, legalMoves } from '../src';
 
 export const VALID_SEATINGS: Color[][] = [
   ['red', 'yellow'],

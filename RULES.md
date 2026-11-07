@@ -12,18 +12,18 @@ Status: agreed in discussion, ready for the rules engine to be built from it.
 
 ## 2. Host settings (room config)
 
-| Setting | Values | Notes |
-|---|---|---|
-| `diceMode` | 1 or 2 | |
-| `extraTurnOnCapture` | on / off | |
-| `extraTurnOnFinish` | on / off | Piece reaches home |
-| `singleDieWhenAllInColumn` | on / off | Rule B, see 4.2. Only matters in 2-dice mode |
-| `killRequiredToEnterColumn` | on / off | See 6 |
-| `teamMode` | on / off | 4 players only |
-| `teamHandover` | `immediate` / `delayed` | Team mode only |
-| `teamHandoverDelayRounds` | number (default 4) | Used when `delayed` |
-| `turnTimer` | off / 15 / 30 / 45 / 60 s | Default off. See 12 |
-| `disconnectTakeover` | 15 / 30 / 60 s / never | Default 60 s. See 12 |
+| Setting                     | Values                    | Notes                                        |
+| --------------------------- | ------------------------- | -------------------------------------------- |
+| `diceMode`                  | 1 or 2                    |                                              |
+| `extraTurnOnCapture`        | on / off                  |                                              |
+| `extraTurnOnFinish`         | on / off                  | Piece reaches home                           |
+| `singleDieWhenAllInColumn`  | on / off                  | Rule B, see 4.2. Only matters in 2-dice mode |
+| `killRequiredToEnterColumn` | on / off                  | See 6                                        |
+| `teamMode`                  | on / off                  | 4 players only                               |
+| `teamHandover`              | `immediate` / `delayed`   | Team mode only                               |
+| `teamHandoverDelayRounds`   | number (default 4)        | Used when `delayed`                          |
+| `turnTimer`                 | off / 15 / 30 / 45 / 60 s | Default off. See 12                          |
+| `disconnectTakeover`        | 15 / 30 / 60 s / never    | Default 60 s. See 12                         |
 
 **Defaults for a new room** (the Hardcore preset; only the host can change them, everyone else sees them read-only): 2 dice, no bonus rolls, two dice to the end (`singleDieWhenAllInColumn` off), capture before entering the home column on, teams off, turn timer off, bot takes over offline players after 60 s.
 
@@ -81,11 +81,13 @@ With one die, a 6 gives a re-roll.
 ## 8. Team mode (4 players)
 
 ### 8.1 Basics
+
 - Each player plays their own four pieces.
 - Teammates never capture each other and can stack harmlessly.
 - The team wins when both teammates have finished all pieces.
 
 ### 8.2 Handover
+
 - When a player finishes all pieces, they keep their seat and their own turn. On it they roll and move **their teammate's pieces**.
 - `immediate`: starts as soon as they finish.
 - `delayed`: they skip `teamHandoverDelayRounds` full rounds first.
@@ -93,7 +95,9 @@ With one die, a 6 gives a re-roll.
 - The finished player earns no status or rewards of their own.
 
 ### 8.3 Mixed stack
+
 A mixed stack has one piece from each teammate on the same square.
+
 - A single enemy piece cannot capture it. It may land and sit on the square.
 - If a teammate then moves away, the piece left behind is captured by the sitting enemy. This gives **no** extra turn but **counts** toward that enemy's kill-to-enter.
 - If enemy pieces from **both** enemy teammates are on the square (one each), both pieces in the stack are captured. The extra-turn bonus (if enabled) goes only to the player whose turn it was. Kill credit goes to both enemy players.

@@ -7,13 +7,7 @@ import { randomInt, randomUUID } from 'node:crypto';
 import { schema, t } from '@colyseus/schema';
 import { type Client, CloseCode, type Deferred, Room, ServerError } from '@colyseus/core';
 import type { Rng } from '@ludo/engine';
-import {
-  JOIN_REFUSED_CLOSE_CODE,
-  LIMITS,
-  type KickReason,
-  ROOM_CODE_ALPHABET,
-  ROOM_CODE_LENGTH,
-} from '@ludo/protocol';
+import { JOIN_REFUSED_CLOSE_CODE, LIMITS, type KickReason, ROOM_CODE_ALPHABET, ROOM_CODE_LENGTH } from '@ludo/protocol';
 import { RoomController } from './controller';
 
 /** Synced state: a revision number and the JSON public view (docs/05-protocol.md §2). */
@@ -170,12 +164,15 @@ export class LudoRoom extends Room<{ state: LudoStateType }> {
     this.wakeTimer = null;
     this.wakeAt = at;
     if (at === null) return;
-    this.wakeTimer = this.clock.setTimeout(() => {
-      this.wakeTimer = null;
-      this.wakeAt = null;
-      this.controller.tick();
-      this.flush();
-    }, Math.max(0, at - Date.now()));
+    this.wakeTimer = this.clock.setTimeout(
+      () => {
+        this.wakeTimer = null;
+        this.wakeAt = null;
+        this.controller.tick();
+        this.flush();
+      },
+      Math.max(0, at - Date.now()),
+    );
   }
 
   private syncAndSend(): void {

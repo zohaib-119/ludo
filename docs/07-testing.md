@@ -2,14 +2,14 @@
 
 ## 1. Layers
 
-| Layer | Tool | What |
-|---|---|---|
-| Engine unit tests | Vitest | Every rule in RULES.md, using hand-built positions |
-| Engine property tests | fast-check | Invariants over random games |
-| Bot tests | Vitest | Always legal; sensible choices in set positions; win rate vs random |
-| Server tests | Vitest + Colyseus testing utilities | Room lifecycle, seats, reconnect, timers (fake clock) |
-| End to end | Playwright | 2–4 real browser contexts playing a game, network drop simulation |
-| Visual | Playwright screenshots | Board and key screens in light/dark, 3 breakpoints |
+| Layer                 | Tool                                | What                                                                |
+| --------------------- | ----------------------------------- | ------------------------------------------------------------------- |
+| Engine unit tests     | Vitest                              | Every rule in RULES.md, using hand-built positions                  |
+| Engine property tests | fast-check                          | Invariants over random games                                        |
+| Bot tests             | Vitest                              | Always legal; sensible choices in set positions; win rate vs random |
+| Server tests          | Vitest + Colyseus testing utilities | Room lifecycle, seats, reconnect, timers (fake clock)               |
+| End to end            | Playwright                          | 2–4 real browser contexts playing a game, network drop simulation   |
+| Visual                | Playwright screenshots              | Board and key screens in light/dark, 3 breakpoints                  |
 
 ## 2. Test position helper
 
@@ -31,6 +31,7 @@ Dice are injected with a scripted RNG: `rng([6, 6, 2, 3])`.
 Each line is at least one test. IDs are referenced from code comments.
 
 **Dice and chains**
+
 - D1 1-die: 6 grants re-roll; 5 doesn't.
 - D2 2-dice: (6,6) grants re-roll; (6,3) doesn't.
 - D3 Re-roll chain stacks without a cap (6,6)(6,6)(6,6)(2,3) → bank of 8 dice.
@@ -39,6 +40,7 @@ Each line is at least one test. IDs are referenced from code comments.
 - D6 Exactly one of two dice playable → void (no partial play).
 
 **Single die**
+
 - S1 Rule A: one unfinished piece in column → 1 die.
 - S2 Rule A doesn't apply when the single unfinished piece is on the track.
 - S3 Rule B on: all unfinished in column → 1 die.
@@ -46,6 +48,7 @@ Each line is at least one test. IDs are referenced from code comments.
 - S5 With one die, a 6 grants re-roll.
 
 **Movement**
+
 - M1 Leave yard only on 6; lands on start square.
 - M2 Exact finish; overshoot not legal.
 - M3 No blocks: passing over stacks is fine.
@@ -53,6 +56,7 @@ Each line is at least one test. IDs are referenced from code comments.
 - M5 Order where capture unlocks the column for the second die is found by the search.
 
 **Captures**
+
 - C1 Landing on a single enemy captures it.
 - C2 Same-owner stack captured together by one piece.
 - C3 No capture on safe squares; mixed owners can share them.
@@ -63,12 +67,14 @@ Each line is at least one test. IDs are referenced from code comments.
 - C8 Double capture counts as one bonus.
 
 **Kill-to-enter**
+
 - K1 Without a kill, moves past progress 50 are illegal.
 - K2 After a capture the column opens, including within the same turn.
 - K3 All four pieces back in the yard → requirement resets.
 - K4 Piece in column → requirement never resets.
 
 **Teams**
+
 - T1 Teammates can't capture each other; they stack.
 - T2 Single enemy can't capture a mixed stack and sits on it.
 - T3 Second enemy (other enemy player) lands → both captured; both credited; bonus to the acting seat only.
@@ -80,6 +86,7 @@ Each line is at least one test. IDs are referenced from code comments.
 - T9 Team wins when both have finished.
 
 **Game flow**
+
 - G1 2-player seats must be opposite.
 - G2 FFA rankings and game end when one player remains.
 - G3 Finished FFA players are skipped.
@@ -87,6 +94,7 @@ Each line is at least one test. IDs are referenced from code comments.
 ## 4. Property tests (fast-check)
 
 Random games with random settings, random seats and random legal actions, for thousands of games:
+
 - P1 `apply` never throws and never mutates input.
 - P2 Invariant: in `awaitMove`, `canPlayAll(bank)` is true.
 - P3 Every piece's progress is in `-1..56`; never two different teams on a non-safe square unless one side is a mixed stack (team mode) — never in FFA.

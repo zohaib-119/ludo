@@ -33,4 +33,3 @@ export function playMatch(settings: Settings, seats: Color[], players: Partial<R
   }
   return { state, botMs, botDecisions };
 }
-

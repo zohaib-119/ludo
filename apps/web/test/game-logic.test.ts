@@ -99,11 +99,18 @@ describe('move choices', () => {
 describe('log lines', () => {
   const names = (c: Color) => ({ red: 'Ali', yellow: 'Sara', green: 'Bo', blue: 'Di' })[c];
   it('describes events in words', () => {
-    expect(describeEvent({ type: 'Rolled', seat: 'red', values: [6, 3], diceCount: 2, reason: 'turn' }, names)?.text).toBe('Ali rolled 6 · 3');
     expect(
-      describeEvent({ type: 'Captured', victims: ['yellow-0', 'yellow-1'], at: 5, creditedTo: ['red'], kind: 'landing' }, names)?.text,
+      describeEvent({ type: 'Rolled', seat: 'red', values: [6, 3], diceCount: 2, reason: 'turn' }, names)?.text,
+    ).toBe('Ali rolled 6 · 3');
+    expect(
+      describeEvent(
+        { type: 'Captured', victims: ['yellow-0', 'yellow-1'], at: 5, creditedTo: ['red'], kind: 'landing' },
+        names,
+      )?.text,
     ).toBe('Ali captured Sara');
-    expect(describeEvent({ type: 'BotActed', seat: 'red', cause: 'timeout' }, names)?.text).toBe('Time ran out — bot played for Ali');
+    expect(describeEvent({ type: 'BotActed', seat: 'red', cause: 'timeout' }, names)?.text).toBe(
+      'Time ran out — bot played for Ali',
+    );
     expect(describeEvent({ type: 'BotActed', seat: 'red', cause: 'bot' }, names)).toBeNull();
     expect(describeEvent({ type: 'PlayerFinished', color: 'yellow', rank: 2 }, names)?.text).toBe('Sara finished 2nd');
   });
@@ -119,7 +126,16 @@ function view(version: number, pieces: Record<string, number>, lastRoll: number[
     seats: ['red', 'yellow'],
     pieces: Object.entries(pieces).map(([id, progress]) => ({ id, color: id.split('-')[0] as Color, progress })),
     players: {},
-    turn: { seat: 'red', controls: 'red', phase: 'awaitMove', rollReason: null, bank: [], lastRoll, deadline: 0, takeoverAt: 0 },
+    turn: {
+      seat: 'red',
+      controls: 'red',
+      phase: 'awaitMove',
+      rollReason: null,
+      bank: [],
+      lastRoll,
+      deadline: 0,
+      takeoverAt: 0,
+    },
     legalMoves: [],
     rankings: [],
     winningTeam: null,
@@ -198,7 +214,12 @@ describe('Playback', () => {
     pb.sync(view(0, {}));
     const dimmed: boolean[] = [];
     pb.store.subscribe((s) => s.tray.length && dimmed.push(s.tray.every((d) => d.void)));
-    pb.push(msg(1, [{ type: 'Rolled', seat: 'red', values: [1, 2], diceCount: 2, reason: 'turn' }, { type: 'RollVoided', seat: 'red', scope: 'turn', values: [1, 2] }]));
+    pb.push(
+      msg(1, [
+        { type: 'Rolled', seat: 'red', values: [1, 2], diceCount: 2, reason: 'turn' },
+        { type: 'RollVoided', seat: 'red', scope: 'turn', values: [1, 2] },
+      ]),
+    );
     await settle();
     expect(dimmed).toContain(true);
     expect(pb.store.getState().tray).toEqual([]);
@@ -256,7 +277,11 @@ describe('Playback', () => {
 
   it('calls the step hook on every square (for hop sounds)', async () => {
     const steps: Array<[number, number]> = [];
-    const pb = new Playback({ nameOf: (c) => c, sleep: async () => {}, onStep: (_id, step, total) => steps.push([step, total]) });
+    const pb = new Playback({
+      nameOf: (c) => c,
+      sleep: async () => {},
+      onStep: (_id, step, total) => steps.push([step, total]),
+    });
     pb.sync(view(0, { 'red-0': 4 }));
     pb.push(msg(1, [{ type: 'Moved', seat: 'red', pieceId: 'red-0', color: 'red', from: 4, to: 7, value: 3 }]));
     await new Promise((r) => setTimeout(r, 10));

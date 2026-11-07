@@ -8,7 +8,15 @@ import { Badge, Card, IconButton, SectionTitle, Segmented, Switch } from '../ui/
 
 type Patch = Partial<RoomSettings>;
 
-export function RulesPanel({ settings, preset, editable }: { settings: RoomSettings; preset: PresetId | 'custom'; editable: boolean }) {
+export function RulesPanel({
+  settings,
+  preset,
+  editable,
+}: {
+  settings: RoomSettings;
+  preset: PresetId | 'custom';
+  editable: boolean;
+}) {
   const update = (patch: Patch) => void sendCommand({ type: 'updateSettings', settings: patch });
   const disabled = !editable;
   const presetOptions: Array<{ value: PresetId | 'custom'; label: string }> = [
@@ -23,7 +31,12 @@ export function RulesPanel({ settings, preset, editable }: { settings: RoomSetti
       <SectionTitle
         aside={
           <span className="flex items-center gap-2">
-            <a href="/how-to-play" target="_blank" rel="noopener" className="text-sm font-semibold text-accent underline-offset-4 hover:underline">
+            <a
+              href="/how-to-play"
+              target="_blank"
+              rel="noopener"
+              className="text-sm font-semibold text-accent underline-offset-4 hover:underline"
+            >
               {t('help.link')}
             </a>
             {!editable && <Badge>{t('rules.readOnly')}</Badge>}
@@ -116,7 +129,10 @@ export function RulesPanel({ settings, preset, editable }: { settings: RoomSetti
             value={settings.turnTimer}
             disabled={disabled}
             onChange={(v) => update({ turnTimer: v })}
-            options={TURN_TIMER_OPTIONS.map((v) => ({ value: v, label: v === 0 ? t('rules.off') : t('rules.seconds', { n: v }) }))}
+            options={TURN_TIMER_OPTIONS.map((v) => ({
+              value: v,
+              label: v === 0 ? t('rules.off') : t('rules.seconds', { n: v }),
+            }))}
           />
         </Row>
         <Row label="rules.disconnectTakeover" value={settings.disconnectTakeover} stacked>
@@ -126,7 +142,10 @@ export function RulesPanel({ settings, preset, editable }: { settings: RoomSetti
             value={settings.disconnectTakeover}
             disabled={disabled}
             onChange={(v) => update({ disconnectTakeover: v })}
-            options={TAKEOVER_OPTIONS.map((v) => ({ value: v, label: v === 0 ? t('rules.never') : t('rules.seconds', { n: v }) }))}
+            options={TAKEOVER_OPTIONS.map((v) => ({
+              value: v,
+              label: v === 0 ? t('rules.never') : t('rules.seconds', { n: v }),
+            }))}
           />
         </Row>
       </Group>
@@ -134,9 +153,24 @@ export function RulesPanel({ settings, preset, editable }: { settings: RoomSetti
   );
 }
 
-type BoolKey = 'extraTurnOnCapture' | 'extraTurnOnFinish' | 'singleDieWhenAllInColumn' | 'killRequiredToEnterColumn' | 'teamMode';
+type BoolKey =
+  | 'extraTurnOnCapture'
+  | 'extraTurnOnFinish'
+  | 'singleDieWhenAllInColumn'
+  | 'killRequiredToEnterColumn'
+  | 'teamMode';
 
-function ToggleRow({ k, settings, disabled, update }: { k: BoolKey; settings: RoomSettings; disabled: boolean; update: (p: Patch) => void }) {
+function ToggleRow({
+  k,
+  settings,
+  disabled,
+  update,
+}: {
+  k: BoolKey;
+  settings: RoomSettings;
+  disabled: boolean;
+  update: (p: Patch) => void;
+}) {
   return (
     <Row label={k} value={settings[k]}>
       <Switch label={t(`rules.${k}`)} checked={settings[k]} disabled={disabled} onChange={(v) => update({ [k]: v })} />
@@ -199,7 +233,19 @@ function Row({
   );
 }
 
-function Stepper({ value, min, max, disabled, onChange }: { value: number; min: number; max: number; disabled: boolean; onChange: (v: number) => void }) {
+function Stepper({
+  value,
+  min,
+  max,
+  disabled,
+  onChange,
+}: {
+  value: number;
+  min: number;
+  max: number;
+  disabled: boolean;
+  onChange: (v: number) => void;
+}) {
   return (
     <div className="flex items-center gap-1 rounded-xl bg-surface-2 p-1">
       <IconButton label="−" className="size-8" disabled={disabled || value <= min} onClick={() => onChange(value - 1)}>

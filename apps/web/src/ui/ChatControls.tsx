@@ -16,7 +16,12 @@ export function ChatControls() {
 
   return (
     <div className="relative flex items-center gap-1">
-      <IconButton label={t('chat.react')} onClick={() => setPicker((v) => !v)} aria-expanded={picker} data-testid="react-button">
+      <IconButton
+        label={t('chat.react')}
+        onClick={() => setPicker((v) => !v)}
+        aria-expanded={picker}
+        data-testid="react-button"
+      >
         <Smile className="size-5" />
       </IconButton>
       <AnimatePresence>
@@ -49,7 +54,10 @@ export function ChatControls() {
       <IconButton label={t('chat.title')} onClick={() => setOpen(true)} className="relative" data-testid="chat-button">
         <MessageCircle className="size-5" />
         {unread > 0 && (
-          <span className="absolute right-1 top-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-danger px-1 text-[10px] font-bold text-white" data-testid="chat-unread">
+          <span
+            className="absolute right-1 top-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-danger px-1 text-[10px] font-bold text-white"
+            data-testid="chat-unread"
+          >
             {unread > 9 ? '9+' : unread}
           </span>
         )}
@@ -76,12 +84,22 @@ function ChatSheet({ open, onClose }: { open: boolean; onClose: () => void }) {
 
   return (
     <Sheet open={open} onClose={onClose} title={t('chat.title')}>
-      <ol ref={listRef} className="mb-3 max-h-[45vh] min-h-24 space-y-2 overflow-y-auto pr-1" data-testid="chat-log" aria-live="polite">
+      <ol
+        ref={listRef}
+        className="mb-3 max-h-[45vh] min-h-24 space-y-2 overflow-y-auto pr-1"
+        data-testid="chat-log"
+        aria-live="polite"
+      >
         {lines.length === 0 && <li className="py-6 text-center text-sm text-muted">{t('chat.empty')}</li>}
         {lines.map((l) => (
           <li key={l.id} className={cx('flex items-end gap-2', l.mine && 'flex-row-reverse')}>
             <Avatar emoji={l.avatar} color={l.color ?? undefined} size={28} />
-            <div className={cx('max-w-[75%] rounded-2xl px-3 py-2 text-sm', l.mine ? 'rounded-br-md bg-accent text-on-accent' : 'rounded-bl-md bg-surface-2')}>
+            <div
+              className={cx(
+                'max-w-[75%] rounded-2xl px-3 py-2 text-sm',
+                l.mine ? 'rounded-br-md bg-accent text-on-accent' : 'rounded-bl-md bg-surface-2',
+              )}
+            >
               {!l.mine && (
                 <p className="text-xs font-bold" style={{ color: l.color ? pieceColor(l.color) : 'var(--text-muted)' }}>
                   {l.name}
@@ -104,7 +122,11 @@ function ChatSheet({ open, onClose }: { open: boolean; onClose: () => void }) {
             data-testid="chat-input"
           />
         </label>
-        <IconButton label={t('chat.send')} type="submit" className="bg-accent text-on-accent hover:bg-accent hover:text-on-accent">
+        <IconButton
+          label={t('chat.send')}
+          type="submit"
+          className="bg-accent text-on-accent hover:bg-accent hover:text-on-accent"
+        >
           <SendHorizontal className="size-5" />
         </IconButton>
       </form>

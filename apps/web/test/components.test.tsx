@@ -17,7 +17,10 @@ vi.mock('../src/net/commands', () => ({
   },
 }));
 const navigate = vi.fn();
-vi.mock('react-router', async (orig) => ({ ...(await orig<typeof import('react-router')>()), useNavigate: () => navigate }));
+vi.mock('react-router', async (orig) => ({
+  ...(await orig<typeof import('react-router')>()),
+  useNavigate: () => navigate,
+}));
 
 // jsdom lacks these.
 beforeEach(() => {
@@ -84,7 +87,9 @@ describe('RulesPanel', () => {
     rerender(<RulesPanel settings={{ ...view.settings, teamMode: true }} preset="custom" editable />);
     expect(screen.getByText('When a player finishes')).toBeTruthy();
     expect(screen.queryByText('Rounds to wait')).toBeNull();
-    rerender(<RulesPanel settings={{ ...view.settings, teamMode: true, teamHandover: 'delayed' }} preset="custom" editable />);
+    rerender(
+      <RulesPanel settings={{ ...view.settings, teamMode: true, teamHandover: 'delayed' }} preset="custom" editable />,
+    );
     expect(screen.getByText('Rounds to wait')).toBeTruthy();
     fireEvent.click(screen.getByRole('button', { name: '+' }));
     expect(sent.at(-1)).toEqual({ type: 'updateSettings', settings: { teamHandoverDelayRounds: 5 } });
@@ -98,7 +103,9 @@ describe('RulesPanel', () => {
 
   it('highlights a rule only when its value changes', () => {
     const { view } = lobbyView();
-    const { rerender, container } = render(<RulesPanel settings={view.settings} preset={view.preset} editable={false} />);
+    const { rerender, container } = render(
+      <RulesPanel settings={view.settings} preset={view.preset} editable={false} />,
+    );
     expect(container.querySelectorAll('[data-testid=rule-flash]')).toHaveLength(0);
     rerender(<RulesPanel settings={view.settings} preset={view.preset} editable={false} />);
     expect(container.querySelectorAll('[data-testid=rule-flash]')).toHaveLength(0);
@@ -108,7 +115,9 @@ describe('RulesPanel', () => {
 
   it('every rule shows a plain explanation right under it (no info buttons)', () => {
     const { view } = lobbyView();
-    render(<RulesPanel settings={{ ...view.settings, teamMode: true, teamHandover: 'delayed' }} preset="custom" editable />);
+    render(
+      <RulesPanel settings={{ ...view.settings, teamMode: true, teamHandover: 'delayed' }} preset="custom" editable />,
+    );
     for (const text of [
       'Roll 1 die, or roll 2 and play each die as its own move.',
       'Capturing an enemy piece gives you an extra roll straight away.',

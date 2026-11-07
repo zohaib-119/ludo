@@ -205,7 +205,11 @@ export class RoomController {
     }
     const name = typeof options.name === 'string' ? cleanText(options.name) : '';
     if (name.length < LIMITS.nameMin || name.length > LIMITS.nameMax) {
-      return { ok: false, code: 'NAME_INVALID', message: `Name must be ${LIMITS.nameMin}–${LIMITS.nameMax} characters` };
+      return {
+        ok: false,
+        code: 'NAME_INVALID',
+        message: `Name must be ${LIMITS.nameMin}–${LIMITS.nameMax} characters`,
+      };
     }
     const member: Member = {
       id: this.deps.newId(),
@@ -716,7 +720,8 @@ export class RoomController {
     if (typeof cmd.text !== 'string') return fail('BAD_PAYLOAD', 'text required');
     const text = cleanText(cmd.text);
     if (text.length === 0) return fail('BAD_PAYLOAD', 'Message is empty');
-    if (text.length > LIMITS.chatMax) return fail('BAD_PAYLOAD', `Messages are limited to ${LIMITS.chatMax} characters`);
+    if (text.length > LIMITS.chatMax)
+      return fail('BAD_PAYLOAD', `Messages are limited to ${LIMITS.chatMax} characters`);
     const now = this.deps.now();
     if (now - member.lastChatAt < 1000 / LIMITS.chatPerSecond) return fail('RATE_LIMITED', 'Slow down');
     member.lastChatAt = now;
@@ -788,9 +793,7 @@ export class RoomController {
   }
 
   private uniqueName(name: string, selfId: string | null): string {
-    const taken = new Set(
-      [...this.members.values()].filter((m) => m.id !== selfId).map((m) => m.name.toLowerCase()),
-    );
+    const taken = new Set([...this.members.values()].filter((m) => m.id !== selfId).map((m) => m.name.toLowerCase()));
     if (!taken.has(name.toLowerCase())) return name;
     for (let n = 2; ; n++) {
       const candidate = `${name.slice(0, LIMITS.nameMax - String(n).length - 1)} ${n}`;

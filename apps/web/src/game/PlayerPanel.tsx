@@ -85,7 +85,11 @@ export function PlayerPanel({
           {seat?.avatar ?? '🤖'}
         </span>
         {deadline > 0 && (
-          <svg viewBox="0 0 48 48" className="pointer-events-none absolute -inset-[2px] size-[48px] -rotate-90" aria-hidden>
+          <svg
+            viewBox="0 0 48 48"
+            className="pointer-events-none absolute -inset-[2px] size-[48px] -rotate-90"
+            aria-hidden
+          >
             <circle
               cx="24"
               cy="24"
@@ -102,7 +106,11 @@ export function PlayerPanel({
         )}
         {seat && !seat.isBot && (
           <span
-            className={cx('absolute -bottom-0.5 size-3 rounded-full ring-2 ring-surface', seat.connected ? 'bg-success' : 'bg-muted', align === 'right' ? '-left-0.5' : '-right-0.5')}
+            className={cx(
+              'absolute -bottom-0.5 size-3 rounded-full ring-2 ring-surface',
+              seat.connected ? 'bg-success' : 'bg-muted',
+              align === 'right' ? '-left-0.5' : '-right-0.5',
+            )}
             aria-label={seat.connected ? 'online' : t('lobby.offline')}
           />
         )}
@@ -129,7 +137,11 @@ export function PlayerPanel({
           <span className="sr-only">{home} of 4 home</span>
           {view.settings.killRequiredToEnterColumn && player && (
             <span className="ml-1 text-muted" title={player.hasKilled ? t('game.hasKill') : t('game.needsKill')}>
-              {player.hasKilled ? <LockOpen className="size-3.5" aria-label={t('game.hasKill')} /> : <Lock className="size-3.5 text-danger" aria-label={t('game.needsKill')} />}
+              {player.hasKilled ? (
+                <LockOpen className="size-3.5" aria-label={t('game.hasKill')} />
+              ) : (
+                <Lock className="size-3.5 text-danger" aria-label={t('game.needsKill')} />
+              )}
             </span>
           )}
         </div>
@@ -144,8 +156,12 @@ export function PlayerPanel({
           {seat?.autoplay && <Badge tone="warning">{t('game.autoplayOn')}</Badge>}
           {seat?.botControlled && !seat.autoplay && <Badge tone="warning">{t('lobby.bot')}</Badge>}
           {seat && !seat.isBot && !seat.connected && <Badge tone="warning">{t('lobby.offline')}</Badge>}
-          {playingFor && mate && <Badge tone="accent">{t('game.playingFor', { name: view.seats[mate]?.name ?? mate })}</Badge>}
-          {finished && (player?.handoverDelayLeft ?? 0) > 0 && <Badge>{t('game.waitingRounds', { n: player!.handoverDelayLeft })}</Badge>}
+          {playingFor && mate && (
+            <Badge tone="accent">{t('game.playingFor', { name: view.seats[mate]?.name ?? mate })}</Badge>
+          )}
+          {finished && (player?.handoverDelayLeft ?? 0) > 0 && (
+            <Badge>{t('game.waitingRounds', { n: player!.handoverDelayLeft })}</Badge>
+          )}
         </div>
       </div>
     </div>

@@ -12,8 +12,7 @@ import {
   trackSquare,
 } from '../src';
 
-const dist = (a: { x: number; y: number }, b: { x: number; y: number }) =>
-  Math.abs(a.x - b.x) + Math.abs(a.y - b.y);
+const dist = (a: { x: number; y: number }, b: { x: number; y: number }) => Math.abs(a.x - b.x) + Math.abs(a.y - b.y);
 
 describe('board geometry', () => {
   it('has 52 unique track cells inside the 15×15 grid', () => {

@@ -36,7 +36,18 @@ function setup(dice: number[] = []) {
   const advance = (ms: number) => {
     now += ms;
   };
-  return { ctrl, rng, join, cmd, must, view, advance, get now() { return now; } };
+  return {
+    ctrl,
+    rng,
+    join,
+    cmd,
+    must,
+    view,
+    advance,
+    get now() {
+      return now;
+    },
+  };
 }
 
 /** Room with seated, ready players (first name is host). Not started. */
@@ -131,7 +142,10 @@ describe('joining', () => {
   });
 
   it('J5 new players cannot join a started game; seated players can rejoin', () => {
-    const h = started([['Ali', 'red'], ['Sara', 'yellow']]);
+    const h = started([
+      ['Ali', 'red'],
+      ['Sara', 'yellow'],
+    ]);
     expect(h.ctrl.join({ playerToken: 'token-new', name: 'Zara' })).toMatchObject({ code: 'GAME_IN_PROGRESS' });
     h.ctrl.setConnected(h.ids[1]!, false);
     expect(h.ctrl.join({ playerToken: 'token-Sara', name: 'Sara' })).toMatchObject({ ok: true, memberId: h.ids[1] });
@@ -165,7 +179,10 @@ describe('seats', () => {
   });
 
   it('S2 leaving a seat; seats are fixed once playing', () => {
-    const h = started([['Ali', 'red'], ['Sara', 'yellow']]);
+    const h = started([
+      ['Ali', 'red'],
+      ['Sara', 'yellow'],
+    ]);
     expect(h.cmd(h.ids[0]!, { type: 'leaveSeat' })).toMatchObject({ code: 'WRONG_ROOM_PHASE' });
     expect(h.cmd(h.ids[0]!, { type: 'takeSeat', color: 'blue' })).toMatchObject({ code: 'WRONG_ROOM_PHASE' });
     const l = setup();
@@ -184,7 +201,10 @@ describe('seats', () => {
   });
 
   it('S4 the host can clear a seat in the lobby', () => {
-    const h = lobby([['Ali', 'red'], ['Sara', 'yellow']]);
+    const h = lobby([
+      ['Ali', 'red'],
+      ['Sara', 'yellow'],
+    ]);
     expect(h.cmd(h.ids[1]!, { type: 'removeSeat', color: 'red' })).toMatchObject({ code: 'NOT_HOST' });
     h.must(h.ids[0]!, { type: 'removeSeat', color: 'yellow' });
     expect(h.view().members[1]).toMatchObject({ seat: null, ready: false });
@@ -197,7 +217,10 @@ describe('seats', () => {
 
 describe('settings', () => {
   it('R1 only the host changes rules, and every value is validated', () => {
-    const h = lobby([['Ali', 'red'], ['Sara', 'yellow']]);
+    const h = lobby([
+      ['Ali', 'red'],
+      ['Sara', 'yellow'],
+    ]);
     const [host, guest] = h.ids as [string, string];
     expect(h.cmd(guest, { type: 'updateSettings', settings: { diceMode: 1 } })).toMatchObject({ code: 'NOT_HOST' });
     const bad: Array<Record<string, unknown>> = [
@@ -229,7 +252,10 @@ describe('settings', () => {
   });
 
   it('R2 a rule change un-readies everyone and is announced; a no-op is not', () => {
-    const h = lobby([['Ali', 'red'], ['Sara', 'yellow']]);
+    const h = lobby([
+      ['Ali', 'red'],
+      ['Sara', 'yellow'],
+    ]);
     h.ctrl.drain();
     h.must(h.ids[0]!, { type: 'updateSettings', settings: { diceMode: 2 } }); // already 2
     expect(h.view().members[1]!.ready).toBe(true);
@@ -270,7 +296,10 @@ describe('settings', () => {
 
 describe('starting a game', () => {
   it('ST1 waits for everyone to be ready, naming them', () => {
-    const h = lobby([['Ali', 'red'], ['Sara', 'yellow']]);
+    const h = lobby([
+      ['Ali', 'red'],
+      ['Sara', 'yellow'],
+    ]);
     h.must(h.ids[1]!, { type: 'setReady', ready: false });
     expect(h.cmd(h.ids[0]!, { type: 'startGame' })).toMatchObject({
       code: 'CANNOT_START',
@@ -279,18 +308,28 @@ describe('starting a game', () => {
   });
 
   it('ST2 checks the seat arrangement against the rules', () => {
-    const adjacent = lobby([['Ali', 'red'], ['Sara', 'green']]);
+    const adjacent = lobby([
+      ['Ali', 'red'],
+      ['Sara', 'green'],
+    ]);
     expect(adjacent.cmd(adjacent.ids[0]!, { type: 'startGame' })).toMatchObject({ code: 'CANNOT_START' });
     const alone = lobby([['Ali', 'red']]);
     expect(alone.cmd(alone.ids[0]!, { type: 'startGame' })).toMatchObject({ code: 'CANNOT_START' });
-    const teams = lobby([['Ali', 'red'], ['Sara', 'green'], ['Zed', 'yellow']]);
+    const teams = lobby([
+      ['Ali', 'red'],
+      ['Sara', 'green'],
+      ['Zed', 'yellow'],
+    ]);
     teams.must(teams.ids[0]!, { type: 'updateSettings', settings: { teamMode: true } });
     teams.ids.slice(1).forEach((id) => teams.must(id, { type: 'setReady', ready: true }));
     expect(teams.cmd(teams.ids[0]!, { type: 'startGame' })).toMatchObject({ code: 'CANNOT_START' });
   });
 
   it('ST3 starts the game: phase, view, stats and events', () => {
-    const h = lobby([['Ali', 'red'], ['Sara', 'yellow']]);
+    const h = lobby([
+      ['Ali', 'red'],
+      ['Sara', 'yellow'],
+    ]);
     expect(h.cmd(h.ids[1]!, { type: 'startGame' })).toMatchObject({ code: 'NOT_HOST' });
     h.ctrl.drain();
     h.must(h.ids[0]!, { type: 'startGame' });
@@ -327,7 +366,13 @@ describe('starting a game', () => {
 
 describe('game actions', () => {
   it('G1 only the acting seat, with the current version, may act', () => {
-    const h = started([['Ali', 'red'], ['Sara', 'yellow']], [6, 6, 2, 3]);
+    const h = started(
+      [
+        ['Ali', 'red'],
+        ['Sara', 'yellow'],
+      ],
+      [6, 6, 2, 3],
+    );
     const [ali, sara] = h.ids as [string, string];
     expect(h.cmd(sara, { type: 'roll', stateVersion: 0 })).toMatchObject({ code: 'NOT_YOUR_TURN' });
     expect(h.cmd(ali, { type: 'roll', stateVersion: 5 })).toMatchObject({ code: 'STALE_STATE' });
@@ -346,7 +391,13 @@ describe('game actions', () => {
   });
 
   it('G2 moves: payload checks and engine errors pass through', () => {
-    const h = started([['Ali', 'red'], ['Sara', 'yellow']], [6, 3]);
+    const h = started(
+      [
+        ['Ali', 'red'],
+        ['Sara', 'yellow'],
+      ],
+      [6, 3],
+    );
     const ali = h.ids[0]!;
     h.must(ali, { type: 'roll', stateVersion: 0 });
     expect(h.cmd(ali, { type: 'move', stateVersion: 1, pieceId: 'red-0' })).toMatchObject({ code: 'BAD_PAYLOAD' });
@@ -365,12 +416,23 @@ describe('game actions', () => {
 
   it('G3 statistics follow the events', () => {
     // red: (6,6) then (6,1): out, out... ; yellow voids with (1,2)
-    const h = started([['Ali', 'red'], ['Sara', 'yellow']], [6, 6, 6, 1, 1, 2]);
+    const h = started(
+      [
+        ['Ali', 'red'],
+        ['Sara', 'yellow'],
+      ],
+      [6, 6, 6, 1, 1, 2],
+    );
     const [ali, sara] = h.ids as [string, string];
     h.must(ali, { type: 'roll', stateVersion: 0 });
     h.must(ali, { type: 'roll', stateVersion: 1 });
     let v = versionOf(h);
-    for (const [pieceId, value] of [['red-0', 6], ['red-1', 6], ['red-2', 6], ['red-0', 1]] as const) {
+    for (const [pieceId, value] of [
+      ['red-0', 6],
+      ['red-1', 6],
+      ['red-2', 6],
+      ['red-0', 1],
+    ] as const) {
       h.must(ali, { type: 'move', stateVersion: v++, pieceId, value });
     }
     h.must(sara, { type: 'roll', stateVersion: v });
@@ -380,7 +442,10 @@ describe('game actions', () => {
   });
 
   it('G4 a finished game can be replayed by vote, or sent back to the lobby', () => {
-    const h = started([['Ali', 'red'], ['Sara', 'yellow']]);
+    const h = started([
+      ['Ali', 'red'],
+      ['Sara', 'yellow'],
+    ]);
     const [ali, sara] = h.ids as [string, string];
     playToEnd(h);
     const v = h.view();
@@ -405,14 +470,20 @@ describe('game actions', () => {
   });
 
   it('G5 only the host may end a game early', () => {
-    const h = started([['Ali', 'red'], ['Sara', 'yellow']]);
+    const h = started([
+      ['Ali', 'red'],
+      ['Sara', 'yellow'],
+    ]);
     expect(h.cmd(h.ids[1]!, { type: 'endGame' })).toMatchObject({ code: 'NOT_HOST' });
     h.must(h.ids[0]!, { type: 'endGame' });
     expect(h.view()).toMatchObject({ phase: 'finished', game: { endedByHost: true } });
   });
 
   it('G6 rematch only needs the connected players', () => {
-    const h = started([['Ali', 'red'], ['Sara', 'yellow']]);
+    const h = started([
+      ['Ali', 'red'],
+      ['Sara', 'yellow'],
+    ]);
     h.must(h.ids[0]!, { type: 'endGame' });
     h.ctrl.setConnected(h.ids[1]!, false);
     h.must(h.ids[0]!, { type: 'rematchVote', yes: true });
@@ -420,7 +491,12 @@ describe('game actions', () => {
   });
 
   it('G7 full 4-player team games run through the controller', () => {
-    const h = lobby([['Ali', 'red'], ['Bo', 'green'], ['Cy', 'yellow'], ['Di', 'blue']]);
+    const h = lobby([
+      ['Ali', 'red'],
+      ['Bo', 'green'],
+      ['Cy', 'yellow'],
+      ['Di', 'blue'],
+    ]);
     h.must(h.ids[0]!, { type: 'updateSettings', settings: { teamMode: true, killRequiredToEnterColumn: true } });
     h.ids.slice(1).forEach((id) => h.must(id, { type: 'setReady', ready: true }));
     h.must(h.ids[0]!, { type: 'startGame' });
@@ -467,14 +543,20 @@ describe('host and presence', () => {
   });
 
   it('L1 leaving the lobby frees the seat', () => {
-    const h = lobby([['Ali', 'red'], ['Sara', 'yellow']]);
+    const h = lobby([
+      ['Ali', 'red'],
+      ['Sara', 'yellow'],
+    ]);
     h.must(h.ids[1]!, { type: 'leaveRoom' });
     expect(h.view().seats.yellow).toBeUndefined();
     expect(h.view().members).toHaveLength(1);
   });
 
   it('L2 leaving mid-game keeps the seat, offline; the player can return', () => {
-    const h = started([['Ali', 'red'], ['Sara', 'yellow']]);
+    const h = started([
+      ['Ali', 'red'],
+      ['Sara', 'yellow'],
+    ]);
     h.must(h.ids[1]!, { type: 'leaveRoom' });
     expect(h.view().seats.yellow).toMatchObject({ connected: false, offlineSince: h.now });
     expect(h.ctrl.join({ playerToken: 'token-Sara', name: 'Sara' })).toMatchObject({ ok: true, memberId: h.ids[1] });
@@ -507,7 +589,10 @@ describe('host and presence', () => {
     h.advance(1);
     expect(h.ctrl.shouldDispose()).toBe(true);
 
-    const g = started([['Ali', 'red'], ['Sara', 'yellow']]);
+    const g = started([
+      ['Ali', 'red'],
+      ['Sara', 'yellow'],
+    ]);
     g.ids.forEach((id) => g.ctrl.setConnected(id, false));
     g.advance(DISPOSE_IDLE_MS.lobby);
     expect(g.ctrl.shouldDispose()).toBe(false); // a game in progress waits longer
@@ -566,8 +651,19 @@ describe('chat and limits', () => {
   it('X2 malformed commands never throw', () => {
     const h = setup();
     const a = h.join('Ali');
-    const junk: unknown[] = [null, 42, 'roll', [], {}, { type: 7 }, { type: 'nope' }, { type: 'takeSeat' },
-      { type: 'updateSettings', settings: null }, { type: 'move', stateVersion: '1' }, { type: 'chat' }];
+    const junk: unknown[] = [
+      null,
+      42,
+      'roll',
+      [],
+      {},
+      { type: 7 },
+      { type: 'nope' },
+      { type: 'takeSeat' },
+      { type: 'updateSettings', settings: null },
+      { type: 'move', stateVersion: '1' },
+      { type: 'chat' },
+    ];
     for (const j of junk) {
       const r = h.ctrl.command(a, j);
       expect(r.ok, JSON.stringify(j)).toBe(false);

@@ -8,7 +8,9 @@ import type { LegalMove, Piece } from '@ludo/engine';
 export function valuesForPiece(moves: LegalMove[], pieces: Piece[], pieceId: string): LegalMove[] {
   const piece = pieces.find((p) => p.id === pieceId);
   if (!piece) return [];
-  const twins = new Set(pieces.filter((p) => p.color === piece.color && p.progress === piece.progress).map((p) => p.id));
+  const twins = new Set(
+    pieces.filter((p) => p.color === piece.color && p.progress === piece.progress).map((p) => p.id),
+  );
   const byValue = new Map<number, LegalMove>();
   for (const m of moves) {
     if (!twins.has(m.pieceId) || byValue.has(m.value)) continue;

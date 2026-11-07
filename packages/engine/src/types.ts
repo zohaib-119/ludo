@@ -86,9 +86,7 @@ export interface GameState {
   turnNumber: number;
 }
 
-export type Action =
-  | { type: 'roll'; seat: Color }
-  | { type: 'move'; seat: Color; pieceId: string; value: number };
+export type Action = { type: 'roll'; seat: Color } | { type: 'move'; seat: Color; pieceId: string; value: number };
 
 export interface Capture {
   victims: string[];
@@ -128,9 +126,7 @@ export interface EngineError {
   message: string;
 }
 
-export type Result =
-  | { ok: true; state: GameState; events: GameEvent[] }
-  | { ok: false; error: EngineError };
+export type Result = { ok: true; state: GameState; events: GameEvent[] } | { ok: false; error: EngineError };
 
 export interface LegalMove {
   pieceId: string;
