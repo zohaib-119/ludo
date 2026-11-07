@@ -18,7 +18,7 @@ import { Die } from './Dice';
 import { GameMenu } from './GameMenu';
 import { type Corner, cornerOf, rotationFor } from './geometry';
 import { LogSheet } from './LogSheet';
-import { NORMAL_TIMING, Playback, REDUCED_TIMING } from './playback';
+import { NORMAL_TIMING, Playback, REDUCED_TIMING, type TrayDie } from './playback';
 import { PlayerPanel } from './PlayerPanel';
 import { Results } from './Results';
 import { formatSeconds, useNow } from './useNow';
@@ -272,7 +272,8 @@ export function GameScreen() {
             awaitingRoll={awaitingRoll}
             awaitingMove={awaitingMove}
             pending={pending}
-            dice={pb.dice}
+            tray={pb.tray}
+            traySeat={pb.traySeat}
             reduced={reduced}
             chosenValue={chosenValue}
             onChooseValue={(v) => {
@@ -299,7 +300,8 @@ function ActionArea({
   awaitingRoll,
   awaitingMove,
   pending,
-  dice,
+  tray,
+  traySeat,
   reduced,
   chosenValue,
   onChooseValue,
@@ -310,7 +312,8 @@ function ActionArea({
   awaitingRoll: boolean;
   awaitingMove: boolean;
   pending: boolean;
-  dice: { values: number[]; rolling: boolean; void: boolean; seat: Color | null; rollId: number };
+  tray: TrayDie[];
+  traySeat: Color | null;
   reduced: boolean;
   chosenValue: number | null;
   onChooseValue: (v: number) => void;
@@ -325,6 +328,7 @@ function ActionArea({
   const deadline = game.turn.deadline;
   const now = useNow(250, deadline > 0) + clockOffset;
   const left = deadline > 0 ? deadline - now : 0;
+  const size = tray.length <= 2 ? 54 : tray.length <= 4 ? 44 : 36;
 
   const rollLabel =
     game.turn.rollReason === 'reroll' || game.turn.rollReason === 'bonusReroll'
@@ -339,63 +343,60 @@ function ActionArea({
     if (seatView && !seatView.isBot && (seatView.botControlled || seatView.autoplay)) status = t('game.botPlaying', { name });
     else status = game.turn.phase === 'awaitRoll' ? t('game.isRolling', { name }) : t('game.isMoving', { name });
   } else if (awaitingMove) {
-    status = game.turn.bank.length > 1 ? t('game.pickValue') : t('game.tapPiece');
+    status = new Set(game.turn.bank).size > 1 ? t('game.pickValue') : t('game.tapPiece');
   }
 
+  // Fixed heights: nothing below the board changes size as turns go by.
   return (
-    <div className="mx-auto flex w-full max-w-md flex-col items-center gap-3" data-testid="action-area">
-      <div className="flex min-h-16 items-center justify-center gap-3">
-        {dice.values.map((v, i) => (
-          <Die
-            key={i}
-            index={i}
-            value={v}
-            rollId={dice.rollId}
-            rolling={dice.rolling}
-            color={dice.seat}
-            voided={dice.void && !dice.rolling}
-            reducedMotion={reduced}
-            size={dice.values.length > 1 ? 52 : 60}
-          />
-        ))}
+    <div className="mx-auto flex w-full max-w-md flex-col items-center gap-2" data-testid="action-area">
+      <div
+        className="flex h-[68px] flex-wrap content-center items-center justify-center gap-2.5"
+        role="group"
+        aria-label="Dice to play"
+        data-testid="tray"
+      >
+        <AnimatePresence initial={false}>
+          {tray.map((d) => {
+            const interactive = awaitingMove && !d.void;
+            const chosen = interactive && chosenValue === d.value;
+            return (
+              <motion.button
+                key={d.id}
+                type="button"
+                layout
+                disabled={!interactive}
+                onClick={() => interactive && onChooseValue(d.value)}
+                aria-pressed={interactive ? chosen : undefined}
+                aria-label={`Die ${d.value}`}
+                className={cx('rounded-[22%] disabled:cursor-default', chosen && 'ring-4 ring-text ring-offset-2 ring-offset-bg')}
+                initial={{ opacity: 0, scale: 0.5, y: 8 }}
+                animate={{ opacity: 1, scale: 1, y: chosen ? -6 : 0 }}
+                exit={{ opacity: 0, scale: 0.4, y: -14, transition: { duration: reduced ? 0 : 0.22 } }}
+                transition={{ type: 'spring', stiffness: 520, damping: 30 }}
+              >
+                <Die id={d.id} value={d.value} rolling={d.rolling} color={traySeat} voided={d.void} reducedMotion={reduced} size={size} />
+              </motion.button>
+            );
+          })}
+        </AnimatePresence>
       </div>
 
-      {awaitingMove && game.turn.bank.length > 0 && (
-        <div className="flex flex-wrap justify-center gap-2" role="group" aria-label="Dice to play" data-testid="bank">
-          {game.turn.bank.map((v, i) => (
-            <button
-              key={`${v}-${i}`}
-              type="button"
-              onClick={() => onChooseValue(v)}
-              aria-pressed={chosenValue === v}
-              className={cx(
-                'flex size-11 items-center justify-center rounded-xl font-display text-xl font-extrabold shadow-soft transition-transform',
-                chosenValue === v ? '-translate-y-1 bg-text text-bg' : 'bg-surface text-text ring-1 ring-line hover:-translate-y-0.5',
-              )}
-              style={chosenValue === v ? undefined : { boxShadow: `inset 0 -3px 0 ${pieceColor(seat)}` }}
-            >
-              {v}
-            </button>
-          ))}
-        </div>
-      )}
-
-      {awaitingRoll && (
-        <div className="flex items-center gap-3">
-          <Button size="lg" className="min-w-44 animate-[pulse_2.2s_ease-in-out_infinite]" onClick={onRoll} loading={pending} data-testid="roll-button">
-            {rollLabel}
-          </Button>
-          {deadline > 0 && (
-            <span className={cx('font-display text-lg font-bold tabular-nums', left < 5000 ? 'text-danger' : 'text-muted')}>{formatSeconds(left)}</span>
-          )}
-        </div>
-      )}
-
-      {status && (
-        <p className="text-center text-sm font-medium text-muted" role="status" data-testid="turn-status">
-          {status}
-        </p>
-      )}
+      <div className="flex h-14 items-center justify-center">
+        {awaitingRoll ? (
+          <div className="flex items-center gap-3">
+            <Button size="lg" className="min-w-44 animate-[pulse_2.2s_ease-in-out_infinite]" onClick={onRoll} loading={pending} data-testid="roll-button">
+              {rollLabel}
+            </Button>
+            {deadline > 0 && (
+              <span className={cx('font-display text-lg font-bold tabular-nums', left < 5000 ? 'text-danger' : 'text-muted')}>{formatSeconds(left)}</span>
+            )}
+          </div>
+        ) : (
+          <p className="text-center text-sm font-medium text-muted" role="status" data-testid="turn-status">
+            {status}
+          </p>
+        )}
+      </div>
     </div>
   );
 }

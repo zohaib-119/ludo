@@ -13,6 +13,15 @@ import { createStore } from 'zustand/vanilla';
 import { t } from '../i18n/messages';
 import { type LogLine, describe, ordinal } from './log';
 
+export interface TrayDie {
+  id: number;
+  value: number;
+  /** Tumbling right now (just rolled). */
+  rolling: boolean;
+  /** About to be discarded because the roll was void. */
+  void: boolean;
+}
+
 export type BannerTone = 'good' | 'bad' | 'info';
 export interface Banner {
   id: number;
@@ -24,8 +33,14 @@ export interface PlaybackState {
   /** Game version the display reflects. -1 before the first snap. */
   version: number;
   progress: Record<string, number>;
-  /** Dice on the table: the latest roll. */
-  dice: { values: number[]; rolling: boolean; void: boolean; seat: Color | null; rollId: number };
+  /**
+   * The dice tray: rolled dice not yet played, in roll order. A die leaves the
+   * tray when the move that uses it starts, so everyone sees which die paid for
+   * which move, bots included.
+   */
+  tray: TrayDie[];
+  /** Whose dice are on the tray (for colour). */
+  traySeat: Color | null;
   banner: Banner | null;
   /** Piece currently flying home after a capture (for its animation). */
   captured: string[];
@@ -35,6 +50,10 @@ export interface PlaybackState {
 
 export interface Timing {
   roll: number;
+  /** Pause after a die leaves the tray, before its piece starts moving. */
+  useDie: number;
+  /** How long void dice stay dimmed before they are cleared. */
+  void: number;
   hop: number;
   enter: number;
   capture: number;
@@ -43,8 +62,28 @@ export interface Timing {
   turn: number;
 }
 
-export const NORMAL_TIMING: Timing = { roll: 700, hop: 110, enter: 300, capture: 480, banner: 900, playerFinished: 1400, turn: 150 };
-export const REDUCED_TIMING: Timing = { roll: 120, hop: 0, enter: 0, capture: 120, banner: 700, playerFinished: 1000, turn: 0 };
+export const NORMAL_TIMING: Timing = {
+  roll: 700,
+  useDie: 220,
+  void: 800,
+  hop: 110,
+  enter: 300,
+  capture: 480,
+  banner: 900,
+  playerFinished: 1400,
+  turn: 150,
+};
+export const REDUCED_TIMING: Timing = {
+  roll: 120,
+  useDie: 0,
+  void: 500,
+  hop: 0,
+  enter: 0,
+  capture: 120,
+  banner: 700,
+  playerFinished: 1000,
+  turn: 0,
+};
 
 /** Queue length at which animations run at double speed, and at which we give up and snap. */
 const FAST_AT = 3;
@@ -64,7 +103,8 @@ export class Playback {
   readonly store = createStore<PlaybackState>(() => ({
     version: -1,
     progress: {},
-    dice: { values: [], rolling: false, void: false, seat: null, rollId: 0 },
+    tray: [],
+    traySeat: null,
     banner: null,
     captured: [],
     busy: false,
@@ -75,6 +115,8 @@ export class Playback {
   private generation = 0;
   private nextId = 1;
   private latest: GameView | null = null;
+  /** Dice in the most recent roll (1 or 2), for the right re-roll banner. */
+  private lastRollCount = 2;
   private opts: Required<Omit<PlaybackOptions, 'onEvent'>> & Pick<PlaybackOptions, 'onEvent'>;
 
   constructor(options: PlaybackOptions) {
@@ -130,7 +172,8 @@ export class Playback {
     this.store.setState({
       version: game.version,
       progress: Object.fromEntries(game.pieces.map((p) => [p.id, p.progress])),
-      dice: { ...this.store.getState().dice, values: game.turn.lastRoll, rolling: false, void: false },
+      tray: game.turn.bank.map((value) => ({ id: this.nextId++, value, rolling: false, void: false })),
+      traySeat: game.turn.seat,
       banner: null,
       captured: [],
       busy: false,
@@ -201,25 +244,41 @@ export class Playback {
     const T = this.opts.timing;
     const name = (c: Color) => this.opts.nameOf(c);
     switch (e.type) {
+      case 'TurnStarted':
+        this.store.setState({ tray: [], traySeat: e.seat });
+        await this.wait(T.turn, gen);
+        return;
       case 'Rolled': {
-        const dice = this.store.getState().dice;
-        this.store.setState({ dice: { values: e.values, rolling: true, void: false, seat: e.seat, rollId: dice.rollId + 1 }, banner: null });
+        this.lastRollCount = e.values.length;
+        const fresh = e.values.map((value) => ({ id: this.nextId++, value, rolling: true, void: false }));
+        this.store.setState((s) => ({ tray: [...s.tray, ...fresh], traySeat: e.seat, banner: null }));
         await this.wait(T.roll, gen);
-        this.store.setState((s) => ({ dice: { ...s.dice, rolling: false } }));
+        this.store.setState((s) => ({ tray: s.tray.map((d) => (d.rolling ? { ...d, rolling: false } : d)) }));
         return;
       }
       case 'RerollGranted': {
-        const single = this.store.getState().dice.values.length === 1;
-        this.showBanner(t(single ? 'game.banner.six' : 'game.banner.doubleSix'), 'good');
+        this.showBanner(t(this.lastRollCount === 1 ? 'game.banner.six' : 'game.banner.doubleSix'), 'good');
         await this.wait(T.banner * 0.6, gen);
         return;
       }
-      case 'RollVoided':
-        this.store.setState((s) => ({ dice: { ...s.dice, void: true } }));
-        this.showBanner(t(e.scope === 'bonus' ? 'game.banner.bonusVoid' : 'game.banner.void'), 'bad');
-        await this.wait(T.banner, gen);
+      case 'RollVoided': {
+        // No message: the dice dim for a moment, then leave the tray.
+        // A void bonus chain is always the most recently rolled dice.
+        const count = e.scope === 'turn' ? this.store.getState().tray.length : e.values.length;
+        const tray = this.store.getState().tray;
+        const doomed = new Set(tray.slice(tray.length - count).map((d) => d.id));
+        this.store.setState({ tray: tray.map((d) => (doomed.has(d.id) ? { ...d, void: true } : d)) });
+        await this.wait(T.void, gen);
+        this.store.setState((s) => ({ tray: s.tray.filter((d) => !doomed.has(d.id)) }));
         return;
+      }
       case 'Moved': {
+        // The die this move uses leaves the tray first, then the piece moves.
+        this.store.setState((s) => {
+          const i = s.tray.findIndex((d) => d.value === e.value && !d.void);
+          return i < 0 ? {} : { tray: [...s.tray.slice(0, i), ...s.tray.slice(i + 1)] };
+        });
+        await this.wait(T.useDie, gen);
         if (e.from === -1) {
           this.setProgress(e.pieceId, 0);
           await this.wait(T.enter, gen);
@@ -246,9 +305,6 @@ export class Playback {
       case 'PlayerFinished':
         this.showBanner(t('game.banner.finished', { name: name(e.color), rank: ordinal(e.rank) }), 'good');
         await this.wait(T.playerFinished, gen);
-        return;
-      case 'TurnStarted':
-        await this.wait(T.turn, gen);
         return;
       default:
         return;

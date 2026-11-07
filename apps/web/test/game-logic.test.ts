@@ -143,7 +143,6 @@ describe('Playback', () => {
     const { pb } = harness();
     pb.sync(view(4, { 'red-0': 7 }, [6, 1]));
     expect(pb.store.getState()).toMatchObject({ version: 4, progress: { 'red-0': 7 }, busy: false });
-    expect(pb.store.getState().dice.values).toEqual([6, 1]);
   });
 
   it('hops a piece square by square, then settles on the event version', async () => {
@@ -172,17 +171,77 @@ describe('Playback', () => {
     expect(pb.store.getState().log[0]!.text).toBe('red captured yellow');
   });
 
-  it('shows dice and banners', async () => {
+  it('fills the tray with rolled dice and removes one die per move, before the piece moves', async () => {
+    const { pb, settle } = harness();
+    pb.sync(view(0, { 'red-0': 0, 'red-1': 0 }));
+    const trace: Array<{ tray: number[]; p0: number }> = [];
+    pb.store.subscribe((s) => trace.push({ tray: s.tray.map((d) => d.value), p0: s.progress['red-0']! }));
+    pb.push(msg(1, [{ type: 'Rolled', seat: 'red', values: [3, 5], diceCount: 2, reason: 'turn' }]));
+    await settle();
+    expect(pb.store.getState().tray.map((d) => [d.value, d.rolling])).toEqual([
+      [3, false],
+      [5, false],
+    ]);
+    pb.push(msg(2, [{ type: 'Moved', seat: 'red', pieceId: 'red-0', color: 'red', from: 0, to: 3, value: 3 }]));
+    await settle();
+    expect(pb.store.getState().tray.map((d) => d.value)).toEqual([5]);
+    // The 3 left the tray while the piece was still on its old square.
+    const used = trace.findIndex((x) => x.tray.length === 1);
+    expect(trace[used]!.p0).toBe(0);
+    pb.push(msg(3, [{ type: 'Moved', seat: 'red', pieceId: 'red-1', color: 'red', from: 0, to: 5, value: 5 }]));
+    await settle();
+    expect(pb.store.getState().tray).toEqual([]);
+  });
+
+  it('a void roll dims the dice and clears them, with no message', async () => {
+    const { pb, settle } = harness();
+    pb.sync(view(0, {}));
+    const dimmed: boolean[] = [];
+    pb.store.subscribe((s) => s.tray.length && dimmed.push(s.tray.every((d) => d.void)));
+    pb.push(msg(1, [{ type: 'Rolled', seat: 'red', values: [1, 2], diceCount: 2, reason: 'turn' }, { type: 'RollVoided', seat: 'red', scope: 'turn', values: [1, 2] }]));
+    await settle();
+    expect(dimmed).toContain(true);
+    expect(pb.store.getState().tray).toEqual([]);
+    expect(pb.store.getState().banner).toBeNull();
+  });
+
+  it('a void bonus roll only removes the bonus dice', async () => {
+    const { pb, settle } = harness();
+    pb.sync(view(0, {}));
+    pb.push(
+      msg(1, [
+        { type: 'Rolled', seat: 'red', values: [4, 3], diceCount: 2, reason: 'turn' },
+        { type: 'Moved', seat: 'red', pieceId: 'red-0', color: 'red', from: 10, to: 14, value: 4 },
+        { type: 'BonusGranted', seat: 'red', reason: 'capture' },
+        { type: 'Rolled', seat: 'red', values: [6, 5], diceCount: 2, reason: 'bonus' },
+        { type: 'RollVoided', seat: 'red', scope: 'bonus', values: [6, 5] },
+      ]),
+    );
+    await settle();
+    expect(pb.store.getState().tray.map((d) => d.value)).toEqual([3]);
+  });
+
+  it('banners: double six vs single six; the tray clears when a turn starts', async () => {
     const { pb, settle } = harness();
     pb.sync(view(0, {}));
     pb.push(msg(1, [{ type: 'Rolled', seat: 'red', values: [6, 6], diceCount: 2, reason: 'turn' }, { type: 'RerollGranted', seat: 'red' }]));
     await settle();
-    expect(pb.store.getState().dice).toMatchObject({ values: [6, 6], rolling: false, void: false });
     expect(pb.store.getState().banner?.text).toBe('Double six! Roll again');
-    pb.push(msg(2, [{ type: 'Rolled', seat: 'red', values: [1, 2], diceCount: 2, reason: 'reroll' }, { type: 'RollVoided', seat: 'red', scope: 'turn', values: [6, 6, 1, 2] }]));
+    pb.push(msg(2, [{ type: 'Rolled', seat: 'red', values: [6], diceCount: 1, reason: 'reroll' }, { type: 'RerollGranted', seat: 'red' }]));
     await settle();
-    expect(pb.store.getState().dice.void).toBe(true);
-    expect(pb.store.getState().banner?.tone).toBe('bad');
+    expect(pb.store.getState().banner?.text).toBe('Six! Roll again'); // even with three dice on the tray
+    expect(pb.store.getState().tray).toHaveLength(3);
+    pb.push(msg(3, [{ type: 'TurnStarted', seat: 'yellow', controls: 'yellow' }]));
+    await settle();
+    expect(pb.store.getState()).toMatchObject({ tray: [], traySeat: 'yellow' });
+  });
+
+  it('a snap rebuilds the tray from the bank', () => {
+    const { pb } = harness();
+    const v = view(7, {});
+    v.turn.bank = [6, 2];
+    pb.sync(v);
+    expect(pb.store.getState().tray.map((d) => d.value)).toEqual([6, 2]);
   });
 
   it('ignores events it has already shown (after a snap)', async () => {

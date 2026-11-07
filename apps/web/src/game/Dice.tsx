@@ -39,40 +39,33 @@ const FACE_TINT: Record<Color, string> = { red: '#ffd8d8', green: '#c9f5d1', yel
 const PIP_COLOR: Record<Color, string> = { red: '#a61e1e', green: '#1b5e2e', yellow: '#8a6700', blue: '#105a9c' };
 
 export function Die({
+  id,
   value,
-  rollId,
   rolling,
   color,
   size = 56,
   voided = false,
   reducedMotion = false,
-  index = 0,
 }: {
+  /** Unique per rolled die: a new id means a new roll. */
+  id: number;
   value: number;
-  rollId: number;
   rolling: boolean;
   color: Color | null;
   size?: number;
   voided?: boolean;
   reducedMotion?: boolean;
-  index?: number;
 }) {
-  // Accumulate spins so every roll tumbles forward instead of snapping back.
-  const spin = useRef({ rollId: -1, x: 0, y: 0 });
-  if (spin.current.rollId !== rollId) {
-    const [fx, fy] = FACE_ROTATION[value] ?? [0, 0];
-    const turnsX = 2 + ((rollId + index) % 2);
-    const turnsY = 1 + ((rollId + index * 2) % 2);
-    const baseX = Math.ceil(spin.current.x / 360) * 360 + turnsX * 360;
-    const baseY = Math.ceil(spin.current.y / 360) * 360 + turnsY * 360;
-    spin.current = { rollId, x: baseX + fx, y: baseY + fy };
-  }
+  // A freshly rolled die tumbles a few turns and lands on its value.
+  const [fx, fy] = FACE_ROTATION[value] ?? [0, 0];
+  const target = { x: (2 + (id % 2)) * 360 + fx, y: (1 + (id % 3 === 0 ? 1 : 0)) * 360 + fy };
+  const startedRolling = useRef(rolling);
   const half = size / 2;
   const face = color ? FACE_TINT[color] : '#fbf8f2';
   const pip = color ? PIP_COLOR[color] : '#1d1b18';
   return (
     <div
-      className={cx('relative transition-[filter,opacity] duration-300', voided && 'opacity-50 grayscale')}
+      className={cx('relative transition-[filter,opacity] duration-300', voided && 'opacity-40 grayscale')}
       style={{ width: size, height: size, perspective: size * 6 }}
       role="img"
       aria-label={rolling ? 'Rolling' : `Die showing ${value}`}
@@ -82,8 +75,8 @@ export function Die({
       <motion.div
         className="relative size-full"
         style={{ transformStyle: 'preserve-3d' }}
-        initial={false}
-        animate={{ rotateX: spin.current.x, rotateY: spin.current.y }}
+        initial={startedRolling.current && !reducedMotion ? { rotateX: 0, rotateY: 0 } : false}
+        animate={{ rotateX: target.x, rotateY: target.y }}
         transition={reducedMotion ? { duration: 0 } : { duration: 0.7, ease: [0.2, 0.8, 0.25, 1] }}
       >
         {FACES.map((f) => (
@@ -105,7 +98,6 @@ export function Die({
           </div>
         ))}
       </motion.div>
-      {voided && <span className="absolute left-[-10%] top-1/2 h-[3px] w-[120%] -rotate-12 rounded-full bg-danger" aria-hidden />}
     </div>
   );
 }
