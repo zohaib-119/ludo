@@ -175,11 +175,13 @@ function SeatTile({
         </div>
       )}
 
-      {!empty && host && !mine && (
+      {/* ✕: the host can clear any seat; everyone can leave their own. */}
+      {!empty && (host || mine) && (
         <button
           type="button"
-          onClick={() => void sendCommand({ type: 'removeSeat', color })}
-          aria-label={`${t('lobby.remove')}: ${seat.name}`}
+          onClick={() => void sendCommand(mine ? { type: 'leaveSeat' } : { type: 'removeSeat', color })}
+          aria-label={mine ? t('lobby.leaveSeat') : `${t('lobby.remove')}: ${seat.name}`}
+          data-testid={`seat-x-${color}`}
           className={cx(
             'absolute inline-flex size-7 items-center justify-center rounded-full bg-surface/80 text-muted hover:bg-surface hover:text-danger',
             REMOVE_CORNER[color],

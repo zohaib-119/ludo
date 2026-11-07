@@ -138,11 +138,6 @@ function ActionBar({ host, seated, ready }: { host: boolean; seated: boolean; re
           {host ? (blocker ?? ' ') : seated ? t('lobby.waitingForHost', { name: hostName }) : t('lobby.sitToPlay')}
         </p>
         <div className="flex gap-2 sm:w-auto">
-          {seated && (
-            <Button variant="ghost" onClick={() => void sendCommand({ type: 'leaveSeat' })} disabled={offline}>
-              {t('lobby.leaveSeat')}
-            </Button>
-          )}
           {host ? (
             <Button
               size="lg"
