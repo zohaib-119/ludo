@@ -241,6 +241,10 @@ When a team player finishes and their teammate has not, `controls` for that play
 - Teams: if the teammate has also finished, that team wins and the game ends. Otherwise handover begins (§7.2).
 - Any dice left in the bank at this moment are impossible (the finishing move would not have been legal), so the turn simply ends.
 
+### 7.3b No capture left (kill-to-enter)
+
+After every action: any player still in the game who needs a capture (`killRequiredToEnterColumn`, no `hasKilled`) is **eliminated** when no enemy piece (of a player still in) is in a yard or on the track. FFA: `eliminated = true`, `finishedRank` = lowest free place, pieces to the yard, event `PlayerEliminated`; skipped from then on; the game ends when at most one player is left. Teams: `PlayerEliminated`, then the other team wins (`GameOver`). A player with every piece past the track has necessarily captured, so two players can never be stuck at once.
+
 ### 7.4 Game over
 
 Phase `gameOver`. Emit `GameOver { rankings | winningTeam }`. All further actions return `GAME_OVER`.

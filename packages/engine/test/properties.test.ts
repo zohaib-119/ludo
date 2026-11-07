@@ -13,6 +13,7 @@ import {
   TEAM,
   apply,
   canPlayAll,
+  isEnemy,
   isSafeSquare,
   legalMoves,
   resolveMove,
@@ -103,6 +104,21 @@ function checkInvariants(before: GameState, after: GameState): void {
     for (const color of after.seats) {
       const anyPast = after.pieces.some((p) => p.color === color && p.progress > 50);
       if (anyPast) assert(after.players[color]!.hasKilled, `${color} is past the track only with a kill`);
+    }
+  }
+
+  // Elimination (no capture left): out players are off the board and never act;
+  // anyone still in who needs a capture must still have something to capture.
+  for (const color of after.seats) {
+    const pl = after.players[color]!;
+    if (pl.eliminated) {
+      assert(after.pieces.every((p) => p.color !== color || p.progress === -1), `${color} is out: pieces in the yard`);
+      if (after.turn.phase.kind !== 'gameOver') assert(after.turn.seat !== color && after.turn.controls !== color, `${color} is out: never acts`);
+    } else if (after.settings.killRequiredToEnterColumn && pl.finishedRank === null && !pl.hasKilled && after.turn.phase.kind !== 'gameOver') {
+      const target = after.pieces.some(
+        (p) => isEnemy(after.settings, color, p.color) && !after.players[p.color]!.eliminated && p.progress <= 50,
+      );
+      assert(target, `${color} needs a capture and still has a target`);
     }
   }
 

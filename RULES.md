@@ -67,6 +67,9 @@ With one die, a 6 gives a re-roll.
 - If all four of a player's pieces are in the yard at once, the requirement resets.
 - Once any piece has entered the column or gone home, the requirement is permanently satisfied.
 - Captures made through a mixed teammate stack count as a kill for each capturing player (see 8.3).
+- **No capture left = defeat.** A player who still needs a capture loses at once when no enemy piece can be captured any more: every enemy piece is in its finishing column or home. Enemy pieces in the yard still count as capturable (they must come out). There is no point waiting for the end.
+  - Free-for-all: the player is out and takes the lowest remaining place (the first player out finishes last). Their pieces leave the board, their turns are skipped, and the others play on. When only one player is left, the game ends.
+  - Teams: that team can never get both players home, so the other team wins immediately.
 
 ## 7. Capturing and stacks (no teams)
 

@@ -64,6 +64,7 @@ export function position(spec: PositionSpec): GameState {
           hasKilled: spec.hasKilled?.[color] ?? false,
           finishedRank: finished.includes(color) ? finished.indexOf(color) + 1 : null,
           handoverDelayLeft: spec.handoverDelay?.[color] ?? 0,
+          eliminated: false,
         },
       ]),
     ),

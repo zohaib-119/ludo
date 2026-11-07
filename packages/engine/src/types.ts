@@ -37,6 +37,8 @@ export interface PlayerState {
   hasKilled: boolean;
   finishedRank: number | null;
   handoverDelayLeft: number;
+  /** Out of the game: needed a capture to enter the column, but no capturable enemy is left. */
+  eliminated: boolean;
 }
 
 /** 'main' for the normal roll chain, 'bonus-N' for each bonus chain. */
@@ -75,7 +77,10 @@ export interface GameState {
   players: Partial<Record<Color, PlayerState>>;
   pieces: Piece[];
   turn: TurnState;
-  /** Finishing order (FFA ranks; in team mode just the order players finished). */
+  /**
+   * FFA: finishing order during the game, the full ranking once it is over.
+   * Team mode: the order players finished.
+   */
   rankings: Color[];
   winningTeam: Color[] | null;
   turnNumber: number;
@@ -106,6 +111,7 @@ export type GameEvent =
   | { type: 'PlayerFinished'; color: Color; rank: number }
   | { type: 'HandoverStarted'; seat: Color; controls: Color; delay: number }
   | { type: 'TurnSkipped'; seat: Color; reason: 'handoverDelay' }
+  | { type: 'PlayerEliminated'; color: Color; rank: number | null; reason: 'noCaptureLeft' }
   | { type: 'GameOver'; rankings: Color[]; winningTeam: Color[] | null };
 
 export type EngineErrorCode =

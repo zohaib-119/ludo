@@ -1,8 +1,8 @@
 /**
  * The turn state machine: apply(state, action, rng). See docs/04-engine.md §4–§7.
  */
-import { type Color, HOME, OPPOSITE, PIECES_PER_PLAYER, TURN_ORDER, YARD } from './board';
-import { canPlayAll, diceCountFor, legalMoves, resolveMove, simFromState } from './moves';
+import { type Color, HOME, LAST_TRACK, OPPOSITE, PIECES_PER_PLAYER, TEAM, TURN_ORDER, YARD } from './board';
+import { canPlayAll, diceCountFor, isEnemy, legalMoves, resolveMove, simFromState } from './moves';
 import type {
   Action,
   EngineError,
@@ -61,7 +61,7 @@ export function createGame(settings: Settings, seats: Color[], rng: Rng): Result
     settings: { ...settings },
     seats: ordered,
     players: Object.fromEntries(
-      ordered.map((color) => [color, { color, hasKilled: false, finishedRank: null, handoverDelayLeft: 0 }]),
+      ordered.map((color) => [color, { color, hasKilled: false, finishedRank: null, handoverDelayLeft: 0, eliminated: false }]),
     ),
     pieces: ordered.flatMap((color) =>
       Array.from({ length: PIECES_PER_PLAYER }, (_, i) => ({ id: `${color}-${i}`, color, progress: YARD })),
@@ -94,6 +94,7 @@ export function apply(input: GameState, action: Action, rng: Rng): Result {
   const events: GameEvent[] = [];
   const result = action.type === 'roll' ? doRoll(state, events, rng) : doMove(state, events, action);
   if (result) return result;
+  checkStuckPlayers(state, events);
   state.version += 1;
   return { ok: true, state, events };
 }
@@ -226,19 +227,81 @@ function finishPlayer(state: GameState, events: GameEvent[], color: Color): void
     return;
   }
 
+  settleFreeForAll(state, events);
+}
+
+/** FFA: when at most one player is still in, rank them and end the game. */
+function settleFreeForAll(state: GameState, events: GameEvent[]): void {
   const remaining = state.seats.filter((c) => !isFinished(state, c));
-  if (remaining.length === 1) {
-    const last = remaining[0]!;
+  if (remaining.length > 1) return;
+  const last = remaining[0];
+  if (last) {
     state.rankings.push(last);
     player(state, last).finishedRank = state.rankings.length;
-    gameOver(state, events);
   }
+  gameOver(state, events);
 }
 
 function gameOver(state: GameState, events: GameEvent[]): void {
   state.turn.phase = { kind: 'gameOver' };
   state.turn.bank = [];
+  if (!state.settings.teamMode) {
+    // Finishers took ranks from the top, eliminated players from the bottom.
+    state.rankings = [...state.seats].sort((a, b) => (player(state, a).finishedRank ?? 99) - (player(state, b).finishedRank ?? 99));
+  }
   events.push({ type: 'GameOver', rankings: [...state.rankings], winningTeam: state.winningTeam });
+}
+
+// ---------------------------------------------------------------------------
+// Kill-to-enter: a player who still needs a capture, with nothing left that
+// they could ever capture, has lost (RULES.md §6).
+// ---------------------------------------------------------------------------
+
+/** Is there an enemy piece in a yard or on the track (one that could still be captured)? */
+function captureStillPossible(state: GameState, color: Color): boolean {
+  return state.pieces.some(
+    (q) => isEnemy(state.settings, color, q.color) && !player(state, q.color).eliminated && q.progress <= LAST_TRACK,
+  );
+}
+
+function checkStuckPlayers(state: GameState, events: GameEvent[]): void {
+  if (!state.settings.killRequiredToEnterColumn) return;
+  // In practice one pass is enough: a player whose pieces are all past the track has
+  // necessarily captured, so they can never be stuck themselves. The loop is a safeguard.
+  let changed = true;
+  while (changed && !isGameOver(state)) {
+    changed = false;
+    for (const color of state.seats) {
+      const p = player(state, color);
+      if (p.finishedRank !== null || p.eliminated || p.hasKilled) continue;
+      if (captureStillPossible(state, color)) continue;
+      eliminate(state, events, color);
+      changed = true;
+      if (isGameOver(state)) return;
+    }
+  }
+  // Defensive: the acting seat is never the one going out, but never leave a turn with a player who is out.
+  const seat = player(state, state.turn.seat);
+  if (!isGameOver(state) && (seat.eliminated || player(state, state.turn.controls).eliminated)) endTurn(state, events);
+}
+
+function eliminate(state: GameState, events: GameEvent[], color: Color): void {
+  const p = player(state, color);
+  p.eliminated = true;
+  for (const piece of state.pieces) if (piece.color === color) piece.progress = YARD;
+
+  if (state.settings.teamMode) {
+    // The team can never get both players home: the other team wins.
+    events.push({ type: 'PlayerEliminated', color, rank: null, reason: 'noCaptureLeft' });
+    state.winningTeam = state.seats.filter((c) => TEAM[c] !== TEAM[color]);
+    gameOver(state, events);
+    return;
+  }
+
+  const out = state.seats.filter((c) => player(state, c).eliminated).length;
+  p.finishedRank = state.seats.length - out + 1;
+  events.push({ type: 'PlayerEliminated', color, rank: p.finishedRank, reason: 'noCaptureLeft' });
+  settleFreeForAll(state, events);
 }
 
 function endTurn(state: GameState, events: GameEvent[]): void {

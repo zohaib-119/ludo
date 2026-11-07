@@ -372,6 +372,132 @@ describe('Kill-to-enter', () => {
   });
 });
 
+describe('Kill-to-enter: no capture left means defeat', () => {
+  const settings = { killRequiredToEnterColumn: true };
+
+  it('X1 1-vs-1: when the opponent’s last track piece enters its column, the stuck player loses at once', () => {
+    const s = position({
+      settings,
+      pieces: { red: [10, 20], yellow: [48, 52, H, H] },
+      hasKilled: { yellow: true },
+      seat: 'yellow',
+      bank: [3],
+    });
+    const r = move(s, 'yellow-0', 3); // 48 → 51: every yellow piece is now in the column or home
+    expect(r.events).toContainEqual({ type: 'PlayerEliminated', color: 'red', rank: 2, reason: 'noCaptureLeft' });
+    expect(r.state.turn.phase.kind).toBe('gameOver');
+    expect(r.state.rankings).toEqual(['yellow', 'red']);
+    expect(r.state.players.red!.eliminated).toBe(true);
+    expect(r.state.pieces.filter((p) => p.color === 'red').every((p) => p.progress === -1)).toBe(true);
+  });
+
+  it('X2 an enemy piece still in the yard keeps the game going (it must come out)', () => {
+    const s = position({
+      settings,
+      pieces: { red: [10], yellow: [48, 52, H, -1] },
+      hasKilled: { yellow: true },
+      seat: 'yellow',
+      bank: [3],
+    });
+    const r = move(s, 'yellow-0', 3);
+    expect(types(r.events)).not.toContain('PlayerEliminated');
+    expect(r.state.turn.phase.kind).not.toBe('gameOver');
+  });
+
+  it('X3 a player who already captured is never stuck', () => {
+    const s = position({
+      settings,
+      pieces: { red: [10], yellow: [48, 52, H, H] },
+      hasKilled: { red: true, yellow: true },
+      seat: 'yellow',
+      bank: [3],
+    });
+    expect(types(move(s, 'yellow-0', 3).events)).not.toContain('PlayerEliminated');
+  });
+
+  it('X4 4 players: the stuck player is out (last place), their pieces leave, play goes on and skips them', () => {
+    // Green needs a capture; red, yellow and blue all have their pieces in columns/home except
+    // red's last track piece, which now enters the column.
+    const s = position({
+      settings,
+      pieces: { red: [49, H, H, H], green: [5, 30], yellow: [52, H, H, H], blue: [53, 54, H, H] },
+      hasKilled: { red: true, yellow: true, blue: true },
+      seat: 'red',
+      bank: [3],
+    });
+    const r = move(s, 'red-0', 3);
+    expect(r.events).toContainEqual({ type: 'PlayerEliminated', color: 'green', rank: 4, reason: 'noCaptureLeft' });
+    expect(r.state.turn.phase.kind).not.toBe('gameOver');
+    expect(r.state.pieces.filter((p) => p.color === 'green').every((p) => p.progress === -1)).toBe(true);
+    // Red's turn ends; green is skipped.
+    expect(r.state.turn.seat).toBe('yellow');
+  });
+
+  it('X5 two players who both still need a capture keep each other in the game', () => {
+    // Yellow is all safe, but red and green are still capturable targets for each other.
+    const s = position({
+      settings,
+      pieces: { red: [5], green: [20], yellow: [49, H, H, H] },
+      hasKilled: { yellow: true },
+      seat: 'yellow',
+      bank: [3],
+    });
+    const r = move(s, 'yellow-0', 3);
+    expect(types(r.events)).not.toContain('PlayerEliminated');
+    // Even with all of red's pieces in the yard: they must come out, so green can still capture them.
+    const t = position({
+      settings,
+      pieces: { red: [-1, -1, -1, -1], green: [20], yellow: [49, H, H, H] },
+      hasKilled: { yellow: true },
+      seat: 'yellow',
+      bank: [3],
+    });
+    expect(types(move(t, 'yellow-0', 3).events)).not.toContain('PlayerEliminated');
+  });
+
+  it('X7 teams: if a player can never capture, the other team wins at once', () => {
+    const s = position({
+      settings: { ...settings, teamMode: true },
+      pieces: { red: [10], green: [48, 53, H, H], yellow: [20], blue: [52, H, H, H] },
+      hasKilled: { green: true, blue: true },
+      seat: 'green',
+      bank: [3],
+    });
+    const r = move(s, 'green-0', 3);
+    expect(r.events).toContainEqual({ type: 'PlayerEliminated', color: 'red', rank: null, reason: 'noCaptureLeft' });
+    expect(r.state.winningTeam).toEqual(['green', 'blue']);
+    expect(r.state.turn.phase.kind).toBe('gameOver');
+  });
+
+  it('X8 with the rule off nobody is ever eliminated', () => {
+    const s = position({ pieces: { red: [10], yellow: [48, 52, H, H] }, seat: 'yellow', bank: [3] });
+    const r = move(s, 'yellow-0', 3);
+    expect(types(r.events)).not.toContain('PlayerEliminated');
+  });
+
+  it('X9 final FFA rankings: finishers from the top, eliminated from the bottom', () => {
+    // Yellow already finished 1st. Blue is out. Green needs a capture and red's last track piece
+    // enters its column now: green goes out (3rd), red is the last one in (2nd).
+    const s = position({
+      settings,
+      pieces: { red: [49, H, H, H], green: [5], yellow: [H, H, H, H], blue: [-1, -1, -1, -1] },
+      hasKilled: { red: true, yellow: true },
+      finished: ['yellow'],
+      seat: 'red',
+      bank: [3],
+    });
+    const withBlueOut = {
+      ...s,
+      players: { ...s.players, blue: { ...s.players.blue!, eliminated: true, finishedRank: 4 } },
+    };
+    const r = move(withBlueOut, 'red-0', 3);
+    expect(r.state.turn.phase.kind).toBe('gameOver');
+    expect(r.state.rankings).toEqual(['yellow', 'red', 'green', 'blue']);
+    expect(r.state.players.green!.finishedRank).toBe(3);
+    expect(r.state.players.red!.finishedRank).toBe(2);
+  });
+});
+
 describe('Teams', () => {
   const settings = { teamMode: true };
   // Square 30 is a normal (not safe) square.
