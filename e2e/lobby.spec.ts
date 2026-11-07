@@ -1,5 +1,11 @@
 import { type Browser, type BrowserContext, type Page, expect, test } from '@playwright/test';
 
+// Windows opened with browser.newContext() stay open until the whole run ends unless closed.
+// Left open, earlier games keep animating and playing in the background and slow later tests.
+test.afterEach(async ({ browser }) => {
+  await Promise.all(browser.contexts().map((c) => c.close()));
+});
+
 const phone = { viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true };
 
 async function player(browser: Browser, name: string, mobile = false): Promise<{ ctx: BrowserContext; page: Page }> {
