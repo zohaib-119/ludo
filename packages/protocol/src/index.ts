@@ -88,39 +88,45 @@ export function presetOf(s: Settings): PresetId | 'custom' {
 // Profiles, chat, limits
 // ---------------------------------------------------------------------------
 
+/**
+ * Avatars are generated pictures (DiceBear styles drawn on the client), stored
+ * as "style:seed". Players pick from the human styles; "bot" is for bot seats.
+ */
+export const AVATAR_STYLES = ['avataaars', 'toonHead'] as const;
+export type AvatarStyle = (typeof AVATAR_STYLES)[number];
+const AVATAR_PATTERN = new RegExp(`^(${AVATAR_STYLES.join('|')}):[A-Za-z0-9]{1,16}$`);
+
+/** True for an avatar a player may choose. */
+export function isPlayerAvatar(value: unknown): value is string {
+  return typeof value === 'string' && AVATAR_PATTERN.test(value);
+}
+
+/** The ready-made choices in the picker (any valid "style:seed" is accepted). */
 export const AVATARS = [
-  '🦁',
-  '🐯',
-  '🐼',
-  '🦊',
-  '🐸',
-  '🐵',
-  '🦄',
-  '🐙',
-  '🦉',
-  '🐧',
-  '🐢',
-  '🐝',
-  '🦋',
-  '🐳',
-  '🦖',
-  '🐲',
-  '👑',
-  '🚀',
-  '⚡',
-  '🔥',
-  '🌙',
-  '⭐',
-  '🍉',
-  '🎲',
+  'avataaars:Zohaib',
+  'avataaars:Ayesha',
+  'avataaars:Hamza',
+  'avataaars:Noor',
+  'avataaars:Bilal',
+  'avataaars:Maya',
+  'avataaars:Rayan',
+  'avataaars:Alina',
+  'toonHead:Ayesha',
+  'toonHead:Noor',
+  'toonHead:Bilal',
+  'toonHead:Hira',
+  'toonHead:Rayan',
+  'toonHead:Amna',
+  'toonHead:Danish',
+  'toonHead:Mina',
 ] as const;
 
 /** Names and avatars for bot seats, by colour. */
 export const BOTS: Readonly<Record<Color, { name: string; avatar: string }>> = {
-  red: { name: 'Bot Rustam', avatar: '🤖' },
-  green: { name: 'Bot Gul', avatar: '🤖' },
-  yellow: { name: 'Bot Zara', avatar: '🤖' },
-  blue: { name: 'Bot Bilal', avatar: '🤖' },
+  red: { name: 'Bot Rustam', avatar: 'bot:Rustam' },
+  green: { name: 'Bot Gul', avatar: 'bot:Gul' },
+  yellow: { name: 'Bot Zara', avatar: 'bot:Zara' },
+  blue: { name: 'Bot Bilal', avatar: 'bot:Bilal' },
 };
 
 export const REACTIONS = ['👍', '😂', '😮', '😡', '🔥', '😭', '👏', '🙏'] as const;

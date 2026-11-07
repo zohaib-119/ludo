@@ -229,7 +229,29 @@ describe('HomePage', () => {
     await renderHome();
     fireEvent.click(screen.getByTestId('open-create'));
     fireEvent.change(screen.getByLabelText('Your name'), { target: { value: 'Zohaib' } });
-    fireEvent.click(screen.getByRole('radio', { name: '🐼' }));
-    expect(JSON.parse(localStorage.getItem('dodice.profile')!)).toEqual({ name: 'Zohaib', avatar: '🐼' });
+    fireEvent.click(screen.getByRole('radio', { name: 'Avatar 3' }));
+    expect(JSON.parse(localStorage.getItem('dodice.profile')!)).toEqual({ name: 'Zohaib', avatar: 'avataaars:Hamza' });
+  });
+
+  it('avatars are generated pictures; More rolls new ones and keeps yours', async () => {
+    localStorage.setItem('dodice.profile', JSON.stringify({ name: 'Zohaib', avatar: '🦊' })); // an old emoji profile
+    await renderHome();
+    fireEvent.click(screen.getByTestId('open-create'));
+    const radios = () => screen.getAllByRole('radio').filter((r) => r.hasAttribute('data-avatar'));
+    expect(radios()).toHaveLength(16);
+    // The old emoji became the first generated avatar, and every choice is an SVG picture.
+    expect(radios()[0]!.getAttribute('aria-checked')).toBe('true');
+    expect(radios()[0]!.getAttribute('data-avatar')).toBe('avataaars:Zohaib');
+    for (const r of radios()) expect(r.querySelector('img')!.getAttribute('src')).toMatch(/^data:image\/svg\+xml/);
+    fireEvent.click(radios()[9]!);
+    const mine = radios()[9]!.getAttribute('data-avatar');
+    const before = radios().map((r) => r.getAttribute('data-avatar'));
+    fireEvent.click(screen.getByTestId('shuffle-avatars'));
+    const after = radios().map((r) => r.getAttribute('data-avatar'));
+    expect(after[0]).toBe(mine); // yours stays, first
+    expect(after.slice(1).some((a) => before.includes(a))).toBe(false);
+    for (const a of after) expect(a).toMatch(/^(avataaars|toonHead):[a-z0-9]{1,16}$/i);
+    fireEvent.click(radios()[5]!);
+    expect(JSON.parse(localStorage.getItem('dodice.profile')!).avatar).toBe(after[5]);
   });
 });

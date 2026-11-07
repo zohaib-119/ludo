@@ -3,7 +3,7 @@
  * own dialogs, opened from the two main buttons.
  */
 import { type Color, pointFor } from '@ludo/engine';
-import { AVATARS, LIMITS, parseRoomCode } from '@ludo/protocol';
+import { LIMITS, parseRoomCode } from '@ludo/protocol';
 import { ArrowRight, BookOpen, LogIn, Plus } from 'lucide-react';
 import { motion } from 'motion/react';
 import { type FormEvent, useEffect, useState } from 'react';
@@ -18,6 +18,7 @@ import { storagePersists } from '../lib/storage';
 import { serverUrl } from '../net/config';
 import { getConnection } from '../net/session';
 import { AppearanceButton } from '../ui/Appearance';
+import { AvatarPicker } from '../ui/AvatarPicker';
 import { Avatar, Button, Sheet, TextField, cx } from '../ui/kit';
 import { toast } from '../ui/toast';
 
@@ -231,30 +232,10 @@ function PlayDialog({ mode, open, onClose }: { mode: 'create' | 'join'; open: bo
   return (
     <Sheet open={open} onClose={onClose} title={mode === 'create' ? t('home.createTitle') : t('home.joinTitle')}>
       <form onSubmit={submit} className="space-y-4" noValidate>
-        <div>
-          <p className="mb-2 text-sm font-semibold text-muted">{t('home.pickAvatar')}</p>
-          <div className="grid grid-cols-8 gap-1.5" role="radiogroup" aria-label={t('home.pickAvatar')}>
-            {AVATARS.map((a) => (
-              <button
-                key={a}
-                type="button"
-                role="radio"
-                aria-checked={a === profile.avatar}
-                aria-label={a}
-                onClick={() => commit({ ...profile, avatar: a })}
-                className={cx(
-                  'flex aspect-square items-center justify-center rounded-xl text-xl transition-transform hover:scale-105 active:scale-95',
-                  a === profile.avatar ? 'bg-accent-soft ring-2 ring-accent' : 'bg-surface-2',
-                )}
-              >
-                {a}
-              </button>
-            ))}
-          </div>
-        </div>
+        <AvatarPicker value={profile.avatar} onChange={(avatar) => commit({ ...profile, avatar })} />
 
         <div className="flex items-end gap-3">
-          <Avatar emoji={profile.avatar} size={48} />
+          <Avatar avatar={profile.avatar} size={48} />
           <div className="flex-1">
             <TextField
               id={`player-name-${mode}`}

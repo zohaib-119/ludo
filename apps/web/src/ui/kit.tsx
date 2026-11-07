@@ -2,6 +2,7 @@
  * Design-system components (docs/02-visual-design.md). Small, token-driven,
  * accessible: real buttons, labelled switches, focus rings, 44px targets.
  */
+import { avatarUri } from '../lib/avatars';
 import type { Color } from '@ludo/engine';
 import { Loader2, X } from 'lucide-react';
 import { AnimatePresence, motion } from 'motion/react';
@@ -318,10 +319,12 @@ const colorVar: Record<Color, string> = {
 };
 export const pieceColor = (c: Color) => colorVar[c];
 
-export function Avatar({ emoji, color, size = 40 }: { emoji: string; color?: Color; size?: number }) {
+/** A player's generated avatar in a circle, optionally ringed in their colour. */
+export function Avatar({ avatar, color, size = 40 }: { avatar: string; color?: Color; size?: number }) {
+  const uri = avatarUri(avatar);
   return (
     <span
-      className="inline-flex shrink-0 items-center justify-center rounded-full bg-surface-2"
+      className="inline-flex shrink-0 items-center justify-center overflow-hidden rounded-full bg-surface-2"
       style={{
         width: size,
         height: size,
@@ -330,7 +333,7 @@ export function Avatar({ emoji, color, size = 40 }: { emoji: string; color?: Col
       }}
       aria-hidden
     >
-      {emoji}
+      {uri ? <img src={uri} alt="" className="size-full" draggable={false} data-avatar={avatar} /> : avatar}
     </span>
   );
 }

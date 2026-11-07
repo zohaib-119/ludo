@@ -141,7 +141,7 @@ function SeatTile({
       ) : (
         <div className="flex min-h-0 flex-1 flex-col items-center justify-center gap-1 px-3 text-center">
           <div className="relative">
-            <Avatar emoji={seat.avatar} size={36} />
+            <Avatar avatar={seat.avatar} size={36} />
             {!seat.isBot && (
               <span className="absolute -bottom-0.5 -right-0.5">
                 <Dot tone={seat.connected ? 'online' : 'offline'} />

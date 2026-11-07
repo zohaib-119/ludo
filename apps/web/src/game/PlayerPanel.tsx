@@ -5,7 +5,7 @@ import { AnimatePresence, motion } from 'motion/react';
 import { useSettings } from '../lib/settings';
 import { useChat } from '../net/chat';
 import { t } from '../i18n/messages';
-import { Badge, cx, pieceColor } from '../ui/kit';
+import { Avatar, Badge, cx, pieceColor } from '../ui/kit';
 import { ordinal } from './log';
 import { useNow } from './useNow';
 
@@ -75,12 +75,13 @@ export function PlayerPanel({
         )}
       </AnimatePresence>
       <div className="relative shrink-0">
-        <span
-          className="flex size-11 items-center justify-center rounded-full text-2xl"
-          style={{ background: 'var(--surface-2)', boxShadow: `inset 0 0 0 3px ${pieceColor(color)}` }}
-          aria-hidden
-        >
-          {seat?.avatar ?? '🤖'}
+        <span className="relative block size-11" aria-hidden>
+          <Avatar avatar={seat?.avatar ?? `bot:${color}`} size={44} />
+          {/* The colour ring sits on top of the picture. */}
+          <span
+            className="absolute inset-0 rounded-full"
+            style={{ boxShadow: `inset 0 0 0 3px ${pieceColor(color)}` }}
+          />
         </span>
         {deadline > 0 && (
           <svg

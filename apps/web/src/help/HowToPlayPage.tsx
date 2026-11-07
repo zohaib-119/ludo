@@ -330,9 +330,10 @@ export function HowToPlayPage() {
 
         <Section id="bots" title="Timer, bots and connections">
           <p>
-            With a turn timer, the bot plays for you when time runs out; two timeouts in a row switch on autoplay until
-            you tap “I’m back”. If you lose connection the game keeps your seat — just reopen the link. If you are gone
-            long enough, the bot plays for you until you return. The host can fill empty seats with bots.
+            With a turn timer, the bot plays for you when time runs out; two timeouts in a row switch on Auto mode until
+            you switch it off in the game menu. If you lose connection the game keeps your seat — just reopen the link.
+            If you are gone long enough, the bot plays for you until you return. The host can fill empty seats with
+            bots.
           </p>
         </Section>
       </div>
@@ -341,6 +342,22 @@ export function HowToPlayPage() {
         <Link to="/" className="font-semibold text-accent underline-offset-4 hover:underline">
           Start a game
         </Link>
+      </p>
+      <p className="mt-6 text-center text-xs text-muted" data-testid="credits">
+        Avatars made with{' '}
+        <a href="https://www.dicebear.com" className="underline underline-offset-2" target="_blank" rel="noreferrer">
+          DiceBear
+        </a>
+        : Avataaars and Bottts by Pablo Stanley; ToonHead by Johan Melin, licensed{' '}
+        <a
+          href="https://creativecommons.org/licenses/by/4.0/"
+          className="underline underline-offset-2"
+          target="_blank"
+          rel="noreferrer"
+        >
+          CC BY 4.0
+        </a>
+        .
       </p>
     </main>
   );

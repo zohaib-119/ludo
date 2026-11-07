@@ -116,7 +116,13 @@ describe('joining', () => {
     expect(h.ctrl.join({ playerToken: 'token-123', name: ' \u0000‮ ' })).toMatchObject({ code: 'NAME_INVALID' });
     const r = h.ctrl.join({ playerToken: 'token-123', name: '  Ali   Khan ', avatar: '<script>' });
     expect(r.ok).toBe(true);
-    expect(h.view().members[0]).toMatchObject({ name: 'Ali Khan', avatar: '🦁' });
+    expect(h.view().members[0]).toMatchObject({ name: 'Ali Khan', avatar: 'avataaars:Zohaib' });
+    // Only "style:seed" in a player style is accepted: old emoji, bot pictures and junk seeds fall back.
+    for (const bad of ['🦊', 'bot:Rustam', 'avataaars:', 'avataaars:a b', 'toonHead:' + 'x'.repeat(17), 'nope:Ali']) {
+      h.must(h.view().members[0]!.id, { type: 'setProfile', name: 'Ali Khan', avatar: 'toonHead:Mina' });
+      h.must(h.view().members[0]!.id, { type: 'setProfile', name: 'Ali Khan', avatar: bad });
+      expect(h.view().members[0]!.avatar, bad).toBe('toonHead:Mina');
+    }
   });
 
   it('J3 duplicate names get a number, ignoring case', () => {
@@ -678,8 +684,8 @@ describe('chat and limits', () => {
     const a = h.join('Ali');
     h.join('Sara');
     expect(h.cmd(a, { type: 'setProfile', name: 'S', avatar: '🦊' })).toMatchObject({ code: 'NAME_INVALID' });
-    h.must(a, { type: 'setProfile', name: 'sara', avatar: '🐼' });
-    expect(h.view().members[0]).toMatchObject({ name: 'sara 2', avatar: '🐼' });
+    h.must(a, { type: 'setProfile', name: 'sara', avatar: 'toonHead:x7k2p9' });
+    expect(h.view().members[0]).toMatchObject({ name: 'sara 2', avatar: 'toonHead:x7k2p9' });
   });
 
   it('cleanText strips control and bidi characters', () => {

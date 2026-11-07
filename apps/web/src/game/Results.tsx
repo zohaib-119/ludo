@@ -78,7 +78,7 @@ export function Results() {
                   animate={{ y: 0, opacity: 1 }}
                   transition={{ delay: 0.3 + [0.15, 0, 0.3][i]!, type: 'spring', stiffness: 260, damping: 20 }}
                 >
-                  <Avatar emoji={view.seats[c]?.avatar ?? '🤖'} color={c} size={i === 1 ? 60 : 48} />
+                  <Avatar avatar={view.seats[c]?.avatar ?? 'bot:' + c} color={c} size={i === 1 ? 60 : 48} />
                   <p className="mt-1 w-full truncate text-center font-display font-bold">{name(c)}</p>
                   <div
                     className="mt-1 flex w-full items-start justify-center rounded-t-xl pt-2 font-display text-2xl font-extrabold text-white"
@@ -98,7 +98,7 @@ export function Results() {
           <div className="flex justify-center gap-4">
             {game.winningTeam.map((c) => (
               <div key={c} className="flex flex-col items-center">
-                <Avatar emoji={view.seats[c]?.avatar ?? '🤖'} color={c} size={60} />
+                <Avatar avatar={view.seats[c]?.avatar ?? 'bot:' + c} color={c} size={60} />
                 <p className="mt-1 font-display font-bold">{name(c)}</p>
               </div>
             ))}

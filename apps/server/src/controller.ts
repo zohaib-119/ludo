@@ -18,6 +18,7 @@ import {
 import { chooseAction } from '@ludo/bot';
 import {
   AVATARS,
+  isPlayerAvatar,
   BOTS,
   type BotCause,
   type ChatMessage,
@@ -802,7 +803,7 @@ export class RoomController {
   }
 
   private validAvatar(value: unknown, fallback: string = AVATARS[0]): string {
-    return typeof value === 'string' && (AVATARS as readonly string[]).includes(value) ? value : fallback;
+    return isPlayerAvatar(value) ? value : fallback;
   }
 
   private recordStats(events: RoomEvent[]): void {

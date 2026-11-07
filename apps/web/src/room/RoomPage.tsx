@@ -222,7 +222,7 @@ function NamePrompt({ code, onDone }: { code: string; onDone: () => void }) {
         <Card>
           <form onSubmit={submit} className="space-y-4" noValidate>
             <div className="flex items-center gap-3">
-              <Avatar emoji={profile.avatar} size={48} />
+              <Avatar avatar={profile.avatar} size={48} />
               <div>
                 <h1 className="font-display text-2xl font-extrabold">{t('room.namePromptTitle', { code })}</h1>
                 <p className="text-sm text-muted">{t('room.namePromptBody')}</p>

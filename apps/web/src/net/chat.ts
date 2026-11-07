@@ -52,7 +52,7 @@ export function showChatView(): () => void {
 function who(memberId: string) {
   const state = getConnection().state;
   const m = state.view?.members.find((x) => x.id === memberId);
-  return { name: m?.name ?? '…', avatar: m?.avatar ?? '🙂', color: m?.seat ?? null, mine: memberId === state.memberId };
+  return { name: m?.name ?? '…', avatar: m?.avatar ?? '', color: m?.seat ?? null, mine: memberId === state.memberId };
 }
 
 function addLine(kind: ChatLine['kind'], from: string, text: string): ChatLine {

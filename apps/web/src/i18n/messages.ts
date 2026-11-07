@@ -12,6 +12,8 @@ const en = {
   'home.namePlaceholder': 'e.g. Zohaib',
   'home.nameHint': '{min}–{max} characters',
   'home.pickAvatar': 'Pick an avatar',
+  'home.moreAvatars': 'More',
+  'home.avatarN': 'Avatar {n}',
   'home.create': 'Create game',
   'home.creating': 'Creating…',
   'home.joinTitle': 'Join a game',
@@ -80,7 +82,8 @@ const en = {
   'lobby.leaveSeat': 'Stand up',
   'lobby.teamA': 'Team A',
   'lobby.teamB': 'Team B',
-  'lobby.watching': 'Watching',
+  'lobby.inRoom': 'In the room',
+  'lobby.watchingShort': 'watching',
   'lobby.watchingHint': 'Pick a corner to play.',
   'lobby.members': 'In the room',
   'lobby.imReady': 'I’m ready',
@@ -123,6 +126,8 @@ const en = {
   'rules.disconnectTakeover': 'Bot for offline players',
 
   // Game
+  'game.yourDice': 'Your dice',
+  'game.diceOf': '{name}’s dice',
   'game.roll': 'Roll',
   'game.rollAgain': 'Roll again',
   'game.rollBonus': 'Roll bonus',

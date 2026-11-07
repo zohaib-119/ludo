@@ -44,7 +44,7 @@ export function LobbyPage() {
                       key={m.id}
                       className="flex items-center gap-1.5 rounded-full bg-surface-2 py-0.5 pr-2.5 pl-0.5 text-xs font-medium"
                     >
-                      <Avatar emoji={m.avatar} size={22} />
+                      <Avatar avatar={m.avatar} size={22} />
                       {m.name}
                       {m.id === memberId && <Badge tone="accent">{t('lobby.you')}</Badge>}
                       {m.isHost && <Badge>{t('lobby.host')}</Badge>}

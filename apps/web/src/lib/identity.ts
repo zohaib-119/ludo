@@ -1,4 +1,4 @@
-import { AVATARS, LIMITS } from '@ludo/protocol';
+import { AVATARS, LIMITS, isPlayerAvatar } from '@ludo/protocol';
 import { readJson, readString, writeJson, writeString } from './storage';
 
 const TOKEN_KEY = 'dodice.playerToken';
@@ -27,7 +27,8 @@ export function playerToken(): string {
 
 export function loadProfile(): Profile {
   const p = readJson<Partial<Profile>>(PROFILE_KEY, {});
-  const avatar = p.avatar && (AVATARS as readonly string[]).includes(p.avatar) ? p.avatar : AVATARS[0];
+  // Older profiles stored an emoji; they get the first generated avatar instead.
+  const avatar = isPlayerAvatar(p.avatar) ? p.avatar : AVATARS[0];
   return { name: typeof p.name === 'string' ? p.name : '', avatar };
 }
 
