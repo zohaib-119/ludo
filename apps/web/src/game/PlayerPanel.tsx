@@ -32,7 +32,8 @@ export function PlayerPanel({
   const total = view.settings.turnTimer * 1000;
   const left = deadline > 0 ? Math.max(0, deadline - now) : 0;
   const fraction = deadline > 0 && total > 0 ? left / total : 0;
-  const finished = player?.finishedRank != null;
+  const out = player?.eliminated === true;
+  const finished = player?.finishedRank != null && !out;
   const mate = view.settings.teamMode ? OPPOSITE[color] : null;
   const playingFor = finished && mate && active && game.turn.controls === mate;
 
@@ -101,6 +102,11 @@ export function PlayerPanel({
         </div>
         <div className={cx('mt-1 flex flex-wrap gap-1', align === 'right' && 'justify-end')}>
           {finished && <Badge tone="success">{t('game.finishedBadge', { rank: ordinal(player.finishedRank!) })}</Badge>}
+          {out && (
+            <span title={t('game.outHelp')}>
+              <Badge tone="warning">{t('game.outBadge')}</Badge>
+            </span>
+          )}
           {seat?.isBot && <Badge>{t('lobby.bot')}</Badge>}
           {seat?.autoplay && <Badge tone="warning">{t('game.autoplayOn')}</Badge>}
           {seat?.botControlled && !seat.autoplay && <Badge tone="warning">{t('lobby.bot')}</Badge>}

@@ -161,7 +161,7 @@ export function GameScreen() {
     return out;
   }, [game.seats, rotation]);
   const locked = view.settings.killRequiredToEnterColumn
-    ? game.seats.filter((c) => !game.players[c]?.hasKilled && game.players[c]?.finishedRank == null)
+    ? game.seats.filter((c) => !game.players[c]?.hasKilled && game.players[c]?.finishedRank == null && !game.players[c]?.eliminated)
     : [];
 
   const [menuOpen, setMenuOpen] = useState(false);

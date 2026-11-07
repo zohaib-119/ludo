@@ -47,6 +47,8 @@ export function describe(e: RoomEvent, nameOf: (c: Color) => string): { color: C
       return { color: e.color, text: t('log.reset', { name: nameOf(e.color) }) };
     case 'BotActed':
       return e.cause === 'bot' ? null : { color: e.seat, text: t(`log.bot.${e.cause}`, { name: nameOf(e.seat) }) };
+    case 'PlayerEliminated':
+      return { color: e.color, text: t('log.eliminated', { name: nameOf(e.color) }) };
     case 'GameOver':
       return { color: null, text: t('log.gameOver') };
     default:

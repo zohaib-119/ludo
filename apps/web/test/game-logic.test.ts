@@ -236,6 +236,16 @@ describe('Playback', () => {
     expect(pb.store.getState()).toMatchObject({ tray: [], traySeat: 'yellow' });
   });
 
+  it('a player going out: pieces leave the board, a banner and a log line', async () => {
+    const { pb, settle } = harness();
+    pb.sync(view(0, { 'red-0': 12, 'red-1': 30, 'yellow-0': 52 }));
+    pb.push(msg(1, [{ type: 'PlayerEliminated', color: 'red', rank: 2, reason: 'noCaptureLeft' }]));
+    await settle();
+    expect(pb.store.getState().progress).toEqual({ 'red-0': -1, 'red-1': -1, 'yellow-0': 52 });
+    expect(pb.store.getState().banner).toMatchObject({ text: 'red is out — nothing left to capture', tone: 'bad' });
+    expect(pb.store.getState().log[0]!.text).toBe('red is out — nothing left to capture');
+  });
+
   it('a snap rebuilds the tray from the bank', () => {
     const { pb } = harness();
     const v = view(7, {});

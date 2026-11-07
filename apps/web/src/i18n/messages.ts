@@ -163,6 +163,9 @@ const en = {
   'game.banner.bonusVoid': 'Bonus roll void',
   'game.banner.finished': '{name} finished — {rank}!',
   'game.banner.yourTurn': 'Your turn!',
+  'game.banner.eliminated': '{name} is out — nothing left to capture',
+  'game.outBadge': 'Out',
+  'game.outHelp': 'Needed a capture to enter the home column, but no enemy piece can be captured any more.',
   'game.autoplayOn': 'Autoplay is on',
   'game.imBack': 'I’m back',
   'game.menu': 'Menu',
@@ -220,6 +223,7 @@ const en = {
   'log.bot.timeout': 'Time ran out — bot played for {name}',
   'log.bot.offline': 'Bot played for {name} (offline)',
   'log.bot.autoplay': 'Autoplay played for {name}',
+  'log.eliminated': '{name} is out — nothing left to capture',
   'log.gameOver': 'Game over',
 
   // Connection pill

@@ -8,7 +8,7 @@
  * the synced state, so the display is never far behind reality.
  */
 import { type Color, pathBetween } from '@ludo/engine';
-import type { EventsMessage, GameView, RoomEvent } from '@ludo/protocol';
+import { ANIMATION_TIMING, type AnimationTiming, type EventsMessage, type GameView, type RoomEvent } from '@ludo/protocol';
 import { createStore } from 'zustand/vanilla';
 import { t } from '../i18n/messages';
 import { type LogLine, describe, ordinal } from './log';
@@ -48,31 +48,10 @@ export interface PlaybackState {
   log: LogLine[];
 }
 
-export interface Timing {
-  roll: number;
-  /** Pause after a die leaves the tray, before its piece starts moving. */
-  useDie: number;
-  /** How long void dice stay dimmed before they are cleared. */
-  void: number;
-  hop: number;
-  enter: number;
-  capture: number;
-  banner: number;
-  playerFinished: number;
-  turn: number;
-}
+export type Timing = AnimationTiming;
 
-export const NORMAL_TIMING: Timing = {
-  roll: 700,
-  useDie: 220,
-  void: 800,
-  hop: 110,
-  enter: 300,
-  capture: 480,
-  banner: 900,
-  playerFinished: 1400,
-  turn: 150,
-};
+/** Normal timing is shared with the server, which paces bots to it. */
+export const NORMAL_TIMING: Timing = ANIMATION_TIMING;
 export const REDUCED_TIMING: Timing = {
   roll: 120,
   useDie: 0,
@@ -306,6 +285,17 @@ export class Playback {
         this.showBanner(t('game.banner.finished', { name: name(e.color), rank: ordinal(e.rank) }), 'good');
         await this.wait(T.playerFinished, gen);
         return;
+      case 'PlayerEliminated': {
+        // Their pieces leave the board, like a capture.
+        const gone = Object.keys(this.store.getState().progress).filter((id) => id.startsWith(`${e.color}-`));
+        this.store.setState((s) => ({
+          captured: gone,
+          progress: { ...s.progress, ...Object.fromEntries(gone.map((id) => [id, -1])) },
+        }));
+        this.showBanner(t('game.banner.eliminated', { name: name(e.color) }), 'bad');
+        await this.wait(T.playerFinished, gen);
+        return;
+      }
       default:
         return;
     }
