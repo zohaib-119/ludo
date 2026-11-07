@@ -92,9 +92,22 @@ body,
 /* Always reserve the scrollbar's space, so content appearing or disappearing
    never shifts the page (and the board) sideways. */
 html {
-  scrollbar-gutter: stable;
-  /* The reserved scrollbar strip shows the html background: match the page. */
   background-color: var(--bg);
+}
+
+/* No visible scrollbars anywhere: everything still scrolls (wheel, trackpad,
+   touch, keyboard), the bars are just not drawn. Hidden bars take no space,
+   so content never shifts when a scrollbar would appear. */
+* {
+  scrollbar-width: none;
+}
+*::-webkit-scrollbar {
+  display: none;
+}
+
+/* A soft fade at the bottom of a scrolling area hints that there is more below. */
+.scroll-fade {
+  mask-image: linear-gradient(to bottom, black calc(100% - 1.5rem), transparent);
 }
 
 body {
