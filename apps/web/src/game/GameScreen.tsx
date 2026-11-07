@@ -178,7 +178,6 @@ export function GameScreen() {
 
   const [menuOpen, setMenuOpen] = useState(false);
   const desktop = useIsDesktop();
-  const mySeatView = mySeat ? view.seats[mySeat] : undefined;
   const showResults = view.phase === 'finished' && (caughtUp || game.endedByHost);
 
   const panel = (corner: Corner) => {
@@ -211,15 +210,6 @@ export function GameScreen() {
           </IconButton>
         </div>
       </header>
-
-      {mySeatView?.autoplay && playing && (
-        <div className="mx-auto mb-2 flex w-full max-w-[1800px] items-center justify-between gap-3 bg-warning-soft px-4 py-2 text-sm font-semibold text-warning sm:rounded-xl">
-          {t('game.autoplayOn')}
-          <Button size="sm" onClick={() => void sendCommand({ type: 'setAutoplay', on: false })} data-testid="im-back">
-            {t('game.imBack')}
-          </Button>
-        </div>
-      )}
 
       <main className="game-grid mx-auto w-full max-w-[1800px] px-3 pb-4 lg:px-5">
         <div style={{ gridArea: 'tl' }}>{panel('top-left')}</div>
@@ -367,7 +357,8 @@ function ActionArea({
   let status = '';
   if (playing && !myTurn) {
     const name = seatView?.name ?? seat;
-    if (seatView && !seatView.isBot && (seatView.botControlled || seatView.autoplay))
+    // Auto mode is private: it never shows. Only an offline player's bot takeover is announced.
+    if (seatView && !seatView.isBot && seatView.botControlled && !seatView.autoplay)
       status = t('game.botPlaying', { name });
     else status = game.turn.phase === 'awaitRoll' ? t('game.isRolling', { name }) : t('game.isMoving', { name });
   } else if (awaitingMove) {

@@ -116,7 +116,7 @@ Random games with random settings, random seats and random legal actions, for th
 - Network drop for 5 s mid-turn: player reconnects automatically, state correct, no duplicated move.
 - Page refresh mid-turn: seat reclaimed via token.
 - Same token in two tabs: older tab kicked with the right message.
-- Turn timer expiry: bot plays one decision; two expiries → autoplay; "I'm back" restores control.
+- Turn timer expiry: bot plays one decision; two expiries → autoplay; switching Auto mode off restores control.
 - Offline player's turn with takeover 15 s: bot takes over, then returns control after reconnect at the next turn.
 - Stale click: `move` with old `stateVersion` rejected and UI recovers.
 

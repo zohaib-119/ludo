@@ -150,7 +150,6 @@ export function PlayerPanel({
             </span>
           )}
           {seat?.isBot && <Badge>{t('lobby.bot')}</Badge>}
-          {seat?.autoplay && <Badge tone="warning">{t('game.autoplayOn')}</Badge>}
           {seat?.botControlled && !seat.autoplay && <Badge tone="warning">{t('lobby.bot')}</Badge>}
           {seat && !seat.isBot && !seat.connected && <Badge tone="warning">{t('lobby.offline')}</Badge>}
           {playingFor && mate && (

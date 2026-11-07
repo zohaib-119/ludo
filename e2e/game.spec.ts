@@ -81,7 +81,12 @@ test('a full game on autoplay ends in results; play again starts a new game', as
   const page = host.page;
   await page.getByTestId('game-menu').click();
   await page.getByRole('switch', { name: 'Auto mode' }).click();
-  await expect(page.getByTestId('im-back')).toBeVisible();
+  // Turning it on closes the menu; no bar appears, and the menu shows it on.
+  await expect(page.getByRole('switch', { name: 'Auto mode' })).toBeHidden();
+  await expect(page.getByTestId('im-back')).toHaveCount(0);
+  await page.getByTestId('game-menu').click();
+  await expect(page.getByRole('switch', { name: 'Auto mode' })).toBeChecked();
+  await page.keyboard.press('Escape');
   const results = page.getByTestId('results');
   await expect(results).toBeVisible({ timeout: 180_000 });
   await expect(results).toContainText('wins!');
@@ -90,7 +95,8 @@ test('a full game on autoplay ends in results; play again starts a new game', as
   await expect(results).toBeHidden({ timeout: 15_000 });
   await expect(page.getByTestId('action-area')).toBeVisible();
   // Control is ours again in the new game (autoplay resets).
-  await expect(page.getByTestId('im-back')).toBeHidden();
+  await page.getByTestId('game-menu').click();
+  await expect(page.getByRole('switch', { name: 'Auto mode' })).not.toBeChecked();
 });
 
 test('the host can end a game early and go back to the lobby', async ({ browser }) => {
