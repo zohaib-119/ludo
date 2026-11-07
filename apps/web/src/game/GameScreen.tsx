@@ -288,7 +288,7 @@ export function GameScreen() {
         {desktop && (
           <aside style={{ gridArea: 'chat' }} className="h-[calc(100dvh-84px)]">
             <div className="flex h-full flex-col rounded-2xl border border-line bg-surface p-4 shadow-card">
-              <ChatPanel className="flex-1" />
+              <ChatPanel className="flex-1" captureTyping />
             </div>
           </aside>
         )}

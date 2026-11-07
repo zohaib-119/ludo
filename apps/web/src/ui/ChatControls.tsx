@@ -25,13 +25,43 @@ export function useIsDesktop(): boolean {
   return Boolean(match);
 }
 
-/** The conversation, quick reactions and the input. Fills its container. */
-export function ChatPanel({ className, title = true }: { className?: string; title?: boolean }) {
+/**
+ * The conversation, quick reactions and the input. Fills its container.
+ * With `captureTyping`, typing anywhere on the page goes into the chat box
+ * (so the chat stays "active" after clicking elsewhere).
+ */
+export function ChatPanel({
+  className,
+  title = true,
+  captureTyping = false,
+}: {
+  className?: string;
+  title?: boolean;
+  captureTyping?: boolean;
+}) {
   const lines = useChat((s) => s.lines);
   const [text, setText] = useState('');
   const listRef = useRef<HTMLOListElement>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => showChatView(), []);
+
+  useEffect(() => {
+    if (!captureTyping) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.defaultPrevented || e.ctrlKey || e.metaKey || e.altKey || e.isComposing) return;
+      // Only printable characters; Space and Enter stay free for the game (rolling the dice).
+      if (e.key.length !== 1 || e.key === ' ') return;
+      const active = document.activeElement as HTMLElement | null;
+      if (active && (active.tagName === 'INPUT' || active.tagName === 'TEXTAREA' || active.isContentEditable)) return;
+      if (document.querySelector('[role=dialog]')) return; // a sheet or dialog is open
+      e.preventDefault();
+      setText((v) => (v + e.key).slice(0, LIMITS.chatMax));
+      inputRef.current?.focus();
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [captureTyping]);
   useEffect(() => {
     listRef.current?.scrollTo({ top: listRef.current.scrollHeight, behavior: 'smooth' });
   }, [lines.length]);
@@ -101,6 +131,7 @@ export function ChatPanel({ className, title = true }: { className?: string; tit
         <label className="flex-1">
           <span className="sr-only">{t('chat.placeholder')}</span>
           <input
+            ref={inputRef}
             value={text}
             onChange={(e) => setText(e.target.value)}
             maxLength={LIMITS.chatMax}
