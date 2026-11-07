@@ -56,6 +56,7 @@ All commands go through one message type, `cmd`, sent with `room.request('cmd', 
 
 | Message | Payload | Notes |
 |---|---|---|
+| `welcome` | `{ memberId }` | Sent right after joining or reconnecting, so the client knows which member it is |
 | `events` | `{ version, events: GameEvent[] }` | Sent after the state patch for that version. Clients ignore batches older than what they have rendered. |
 | `chat` | `{ from, text, at }` | |
 | `react` | `{ from, emoji }` | |

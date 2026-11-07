@@ -112,6 +112,14 @@ Random games with random settings, random seats and random legal actions, for th
 - Offline player's turn with takeover 15 s: bot takes over, then returns control after reconnect at the next turn.
 - Stale click: `move` with old `stateVersion` rejected and UI recovers.
 
+## 6b. What exists (M4)
+
+- `apps/web/test/connection.test.ts`: the client connection manager against a real server in Node — create/join, every join failure reason, refused clicks while offline, layer-1 auto-reconnect, layer-2 token rejoin, second tab + "Use here", room closing, leaving, event delivery.
+- `apps/web/test/lobby-logic.test.ts`: the client's start-blocker messages agree with the server for all 32 seat/team combinations.
+- `apps/web/test/components.test.tsx` (jsdom): rules panel (host vs guest, conditional options, change highlight), seat board (host controls), home page (name and code validation, pasted links, saved profile).
+- `e2e/lobby.spec.ts` (Playwright, real browsers, server and web app started by the config): four-player lobby flow with rule changes un-readying everyone, refresh keeping the seat in lobby and game, second tab, unknown/started rooms, leaving, going offline and back.
+- Run with `npm test` and `npm run e2e`. Set `PW_CHROMIUM_PATH` to use an already-installed Chromium instead of `npx playwright install`.
+
 ## 7. CI
 
 All unit, property and server tests on every push. Playwright on the main branch and before deploys. Engine coverage target: 100 % of branches in `moves.ts`, `playability.ts`, `reducer.ts`, `teams.ts`.

@@ -37,7 +37,7 @@
 | Tests | Vitest, fast-check (property tests), Playwright (end to end) | |
 | Lint / format | ESLint, Prettier | |
 
-Exact versions are pinned when the project is created; Colyseus APIs referenced here must be checked against its docs at that time (see §9).
+Pinned in M4: React 19.3, Vite 6.3, React Router 7.18 (7.6 had security advisories), Tailwind 4.1, Motion 12, Zustand 5, `@colyseus/sdk` 0.18, Playwright 1.65. Newer majors (Vite 8, React Router 8, Motion 14) were skipped as too new to rely on.
 
 ## 3. Repository layout
 
