@@ -11,9 +11,9 @@ import { getConnection, useConnection } from '../net/session';
 import { Avatar, Button, cx, pieceColor } from '../ui/kit';
 import { ordinal } from './log';
 
-const STAT_KEYS: Array<keyof PlayerStats> = ['captures', 'lost', 'sixes', 'voids', 'botTurns'];
+const STAT_KEYS = ['captures', 'lost', 'sixes', 'voids'] as const satisfies ReadonlyArray<keyof PlayerStats>;
 /** Columns hidden on narrow phones so the table fits without scrolling. */
-const WIDE_ONLY = new Set<keyof PlayerStats>(['voids', 'botTurns']);
+const WIDE_ONLY = new Set<keyof PlayerStats>(['voids']);
 
 export function Results() {
   const view = useConnection((s) => s.view)!;

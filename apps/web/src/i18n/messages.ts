@@ -179,7 +179,6 @@ const en = {
   'results.stats.lost': 'Lost',
   'results.stats.sixes': 'Sixes',
   'results.stats.voids': 'Void rolls',
-  'results.stats.botTurns': 'Bot turns',
 
   // Log lines
   'log.turn': '{name}’s turn',

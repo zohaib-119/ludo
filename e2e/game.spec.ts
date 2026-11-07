@@ -91,6 +91,8 @@ test('a full game on autoplay ends in results; play again starts a new game', as
   await expect(results).toBeVisible({ timeout: 180_000 });
   await expect(results).toContainText('wins!');
   await expect(results.getByRole('table')).toContainText('Zohaib');
+  // Stats columns: no "Bot turns" (auto mode stays private).
+  await expect(results.getByRole('columnheader')).toHaveText(['', 'Captures', 'Lost', 'Sixes', 'Void rolls']);
   await page.getByTestId('play-again').click();
   await expect(results).toBeHidden({ timeout: 15_000 });
   await expect(page.getByTestId('action-area')).toBeVisible();
