@@ -17,12 +17,12 @@ import {
 import { createServer } from '../src/app';
 import type { LudoRoom } from '../src/room';
 
-const PORT = 2611;
+// boot() with a ready-made Server always listens on 2568 (its default test port).
 let colyseus: ColyseusTestServer;
 const open: SdkRoom[] = [];
 
 beforeAll(async () => {
-  colyseus = await boot(createServer(), PORT);
+  colyseus = await boot(createServer());
 });
 afterEach(async () => {
   for (const r of open.splice(0)) {
@@ -86,8 +86,10 @@ describe('rooms over the network', () => {
   it('creates a room with a 6-character code and makes the creator host', async () => {
     const ali = track(await colyseus.sdk.create(ROOM_NAME, opts('Ali')));
     expect(ali.roomId).toMatch(new RegExp(`^[${ROOM_CODE_ALPHABET}]{6}$`));
+    const welcome = new Promise<{ memberId: string }>((r) => ali.onMessage('welcome', r));
     const v = await until(ali, (x) => x.members.length === 1);
     expect(v.code).toBe(ali.roomId);
+    expect((await welcome).memberId).toBe(v.members[0]!.id);
     expect(v.members[0]).toMatchObject({ name: 'Ali', isHost: true, connected: true });
   });
 
@@ -229,6 +231,7 @@ describe('http endpoints', () => {
     expect(health.data).toEqual({ ok: true });
     const ali = track(await colyseus.sdk.create(ROOM_NAME, opts('Ali')));
     const found = await colyseus.http.get(`/api/rooms/${ali.roomId.toLowerCase()}`);
+    expect(found.headers['access-control-allow-origin']).toBe('*');
     expect(found.data).toMatchObject({ exists: true, phase: 'lobby', members: 1, seatsTaken: 0 });
     const missing = await colyseus.http.get('/api/rooms/ZZZZZZ');
     expect(missing.data).toEqual({ exists: false });

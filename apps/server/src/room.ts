@@ -110,6 +110,7 @@ export class LudoRoom extends Room<{ state: LudoStateType }> {
       }
     }
     this.sessions.set(client.sessionId, { memberId: result.memberId, client });
+    client.send('welcome', { memberId: result.memberId });
     this.flush();
   }
 
@@ -131,6 +132,7 @@ export class LudoRoom extends Room<{ state: LudoStateType }> {
     if (!session) return;
     session.pending = undefined;
     session.client = client;
+    client.send('welcome', { memberId: session.memberId });
     this.controller.setConnected(session.memberId, true);
     this.flush();
   }

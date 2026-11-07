@@ -7,6 +7,11 @@ export function createServer() {
     greet: false,
     rooms: { [ROOM_NAME]: defineRoom(LudoRoom) },
     express: (app) => {
+      // Read-only public endpoints: allow the web client on another origin (dev server, static host).
+      app.use('/api', (_req, res, next) => {
+        res.setHeader('Access-Control-Allow-Origin', '*');
+        next();
+      });
       app.get('/healthz', (_req, res) => {
         res.json({ ok: true });
       });

@@ -115,7 +115,7 @@ export const ROOM_CODE_LENGTH = 6;
 
 /** Normalises user input like "k7q-x9m" or a pasted link into a room code, or null. */
 export function parseRoomCode(input: string): string | null {
-  const fromLink = /\/r\/([A-Za-z0-9-]+)/.exec(input)?.[1] ?? input;
+  const fromLink = /\/r\/([A-Za-z0-9-]+)/i.exec(input)?.[1] ?? input;
   const code = fromLink.toUpperCase().replace(/[\s-]/g, '');
   if (code.length !== ROOM_CODE_LENGTH) return null;
   if ([...code].some((ch) => !ROOM_CODE_ALPHABET.includes(ch))) return null;
@@ -316,7 +316,13 @@ export interface KickedMessage {
   reason: KickReason;
 }
 
+/** Sent to a client right after it joins: which member it is. */
+export interface WelcomeMessage {
+  memberId: string;
+}
+
 export interface ServerMessages {
+  welcome: WelcomeMessage;
   events: EventsMessage;
   chat: ChatMessage;
   react: ReactMessage;
