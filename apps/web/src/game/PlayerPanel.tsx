@@ -65,6 +65,7 @@ export function PlayerPanel({
             exit={{ opacity: 0, y: -4 }}
             className={cx(
               'absolute top-full z-20 mt-1.5 max-w-[90%] truncate rounded-2xl bg-text px-3 py-1.5 text-xs font-medium text-bg shadow-lift',
+              'lg:top-auto lg:right-3 lg:bottom-3 lg:left-auto lg:mt-0 lg:max-w-[50%] lg:rounded-br-md',
               align === 'right' ? 'right-2' : 'left-2',
             )}
             data-testid={`bubble-${color}`}
@@ -113,20 +114,41 @@ export function PlayerPanel({
         )}
       </div>
       <div className="min-w-0 flex-1">
-        <p className="truncate font-display text-[15px] font-bold leading-tight">
-          {colorBlind && (
-            <span className="mr-1" style={{ color: pieceColor(color) }} aria-hidden>
-              {GLYPH[color]}
-            </span>
-          )}
-          {seat?.name ?? color}
-          {isMe && <span className="ml-1 text-xs font-semibold text-accent">({t('lobby.you')})</span>}
-        </p>
+        <div className={cx('flex flex-wrap items-center gap-x-2 gap-y-1', align === 'right' && 'flex-row-reverse')}>
+          <p className="max-w-full min-w-0 truncate font-display text-[15px] leading-tight font-bold lg:text-base">
+            {colorBlind && (
+              <span className="mr-1" style={{ color: pieceColor(color) }} aria-hidden>
+                {GLYPH[color]}
+              </span>
+            )}
+            {seat?.name ?? color}
+            {isMe && <span className="ml-1 text-xs font-semibold text-accent">({t('lobby.you')})</span>}
+          </p>
+          <div className="flex shrink-0 flex-wrap gap-1">
+            {finished && (
+              <Badge tone="success">{t('game.finishedBadge', { rank: ordinal(player.finishedRank!) })}</Badge>
+            )}
+            {out && (
+              <span title={t('game.outHelp')}>
+                <Badge tone="warning">{t('game.outBadge')}</Badge>
+              </span>
+            )}
+            {seat?.isBot && <Badge>{t('lobby.bot')}</Badge>}
+            {seat?.botControlled && !seat.autoplay && <Badge tone="warning">{t('lobby.bot')}</Badge>}
+            {seat && !seat.isBot && !seat.connected && <Badge tone="warning">{t('lobby.offline')}</Badge>}
+            {playingFor && mate && (
+              <Badge tone="accent">{t('game.playingFor', { name: view.seats[mate]?.name ?? mate })}</Badge>
+            )}
+            {finished && (player?.handoverDelayLeft ?? 0) > 0 && (
+              <Badge>{t('game.waitingRounds', { n: player!.handoverDelayLeft })}</Badge>
+            )}
+          </div>
+        </div>
         <div className={cx('mt-1 flex items-center gap-1', align === 'right' && 'flex-row-reverse')}>
           {[0, 1, 2, 3].map((i) => (
             <span
               key={i}
-              className="size-2.5 rounded-full"
+              className="size-2.5 rounded-full lg:size-3"
               style={{ background: i < home ? pieceColor(color) : 'var(--surface-3)' }}
               aria-hidden
             />
@@ -140,23 +162,6 @@ export function PlayerPanel({
                 <Lock className="size-3.5 text-danger" aria-label={t('game.needsKill')} />
               )}
             </span>
-          )}
-        </div>
-        <div className={cx('mt-1 flex flex-wrap gap-1', align === 'right' && 'justify-end')}>
-          {finished && <Badge tone="success">{t('game.finishedBadge', { rank: ordinal(player.finishedRank!) })}</Badge>}
-          {out && (
-            <span title={t('game.outHelp')}>
-              <Badge tone="warning">{t('game.outBadge')}</Badge>
-            </span>
-          )}
-          {seat?.isBot && <Badge>{t('lobby.bot')}</Badge>}
-          {seat?.botControlled && !seat.autoplay && <Badge tone="warning">{t('lobby.bot')}</Badge>}
-          {seat && !seat.isBot && !seat.connected && <Badge tone="warning">{t('lobby.offline')}</Badge>}
-          {playingFor && mate && (
-            <Badge tone="accent">{t('game.playingFor', { name: view.seats[mate]?.name ?? mate })}</Badge>
-          )}
-          {finished && (player?.handoverDelayLeft ?? 0) > 0 && (
-            <Badge>{t('game.waitingRounds', { n: player!.handoverDelayLeft })}</Badge>
           )}
         </div>
       </div>

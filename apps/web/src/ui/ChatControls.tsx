@@ -76,22 +76,37 @@ export function ChatPanel({
   return (
     <div className={cx('flex min-h-0 flex-col', className)} data-testid="chat-panel">
       {title && (
-        <h2 className="mb-3 flex items-center gap-2 font-display text-lg font-bold">
-          <MessageCircle className="size-5 text-accent" /> {t('chat.title')}
-        </h2>
+        <div className="flex items-center gap-3 border-b border-line pb-3">
+          <span className="flex size-9 items-center justify-center rounded-xl bg-accent-soft text-accent">
+            <MessageCircle className="size-5" />
+          </span>
+          <div className="min-w-0">
+            <h2 className="font-display text-lg leading-tight font-bold">{t('chat.title')}</h2>
+            {captureTyping && <p className="text-xs text-muted">{t('chat.typeAnywhere')}</p>}
+          </div>
+        </div>
       )}
       <ol
         ref={listRef}
-        className="min-h-24 flex-1 space-y-2.5 overflow-y-auto pr-1"
+        className="-mx-1 min-h-24 flex-1 space-y-3 overflow-y-auto px-1 py-3"
         data-testid="chat-log"
         aria-live="polite"
       >
-        {lines.length === 0 && <li className="py-8 text-center text-sm text-muted">{t('chat.empty')}</li>}
+        {lines.length === 0 && (
+          <li className="flex h-full flex-col items-center justify-center gap-2 py-8 text-center">
+            <span className="flex size-14 items-center justify-center rounded-2xl bg-surface-2 text-3xl" aria-hidden>
+              👋
+            </span>
+            <p className="font-display font-bold">{t('chat.empty')}</p>
+            <p className="text-sm text-muted">{t('chat.emptyHint')}</p>
+          </li>
+        )}
         {lines.map((l, i) => {
           // The sender's name heads each run of messages (shown once for consecutive messages).
           const showName = i === 0 || lines[i - 1]!.from !== l.from;
+          const tint = l.color ? `var(--${l.color}-light)` : 'var(--surface-2)';
           return (
-            <li key={l.id} className={cx('flex flex-col', l.mine ? 'items-end' : 'items-start', !showName && '-mt-1')}>
+            <li key={l.id} className={cx('flex flex-col', l.mine ? 'items-end' : 'items-start', !showName && '-mt-2')}>
               {showName && <Name line={l} />}
               {l.kind === 'reaction' ? (
                 <span className="text-4xl leading-none" role="img" aria-label={l.text} data-testid="chat-reaction">
@@ -100,9 +115,10 @@ export function ChatPanel({
               ) : (
                 <p
                   className={cx(
-                    'max-w-[85%] rounded-2xl px-3 py-2 text-sm break-words whitespace-pre-wrap',
-                    l.mine ? 'rounded-tr-md bg-accent text-on-accent' : 'rounded-tl-md bg-surface-2',
+                    'max-w-[85%] rounded-2xl px-3.5 py-2 text-[15px] leading-snug break-words whitespace-pre-wrap shadow-soft',
+                    l.mine ? 'rounded-br-md bg-accent text-on-accent' : 'rounded-bl-md text-text',
                   )}
+                  style={l.mine ? undefined : { background: tint }}
                 >
                   {l.text}
                 </p>
@@ -112,12 +128,16 @@ export function ChatPanel({
         })}
       </ol>
 
-      <div className="mt-3 flex justify-between gap-1" role="group" aria-label={t('chat.react')}>
+      <div
+        className="flex justify-between gap-0.5 rounded-2xl bg-surface-2 p-1"
+        role="group"
+        aria-label={t('chat.react')}
+      >
         {REACTIONS.map((emoji) => (
           <button
             key={emoji}
             type="button"
-            className="flex size-9 items-center justify-center rounded-xl text-xl transition-transform hover:scale-110 hover:bg-surface-2 active:scale-95"
+            className="flex h-9 flex-1 items-center justify-center rounded-xl text-xl transition-transform hover:scale-110 hover:bg-surface active:scale-95"
             onClick={() => void sendCommand({ type: 'react', emoji })}
             aria-label={`${t('chat.sendReaction')} ${emoji}`}
             data-testid={`react-${emoji}`}
@@ -127,7 +147,10 @@ export function ChatPanel({
         ))}
       </div>
 
-      <form onSubmit={send} className="mt-2 flex gap-2">
+      <form
+        onSubmit={send}
+        className="mt-2 flex items-center gap-1 rounded-full border border-line bg-surface p-1 pl-4 transition-shadow focus-within:border-accent focus-within:ring-4 focus-within:ring-accent/15"
+      >
         <label className="flex-1">
           <span className="sr-only">{t('chat.placeholder')}</span>
           <input
@@ -136,14 +159,18 @@ export function ChatPanel({
             onChange={(e) => setText(e.target.value)}
             maxLength={LIMITS.chatMax}
             placeholder={t('chat.placeholder')}
-            className="h-11 w-full rounded-xl border border-transparent bg-surface-2 px-4 outline-none focus:border-accent focus:bg-surface"
+            className="h-10 w-full bg-transparent outline-none focus-visible:outline-none"
             data-testid="chat-input"
           />
         </label>
         <IconButton
           label={t('chat.send')}
           type="submit"
-          className="bg-accent text-on-accent hover:bg-accent hover:text-on-accent"
+          className={cx(
+            'shrink-0 rounded-full transition-opacity',
+            'bg-accent text-on-accent hover:bg-accent hover:text-on-accent',
+            !text.trim() && 'opacity-50',
+          )}
         >
           <SendHorizontal className="size-5" />
         </IconButton>
@@ -155,11 +182,13 @@ export function ChatPanel({
 function Name({ line }: { line: { name: string; color: string | null } }) {
   return (
     <p
-      className="mb-1 px-1 text-xs font-bold"
-      data-testid="chat-name"
-      style={{ color: line.color ? pieceColor(line.color as never) : 'var(--text-muted)' }}
+      className="mb-1 flex items-center gap-1.5 px-1 text-xs font-bold"
+      style={{ color: line.color ? `var(--${line.color}-dark)` : 'var(--text-muted)' }}
     >
-      {line.name}
+      {line.color && (
+        <span className="size-2 rounded-full" style={{ background: pieceColor(line.color as never) }} aria-hidden />
+      )}
+      <span data-testid="chat-name">{line.name}</span>
     </p>
   );
 }

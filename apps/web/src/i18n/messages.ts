@@ -234,7 +234,9 @@ const en = {
   // Chat
   'chat.title': 'Chat',
   'chat.react': 'Reactions',
-  'chat.empty': 'No messages yet. Say hi!',
+  'chat.empty': 'No messages yet',
+  'chat.emptyHint': 'Say hi, or tap a reaction below.',
+  'chat.typeAnywhere': 'Just start typing to chat',
   'chat.placeholder': 'Message',
   'chat.send': 'Send',
   'chat.sendReaction': 'Send reaction',
