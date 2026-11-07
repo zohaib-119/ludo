@@ -11,10 +11,10 @@ import { isHost, suggestedColor, teamOf } from './logic';
 const CORNERS: Color[] = ['green', 'yellow', 'red', 'blue'];
 
 const OUTER_CORNER: Record<Color, string> = {
-  green: 'left-2.5 top-2.5',
-  yellow: 'right-2.5 top-2.5 flex-row-reverse',
-  red: 'bottom-2.5 left-2.5',
-  blue: 'bottom-2.5 right-2.5 flex-row-reverse',
+  green: 'left-2 top-2',
+  yellow: 'right-2 top-2',
+  red: 'bottom-2 left-2',
+  blue: 'bottom-2 right-2',
 };
 
 /** The host's remove button goes in the other outer corner of the tile. */
@@ -111,15 +111,12 @@ function SeatTile({
       style={{ borderColor: pieceColor(color), background: empty ? 'var(--surface)' : tint[color] }}
       data-testid={`seat-${color}`}
     >
-      {/* Colour marker (and team) in the tile's outer corner, away from the board centre. */}
-      <div className={cx('absolute flex items-center gap-1.5', OUTER_CORNER[color])}>
-        <span
-          className="piece size-4 shrink-0 sm:size-5"
-          style={{ ['--piece' as string]: pieceColor(color) }}
-          aria-hidden
-        />
-        {teamMode && <Badge tone="neutral">{teamOf(color) === 'A' ? t('lobby.teamA') : t('lobby.teamB')}</Badge>}
-      </div>
+      {/* Colour marker in the tile's outer corner, away from the board centre. */}
+      <span
+        className={cx('piece absolute size-3.5', OUTER_CORNER[color])}
+        style={{ ['--piece' as string]: pieceColor(color) }}
+        aria-hidden
+      />
 
       {empty ? (
         <div className="flex flex-1 flex-col items-center justify-center gap-1.5">
@@ -141,24 +138,23 @@ function SeatTile({
               <Bot className="size-3.5" /> {t('lobby.addBot')}
             </button>
           )}
+          {teamMode && <Badge tone="neutral">{teamOf(color) === 'A' ? t('lobby.teamA') : t('lobby.teamB')}</Badge>}
         </div>
       ) : (
-        <div className="flex flex-1 flex-col items-center justify-center gap-1 text-center">
+        <div className="flex flex-1 flex-col items-center justify-center gap-1 px-3 py-4 text-center">
           <div className="relative">
-            <Avatar emoji={seat.avatar} size={44} />
+            <Avatar emoji={seat.avatar} size={36} />
             {!seat.isBot && (
               <span className="absolute -bottom-0.5 -right-0.5">
                 <Dot tone={seat.connected ? 'online' : 'offline'} />
               </span>
             )}
           </div>
-          <p
-            className="w-full truncate px-1 font-display text-[15px] font-bold leading-tight sm:text-base"
-            title={seat.name}
-          >
+          <p className="w-full truncate px-1 font-display text-sm leading-tight font-bold" title={seat.name}>
             {seat.name}
           </p>
           <div className="flex flex-wrap justify-center gap-1">
+            {teamMode && <Badge tone="neutral">{teamOf(color) === 'A' ? t('lobby.teamA') : t('lobby.teamB')}</Badge>}
             {mine && <Badge tone="accent">{t('lobby.you')}</Badge>}
             {seat.memberId === hostId && <Badge>{t('lobby.host')}</Badge>}
             {seat.isBot && <Badge>{t('lobby.bot')}</Badge>}
