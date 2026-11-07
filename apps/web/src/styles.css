@@ -122,9 +122,12 @@ body {
   overscroll-behavior-y: none;
 }
 
-:focus-visible {
-  outline: 2px solid var(--accent);
-  outline-offset: 2px;
+/* In the base layer so a component can opt out with a utility (e.g. the chat box draws its own focus). */
+@layer base {
+  :focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+  }
 }
 
 button {
@@ -176,7 +179,7 @@ button:disabled {
   /* Desktop: players and dice on the left, the board as big as the height allows, chat on the right. */
   .game-grid {
     gap: 0.75rem 1.25rem;
-    grid-template-columns: 15rem minmax(0, 1fr) 20rem;
+    grid-template-columns: clamp(15rem, 18vw, 22rem) minmax(0, 1fr) clamp(20rem, 24vw, 28rem);
     grid-template-rows: auto auto auto auto 1fr;
     grid-template-areas:
       'tl board chat'

@@ -26,7 +26,7 @@ export function LobbyPage() {
   return (
     <div className="flex min-h-dvh flex-col pb-36 lg:h-dvh lg:min-h-0 lg:overflow-hidden lg:pb-0">
       <TopBar code={view.code} inGame={false} />
-      <main className="mx-auto grid w-full max-w-[1500px] flex-1 gap-4 px-4 lg:min-h-0 lg:grid-cols-[minmax(0,1fr)_300px_260px] xl:grid-cols-[minmax(0,1fr)_360px_320px] lg:pb-[5.75rem]">
+      <main className="mx-auto grid w-full max-w-[1500px] flex-1 gap-4 px-4 lg:min-h-0 lg:grid-cols-[minmax(0,1fr)_300px_260px] xl:grid-cols-[minmax(0,1fr)_360px_380px] lg:pb-[5.75rem]">
         <div className="flex min-h-0 flex-col gap-3">
           <ShareCard code={view.code} />
           <Card className="flex min-h-0 flex-1 flex-col">
