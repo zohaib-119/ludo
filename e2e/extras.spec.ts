@@ -41,6 +41,11 @@ test('chat and reactions: a chat column on desktop, a chat sheet with unread cou
   // A reaction is an instant chat message.
   await host.page.getByTestId('react-🔥').click();
   await expect(guest.page.getByTestId('chat-log').getByTestId('chat-reaction')).toHaveText('🔥');
+  // Names, not avatars, head each run of messages: Sara's message, then Zohaib's reaction.
+  await expect(guest.page.getByTestId('chat-log').getByTestId('chat-name')).toHaveText(['Sara', 'Zohaib']);
+  await host.page.getByTestId('react-👍').click();
+  await expect(guest.page.getByTestId('chat-log').getByTestId('chat-reaction')).toHaveCount(2);
+  await expect(guest.page.getByTestId('chat-log').getByTestId('chat-name')).toHaveText(['Sara', 'Zohaib']);
   await host.page.keyboard.press('Escape');
 
   // In the game, a text message also shows briefly on the sender's panel (phones).

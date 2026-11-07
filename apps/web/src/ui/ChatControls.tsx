@@ -9,7 +9,7 @@ import { type FormEvent, useEffect, useRef, useState } from 'react';
 import { t } from '../i18n/messages';
 import { showChatView, useChat } from '../net/chat';
 import { sendCommand } from '../net/commands';
-import { Avatar, IconButton, Sheet, cx, pieceColor } from './kit';
+import { IconButton, Sheet, cx, pieceColor } from './kit';
 
 /** True on wide screens, where chat is a permanent column. */
 export function useIsDesktop(): boolean {
@@ -87,29 +87,29 @@ export function ChatPanel({
         aria-live="polite"
       >
         {lines.length === 0 && <li className="py-8 text-center text-sm text-muted">{t('chat.empty')}</li>}
-        {lines.map((l) => (
-          <li key={l.id} className={cx('flex items-end gap-2', l.mine && 'flex-row-reverse')}>
-            <Avatar emoji={l.avatar} color={l.color ?? undefined} size={28} />
-            {l.kind === 'reaction' ? (
-              <div className={cx('flex flex-col', l.mine ? 'items-end' : 'items-start')}>
-                {!l.mine && <Name line={l} />}
+        {lines.map((l, i) => {
+          // The sender's name heads each run of messages (shown once for consecutive messages).
+          const showName = i === 0 || lines[i - 1]!.from !== l.from;
+          return (
+            <li key={l.id} className={cx('flex flex-col', l.mine ? 'items-end' : 'items-start', !showName && '-mt-1')}>
+              {showName && <Name line={l} />}
+              {l.kind === 'reaction' ? (
                 <span className="text-4xl leading-none" role="img" aria-label={l.text} data-testid="chat-reaction">
                   {l.text}
                 </span>
-              </div>
-            ) : (
-              <div
-                className={cx(
-                  'max-w-[78%] rounded-2xl px-3 py-2 text-sm',
-                  l.mine ? 'rounded-br-md bg-accent text-on-accent' : 'rounded-bl-md bg-surface-2',
-                )}
-              >
-                {!l.mine && <Name line={l} />}
-                <p className="break-words whitespace-pre-wrap">{l.text}</p>
-              </div>
-            )}
-          </li>
-        ))}
+              ) : (
+                <p
+                  className={cx(
+                    'max-w-[85%] rounded-2xl px-3 py-2 text-sm break-words whitespace-pre-wrap',
+                    l.mine ? 'rounded-tr-md bg-accent text-on-accent' : 'rounded-tl-md bg-surface-2',
+                  )}
+                >
+                  {l.text}
+                </p>
+              )}
+            </li>
+          );
+        })}
       </ol>
 
       <div className="mt-3 flex justify-between gap-1" role="group" aria-label={t('chat.react')}>
@@ -155,7 +155,8 @@ export function ChatPanel({
 function Name({ line }: { line: { name: string; color: string | null } }) {
   return (
     <p
-      className="mb-0.5 text-xs font-bold"
+      className="mb-1 px-1 text-xs font-bold"
+      data-testid="chat-name"
       style={{ color: line.color ? pieceColor(line.color as never) : 'var(--text-muted)' }}
     >
       {line.name}
