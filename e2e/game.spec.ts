@@ -12,7 +12,8 @@ async function player(browser: Browser, name: string) {
 async function hostWithBots(browser: Browser, mySeat: string, bots: string[], rules?: (p: Page) => Promise<void>) {
   const host = await player(browser, 'Zohaib');
   await host.page.goto('/');
-  await host.page.getByRole('button', { name: 'Create game' }).click();
+  await host.page.getByTestId('open-create').click();
+  await host.page.getByTestId('create-submit').click();
   await expect(host.page.getByTestId('seat-board')).toBeVisible();
   await host.page
     .getByTestId(`seat-${mySeat}`)
@@ -42,7 +43,7 @@ async function actOnce(page: Page): Promise<boolean> {
   return false;
 }
 
-test('playing turns against bots: roll, dice, move, log', async ({ browser }) => {
+test('playing turns against bots: roll, dice, move', async ({ browser }) => {
   test.setTimeout(150_000);
   const host = await hostWithBots(browser, 'red', ['green', 'yellow', 'blue']);
   const page = host.page;
@@ -50,19 +51,26 @@ test('playing turns against bots: roll, dice, move, log', async ({ browser }) =>
   await expect(page.getByTestId('roll-button')).toBeVisible({ timeout: 30_000 });
   await page.getByTestId('roll-button').click();
   await expect(page.getByTestId('die').first()).toHaveAttribute('data-value', /[1-6]/);
-  // Keep playing our turns until something of ours has moved, while bots play theirs.
+  // Record every change of turn inside the page (bots are fast in tests; polling could miss them).
+  await page.evaluate(() => {
+    const w = window as unknown as { __seats: string[] };
+    w.__seats = [];
+    const area = document.querySelector('[data-testid=action-area]')!;
+    new MutationObserver(() => w.__seats.push(area.getAttribute('data-seat') ?? '')).observe(area, {
+      attributes: true,
+      attributeFilter: ['data-seat'],
+    });
+  });
+  // Keep playing our turns until one of our pieces is on the board and a bot has taken a turn.
   await expect(async () => {
     await actOnce(page);
-    await page.getByRole('button', { name: 'Game log' }).click();
-    const log = page.getByTestId('game-log');
-    try {
-      await expect(log).toContainText(/Zohaib (moved|brought a piece out)/, { timeout: 500 });
-      await expect(log).toContainText(/Bot \w+ rolled/, { timeout: 500 });
-    } finally {
-      await page.keyboard.press('Escape'); // close the log before the next try
-      await expect(log).toBeHidden();
-    }
-  }).toPass({ timeout: 120_000, intervals: [700] });
+    const progresses = await page
+      .locator('[data-testid^=piece-red-]')
+      .evaluateAll((els) => els.map((e) => Number(e.getAttribute('data-progress'))));
+    expect(progresses.some((p) => p >= 0)).toBe(true);
+    const seats = await page.evaluate(() => (window as unknown as { __seats: string[] }).__seats);
+    expect(seats.some((s) => s !== 'red')).toBe(true);
+  }).toPass({ timeout: 120_000, intervals: [400] });
   // Bots really took turns and the turn came back to us.
   await expect(page.getByTestId('panel-red')).toBeVisible();
 });
@@ -101,7 +109,8 @@ test('the host can end a game early and go back to the lobby', async ({ browser 
 test('when a player drops, others see who we wait for, and the host can let the bot play', async ({ browser }) => {
   const host = await player(browser, 'Zohaib');
   await host.page.goto('/');
-  await host.page.getByRole('button', { name: 'Create game' }).click();
+  await host.page.getByTestId('open-create').click();
+  await host.page.getByTestId('create-submit').click();
   await expect(host.page.getByTestId('seat-board')).toBeVisible();
   const code = host.page.url().split('/r/')[1]!;
   await host.page

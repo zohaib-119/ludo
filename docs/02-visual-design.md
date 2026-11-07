@@ -13,7 +13,7 @@ Principles:
 
 ## 2. Design tokens
 
-All colours, sizes and timings are CSS custom properties (exposed through Tailwind's theme), defined for light and dark themes.
+All colours, sizes and timings are CSS custom properties (exposed through Tailwind's theme). **One light theme** (dark and system themes were removed at the owner's request; the dark column in the table below is no longer used).
 
 ### Colour
 

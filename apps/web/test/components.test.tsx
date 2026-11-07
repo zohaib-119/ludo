@@ -95,6 +95,14 @@ describe('RulesPanel', () => {
     expect(sent.at(-1)).toEqual({ type: 'updateSettings', settings: { teamHandoverDelayRounds: 5 } });
   });
 
+  it('team mode comes first, above the presets', () => {
+    const { view } = lobbyView();
+    render(<RulesPanel settings={view.settings} preset={view.preset} editable />);
+    const team = screen.getByRole('switch', { name: 'Team mode' });
+    const preset = screen.getByRole('radiogroup', { name: 'Preset' });
+    expect(team.compareDocumentPosition(preset) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+  });
+
   it('hides the endgame rule in 1-die mode', () => {
     const { view } = lobbyView();
     render(<RulesPanel settings={{ ...view.settings, diceMode: 1 }} preset="classic" editable />);
@@ -176,35 +184,50 @@ describe('HomePage', () => {
     );
   };
 
-  it('requires a valid name before joining', async () => {
+  it('opens separate dialogs for creating and joining', async () => {
     localStorage.clear();
     await renderHome();
-    fireEvent.change(screen.getByPlaceholderText('Room code'), { target: { value: 'k7qx9m' } });
-    fireEvent.click(screen.getByRole('button', { name: 'Join' }));
+    expect(screen.queryByRole('dialog')).toBeNull();
+    fireEvent.click(screen.getByTestId('open-create'));
+    expect(screen.getByRole('dialog', { name: 'Create a game' })).toBeTruthy();
+    expect(screen.queryByTestId('join-code')).toBeNull();
+    fireEvent.keyDown(window, { key: 'Escape' });
+    fireEvent.click(screen.getByTestId('open-join'));
+    expect(screen.getByRole('dialog', { name: 'Join a game' })).toBeTruthy();
+    expect(screen.getByTestId('join-code')).toBeTruthy();
+  });
+
+  it('joining needs a valid name and code', async () => {
+    localStorage.clear();
+    await renderHome();
+    fireEvent.click(screen.getByTestId('open-join'));
+    fireEvent.change(screen.getByTestId('join-code'), { target: { value: 'k7qx9m' } });
+    fireEvent.click(screen.getByTestId('join-submit'));
     expect(screen.getByText('2–16 characters')).toBeTruthy();
     expect(navigate).not.toHaveBeenCalled();
     fireEvent.change(screen.getByLabelText('Your name'), { target: { value: 'Zohaib' } });
-    fireEvent.click(screen.getByRole('button', { name: 'Join' }));
+    fireEvent.click(screen.getByTestId('join-submit'));
     expect(navigate).toHaveBeenCalledWith('/r/K7QX9M');
   });
 
   it('rejects malformed codes and accepts pasted links', async () => {
     localStorage.setItem('dodice.profile', JSON.stringify({ name: 'Zohaib', avatar: '🦊' }));
     await renderHome();
-    fireEvent.change(screen.getByPlaceholderText('Room code'), { target: { value: 'ABC' } });
-    fireEvent.click(screen.getByRole('button', { name: 'Join' }));
+    fireEvent.click(screen.getByTestId('open-join'));
+    fireEvent.change(screen.getByTestId('join-code'), { target: { value: 'ABC' } });
+    fireEvent.click(screen.getByTestId('join-submit'));
     expect(screen.getByText(/Codes are 6 letters/)).toBeTruthy();
-    fireEvent.change(screen.getByPlaceholderText('Room code'), { target: { value: 'https://x.y/r/k7qx9m' } });
-    fireEvent.click(screen.getByRole('button', { name: 'Join' }));
+    fireEvent.change(screen.getByTestId('join-code'), { target: { value: 'https://x.y/r/k7qx9m' } });
+    fireEvent.click(screen.getByTestId('join-submit'));
     expect(navigate).toHaveBeenCalledWith('/r/K7QX9M');
   });
 
   it('remembers the name and avatar', async () => {
     localStorage.clear();
     await renderHome();
+    fireEvent.click(screen.getByTestId('open-create'));
     fireEvent.change(screen.getByLabelText('Your name'), { target: { value: 'Zohaib' } });
-    fireEvent.click(screen.getByRole('button', { name: 'Pick an avatar' }));
-    fireEvent.click(screen.getByRole('button', { name: '🐼' }));
+    fireEvent.click(screen.getByRole('radio', { name: '🐼' }));
     expect(JSON.parse(localStorage.getItem('dodice.profile')!)).toEqual({ name: 'Zohaib', avatar: '🐼' });
   });
 });

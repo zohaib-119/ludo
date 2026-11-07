@@ -13,7 +13,8 @@ async function player(browser: Browser, name: string, mobile = false): Promise<{
 
 async function createRoom(page: Page): Promise<string> {
   await page.goto('/');
-  await page.getByRole('button', { name: 'Create game' }).click();
+  await page.getByTestId('open-create').click();
+  await page.getByTestId('create-submit').click();
   await expect(page).toHaveURL(/\/r\/[A-Z0-9]{6}$/);
   return page.url().split('/r/')[1]!;
 }
