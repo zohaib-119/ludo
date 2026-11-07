@@ -58,7 +58,7 @@ With one die, a 6 gives a re-roll.
 
 - A piece leaves the yard only on a 6.
 - Finishing needs an **exact** roll. Overshooting is not playable.
-- Star squares are safe: no captures there.
+- The marked safe squares (shown as plain gold squares) are safe: no captures there.
 - No blocks (stacks are never walls). Pieces can pass over and share squares freely.
 - A captured piece returns to the yard.
 
@@ -121,7 +121,7 @@ A mixed stack has one piece from each teammate on the same square.
 
 - 52-square shared track. Each color has a start square, and the colors' start squares are 13 squares apart.
 - From its start square a piece travels 51 squares of track (progress 0-50), then enters its own 5-square finishing column (51-55), then home (56). A full journey is 56 steps after leaving the yard.
-- 8 safe squares: the four start squares, plus the four star squares 8 squares past each start.
+- 8 safe squares: the four start squares, plus four marked squares 8 squares past each start (drawn as plain gold squares).
 - These follow the most common modern layout found in online references. Positions are stored as data, so they can be changed in one place.
 
 ## 12. Timers and bots

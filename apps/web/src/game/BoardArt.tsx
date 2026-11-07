@@ -19,6 +19,8 @@ export const LIGHT: Record<Color, string> = { red: '#FFD3D3', green: '#C3F0CC', 
 export const DARK: Record<Color, string> = { red: '#A61E1E', green: '#1B5E2E', yellow: '#A67C00', blue: '#105A9C' };
 
 const PAPER = '#FFFDF8';
+/** Safe squares: a plain soft-gold fill (no star symbol). */
+export const SAFE_FILL = '#F4DE9C';
 const GRID = '#D9CFBE';
 const CELL = '#FFFFFF';
 
@@ -69,6 +71,7 @@ export const BoardArt = memo(function BoardArt({
       {/* Track: printed grid of squares */}
       {TRACK_CELLS.map((c, i) => {
         const start = COLORS.find((col) => START[col] === i);
+        const safe = !start && SAFE_SQUARES.has(i);
         return (
           <rect
             key={i}
@@ -76,10 +79,12 @@ export const BoardArt = memo(function BoardArt({
             y={c.y - 0.5}
             width={1}
             height={1}
-            fill={start ? BASE[start] : CELL}
+            fill={start ? BASE[start] : safe ? SAFE_FILL : CELL}
             stroke={GRID}
             strokeWidth={0.035}
-          />
+          >
+            {safe && <title>Safe square</title>}
+          </rect>
         );
       })}
 
@@ -133,14 +138,6 @@ export const BoardArt = memo(function BoardArt({
         );
       })}
 
-      {/* Safe stars */}
-      {[...SAFE_SQUARES]
-        .filter((i) => !COLORS.some((col) => START[col] === i))
-        .map((i) => {
-          const c = TRACK_CELLS[i]!;
-          return <Star key={`star-${i}`} x={c.x} y={c.y} />;
-        })}
-
       {/* Centre: home triangles */}
       <polygon points="6,9 9,9 7.5,7.5" fill="url(#tri-red)" />
       <polygon points="6,6 6,9 7.5,7.5" fill="url(#tri-green)" />
@@ -188,17 +185,3 @@ export const BoardArt = memo(function BoardArt({
     </g>
   );
 });
-
-function Star({ x, y }: { x: number; y: number }) {
-  const pts: string[] = [];
-  for (let i = 0; i < 10; i++) {
-    const r = i % 2 === 0 ? 0.36 : 0.16;
-    const a = (Math.PI / 5) * i - Math.PI / 2;
-    pts.push(`${(x + r * Math.cos(a)).toFixed(3)},${(y + r * Math.sin(a)).toFixed(3)}`);
-  }
-  return (
-    <polygon points={pts.join(' ')} fill="#E8B23A" stroke="#B9862A" strokeWidth={0.03} strokeLinejoin="round">
-      <title>Safe square</title>
-    </polygon>
-  );
-}

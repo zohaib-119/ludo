@@ -55,7 +55,7 @@ All colours, sizes and timings are CSS custom properties (exposed through Tailwi
 - Drawn as **one SVG** with a 15 × 15 grid viewBox, scaled to the container. Crisp at every size, cheap to animate.
 - **Corners (yards):** large rounded squares in the player's base colour with a lighter inner tray holding 4 piece slots. The yard of the player whose turn it is gets a slow breathing glow.
 - **Track squares:** `--surface-2` with a thin border. Each player's start square is filled with their light colour and marked with a small arrow showing direction of travel.
-- **Star (safe) squares:** a star icon in `--text-muted`, tinted gold on hover/press, with a tooltip "Safe square".
+- **Safe squares:** a plain soft-gold fill (no star symbol), with a tooltip "Safe square".
 - **Finishing columns:** filled with the player's light colour, leading to the centre.
 - **Centre (home):** four triangles in player colours meeting at a point. Finished pieces sit small inside their colour's triangle.
 - **Kill-to-enter lock:** when the rule is on and a player hasn't captured yet, a small lock sits on the entrance to their column. It unlocks with a click animation and sound on their first capture.

@@ -61,7 +61,7 @@ function MiniDie({ value, faded = false }: { value: number; faded?: boolean }) {
 
 interface Cell {
   pieces?: Color[];
-  star?: boolean;
+  safe?: boolean;
   column?: Color;
   lock?: boolean;
   highlight?: boolean;
@@ -89,11 +89,7 @@ function Track({ cells, caption }: { cells: Cell[]; caption?: string }) {
                 strokeWidth={c.highlight ? 2.5 : 0}
                 strokeDasharray={c.highlight ? '4 3' : undefined}
               />
-              {c.star && (
-                <text x={x + 15.5} y={28} textAnchor="middle" fontSize="16" fill="var(--text-muted)">
-                  ★
-                </text>
-              )}
+              {c.safe && <rect x={x} y={6} width={31} height={31} rx={6} fill="#F4DE9C" />}
               {c.lock && (
                 <text x={x + 15.5} y={28} textAnchor="middle" fontSize="15">
                   🔒
@@ -266,12 +262,12 @@ export function HowToPlayPage() {
               {},
               { pieces: ['yellow'], highlight: true },
               {},
-              { star: true, pieces: ['green'] },
+              { safe: true, pieces: ['green'] },
             ]}
-            caption="Red rolls 3 and captures yellow. Green is safe on the star."
+            caption="Red rolls 3 and captures yellow. Green is safe on the gold square."
           />
           <p>
-            <b>Star squares and everyone’s start squares are safe</b>: nobody can be captured there, and different
+            <b>The gold squares and everyone’s start squares are safe</b>: nobody can be captured there, and different
             colours can share them.
           </p>
         </Section>
