@@ -44,7 +44,7 @@ test('four players: create, join by link, seats, rules un-ready everyone, start'
 
   for (const g of guests) await g.page.getByTestId('ready-button').click();
   await host.page.getByRole('button', { name: 'Start game' }).click();
-  for (const p of [host.page, ...guests.map((g) => g.page)]) await expect(p.getByTestId('game-placeholder')).toBeVisible();
+  for (const p of [host.page, ...guests.map((g) => g.page)]) await expect(p.getByTestId('action-area')).toBeVisible();
 });
 
 test('refreshing keeps your seat, in the lobby and in a game', async ({ browser }) => {
@@ -62,10 +62,11 @@ test('refreshing keeps your seat, in the lobby and in a game', async ({ browser 
   await expect(seat(host.page, 'yellow')).toContainText('Ready');
 
   await host.page.getByRole('button', { name: 'Start game' }).click();
-  await expect(guest.page.getByTestId('game-placeholder')).toBeVisible();
+  await expect(guest.page.getByTestId('action-area')).toBeVisible();
   await guest.page.reload();
-  await expect(guest.page.getByTestId('game-placeholder')).toBeVisible();
-  await expect(guest.page.getByTestId('game-placeholder')).toContainText('Sara');
+  await expect(guest.page.getByTestId('action-area')).toBeVisible();
+  await expect(guest.page.getByTestId('panel-yellow')).toContainText('Sara');
+  await expect(guest.page.getByTestId('panel-yellow')).toContainText('(You)');
 });
 
 test('a second tab takes over; "Use here" takes it back', async ({ browser }) => {
@@ -90,7 +91,7 @@ test('clear messages for unknown rooms and started games', async ({ browser }) =
   await sit(host.page, 'red');
   await seat(host.page, 'yellow').getByRole('button', { name: /Add bot/ }).click();
   await host.page.getByRole('button', { name: 'Start game' }).click();
-  await expect(host.page.getByTestId('game-placeholder')).toBeVisible();
+  await expect(host.page.getByTestId('action-area')).toBeVisible();
   const late = await player(browser, 'Late');
   await late.page.goto(`/r/${code}`);
   await expect(late.page.getByText('Game already started')).toBeVisible();
