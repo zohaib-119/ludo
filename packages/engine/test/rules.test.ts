@@ -696,8 +696,9 @@ describe('Teams', () => {
 });
 
 describe('Game flow and setup', () => {
-  it('G1 2-player games must use opposite corners', () => {
-    expect(validateSetup(BASE, ['red', 'green'])).toMatch(/opposite/);
+  it('G1 2-player games can use any two corners', () => {
+    expect(validateSetup(BASE, ['red', 'green'])).toBeNull();
+    expect(validateSetup(BASE, ['blue', 'red'])).toBeNull();
     expect(validateSetup(BASE, ['red', 'yellow'])).toBeNull();
     expect(validateSetup(BASE, ['green', 'blue'])).toBeNull();
     expect(validateSetup({ ...BASE, teamMode: true }, ['red', 'green', 'yellow'])).toMatch(/team/);

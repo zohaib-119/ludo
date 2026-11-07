@@ -37,7 +37,6 @@ export function validateSetup(settings: Settings, seats: Color[]): string | null
   if (new Set(seats).size !== seats.length) return 'duplicate seats';
   if (seats.some((c) => !TURN_ORDER.includes(c))) return 'unknown colour';
   if (seats.length < 2 || seats.length > 4) return 'need 2 to 4 players';
-  if (seats.length === 2 && OPPOSITE[seats[0]!] !== seats[1]) return '2 players must sit opposite';
   if (settings.teamMode && seats.length !== 4) return 'team mode needs 4 players';
   return null;
 }

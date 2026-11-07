@@ -21,7 +21,7 @@ const OPPOSITE = { red: 'yellow', yellow: 'red', green: 'blue', blue: 'green' };
 const START: Record<Color, number> = { red: 0, green: 13, yellow: 26, blue: 39 };
 ```
 
-Teams: `red + yellow` vs `green + blue`. In 2-player games the two seats must be opposite. 3-player games may use any three colours.
+Teams: `red + yellow` vs `green + blue`. 2- and 3-player games may use any colours.
 
 ### 1.2 Progress
 
@@ -296,4 +296,4 @@ Events describe what happened, in order, for animations and the game log.
 
 ## 11. Setup
 
-`createGame(settings, seats, rng)` validates the seat set (2 players: opposite colours; teams: all four seats), places all pieces in yards, and picks the **first player at random**. Emits `TurnStarted`.
+`createGame(settings, seats, rng)` validates the seat set (2 to 4 distinct colours; teams: all four seats), places all pieces in yards, and picks the **first player at random**. Emits `TurnStarted`.

@@ -2,7 +2,7 @@
  * Pure lobby helpers, shared by the UI and its tests. The server is the
  * authority; these only explain in advance why something is not possible.
  */
-import { type Color, OPPOSITE, TEAM, TURN_ORDER } from '@ludo/engine';
+import { type Color, TEAM, TURN_ORDER } from '@ludo/engine';
 import type { MemberView, RoomView } from '@ludo/protocol';
 import { t } from '../i18n/messages';
 
@@ -19,7 +19,6 @@ export function startBlocker(view: RoomView): string | null {
   const colors = occupiedColors(view);
   if (colors.length < 2) return t('start.needPlayers');
   if (view.settings.teamMode && colors.length !== 4) return t('start.teamsNeedFour');
-  if (colors.length === 2 && OPPOSITE[colors[0]!] !== colors[1]) return t('start.opposite');
   const waiting = view.members.filter((m) => m.seat && m.id !== view.hostId && !m.ready).map((m) => m.name);
   if (waiting.length > 0) return t('start.waitingFor', { names: waiting.join(', ') });
   return null;
@@ -27,14 +26,3 @@ export function startBlocker(view: RoomView): string | null {
 
 /** Team label for a colour in team mode. */
 export const teamOf = (color: Color): 'A' | 'B' => (TEAM[color] === 0 ? 'A' : 'B');
-
-/**
- * Soft hint for 2-player seating: when exactly one other corner is taken,
- * the opposite corner is the one that lets a 2-player game start.
- */
-export function suggestedColor(view: RoomView, memberId: string | null): Color | null {
-  const others = occupiedColors(view).filter((c) => view.seats[c]?.memberId !== memberId);
-  if (others.length !== 1) return null;
-  const opposite = OPPOSITE[others[0]!];
-  return view.seats[opposite] ? null : opposite;
-}

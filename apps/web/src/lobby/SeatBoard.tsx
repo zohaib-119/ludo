@@ -5,7 +5,7 @@ import { motion } from 'motion/react';
 import { t } from '../i18n/messages';
 import { sendCommand } from '../net/commands';
 import { Avatar, Badge, Dot, cx, pieceColor } from '../ui/kit';
-import { isHost, suggestedColor, teamOf } from './logic';
+import { isHost, teamOf } from './logic';
 
 /** Canonical board corners: green top-left, yellow top-right, red bottom-left, blue bottom-right. */
 const CORNERS: Color[] = ['green', 'yellow', 'red', 'blue'];
@@ -42,7 +42,6 @@ export function SeatBoard({
   className?: string;
 }) {
   const host = isHost(view, memberId);
-  const suggested = suggestedColor(view, memberId);
   const mySeat = view.members.find((m) => m.id === memberId)?.seat ?? null;
 
   return (
@@ -59,7 +58,6 @@ export function SeatBoard({
           host={host}
           hostId={view.hostId}
           teamMode={view.settings.teamMode}
-          suggested={suggested === color && !mySeat}
           ready={view.members.find((m) => m.seat === color)?.ready ?? false}
         />
       ))}
@@ -83,7 +81,6 @@ function SeatTile({
   host,
   hostId,
   teamMode,
-  suggested,
   ready,
 }: {
   color: Color;
@@ -92,7 +89,6 @@ function SeatTile({
   host: boolean;
   hostId: string | null;
   teamMode: boolean;
-  suggested: boolean;
   ready: boolean;
 }) {
   const empty = !seat;
@@ -106,7 +102,6 @@ function SeatTile({
         'relative flex flex-col overflow-hidden rounded-2xl border-[3px] p-2.5 sm:p-3',
         empty ? 'border-dashed' : 'border-solid shadow-card',
         mine && 'ring-4 ring-accent/60',
-        suggested && 'ring-4 ring-accent/30',
       )}
       style={{ borderColor: pieceColor(color), background: empty ? 'var(--surface)' : tint[color] }}
       data-testid={`seat-${color}`}

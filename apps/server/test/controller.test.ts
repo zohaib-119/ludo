@@ -312,7 +312,9 @@ describe('starting a game', () => {
       ['Ali', 'red'],
       ['Sara', 'green'],
     ]);
-    expect(adjacent.cmd(adjacent.ids[0]!, { type: 'startGame' })).toMatchObject({ code: 'CANNOT_START' });
+    // Two players may sit side by side.
+    expect(adjacent.cmd(adjacent.ids[0]!, { type: 'startGame' })).toMatchObject({ ok: true });
+    expect(adjacent.view().game?.seats).toEqual(['red', 'green']);
     const alone = lobby([['Ali', 'red']]);
     expect(alone.cmd(alone.ids[0]!, { type: 'startGame' })).toMatchObject({ code: 'CANNOT_START' });
     const teams = lobby([

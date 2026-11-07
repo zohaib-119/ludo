@@ -6,7 +6,7 @@ import { describe, expect, it } from 'vitest';
 import { type Color, seededRng } from '@ludo/engine';
 import type { Command } from '@ludo/protocol';
 import { RoomController } from '../../server/src/controller';
-import { isHost, me, startBlocker, suggestedColor } from '../src/lobby/logic';
+import { isHost, me, startBlocker } from '../src/lobby/logic';
 
 function room() {
   let id = 0;
@@ -34,10 +34,8 @@ describe('startBlocker', () => {
     expect(startBlocker(r.view())).toBe('Need at least 2 players');
     r.cmd(ali, { type: 'takeSeat', color: 'red' });
     const sara = r.join('Sara');
+    // Any two corners will do, side by side included.
     r.cmd(sara, { type: 'takeSeat', color: 'green' });
-    expect(startBlocker(r.view())).toBe('2 players must sit in opposite corners');
-    agreesWithServer(r, ali);
-    r.cmd(sara, { type: 'takeSeat', color: 'yellow' });
     expect(startBlocker(r.view())).toBe('Waiting for Sara');
     agreesWithServer(r, ali);
     r.cmd(sara, { type: 'setReady', ready: true });
@@ -87,17 +85,5 @@ describe('helpers', () => {
     expect(isHost(r.view(), ali)).toBe(true);
     expect(isHost(r.view(), sara)).toBe(false);
     expect(isHost(r.view(), null)).toBe(false);
-  });
-
-  it('suggests the opposite corner when exactly one other seat is taken', () => {
-    const r = room();
-    const ali = r.join('Ali');
-    const sara = r.join('Sara');
-    expect(suggestedColor(r.view(), sara)).toBeNull();
-    r.cmd(ali, { type: 'takeSeat', color: 'green' });
-    expect(suggestedColor(r.view(), sara)).toBe('blue');
-    r.cmd(sara, { type: 'takeSeat', color: 'red' });
-    // Sara's own seat doesn't count; Ali sees the suggestion for Sara's corner gone.
-    expect(suggestedColor(r.view(), ali)).toBe('yellow');
   });
 });

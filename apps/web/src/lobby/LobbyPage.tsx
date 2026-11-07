@@ -36,9 +36,6 @@ export function LobbyPage() {
             <div className="flex min-h-0 flex-1 items-center justify-center">
               <SeatBoard view={view} memberId={memberId} className="lg:w-[min(100%,calc(100dvh-24rem))]" />
             </div>
-            {!view.settings.teamMode && seatedCount <= 2 && (
-              <p className="mt-3 text-center text-xs text-muted">{t('lobby.twoPlayerHint')}</p>
-            )}
             {watchers.length > 0 && (
               <div className="mt-3 border-t border-line pt-2">
                 <ul className="flex flex-wrap gap-1.5" aria-label={t('lobby.watching')}>

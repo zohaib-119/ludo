@@ -87,7 +87,7 @@ Each line is at least one test. IDs are referenced from code comments.
 
 **Game flow**
 
-- G1 2-player seats must be opposite.
+- G1 2-player games may use any two corners.
 - G2 FFA rankings and game end when one player remains.
 - G3 Finished FFA players are skipped.
 

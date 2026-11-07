@@ -44,7 +44,7 @@ Links like `https://<site>/r/K7QX9M` are the main way to invite people.
 **Seat picker:** a miniature board showing the four corners. Each corner shows its occupant (avatar, name, connection dot, "Host" badge, "Bot" badge) or "Empty — tap to sit".
 
 - Players tap an empty corner to take or change seat.
-- 2-player rooms: only opposite pairs are allowed. Choosing red disables green and blue and the second player must take yellow, and so on. The UI explains why the other corners are greyed out.
+- 2-player rooms: any two corners, side by side or opposite.
 - Team mode: corners are tinted by team (red+yellow vs green+blue) and labelled "Team A" / "Team B".
 - Host can remove a player or bot from a seat (with confirmation) and **Add bot** to an empty seat.
 

@@ -6,7 +6,7 @@ Status: agreed in discussion, ready for the rules engine to be built from it.
 
 - Players: 2, 3 or 4. Four pieces per player.
 - Colors: red, green, yellow, blue. Opposite corners are red/yellow and green/blue.
-- 2 players: they must sit in opposite corners. They choose the pair (red/yellow or green/blue) and which color each takes.
+- 2 or 3 players: any corners. Empty corners are simply skipped.
 - 4 players: either free-for-all or teams. Teammates sit opposite each other (red+yellow vs green+blue), so turns alternate between teams.
 - Dice mode: **1 die** or **2 dice** (host setting).
 

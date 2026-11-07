@@ -80,7 +80,6 @@ const en = {
   'lobby.leaveSeat': 'Stand up',
   'lobby.teamA': 'Team A',
   'lobby.teamB': 'Team B',
-  'lobby.twoPlayerHint': 'With 2 players, sit in opposite corners (red–yellow or green–blue).',
   'lobby.watching': 'Watching',
   'lobby.watchingHint': 'Pick a corner to play.',
   'lobby.members': 'In the room',
@@ -94,7 +93,6 @@ const en = {
 
   // Start blockers
   'start.needPlayers': 'Need at least 2 players',
-  'start.opposite': '2 players must sit in opposite corners',
   'start.teamsNeedFour': 'Team mode needs all 4 seats',
   'start.waitingFor': 'Waiting for {names}',
 
