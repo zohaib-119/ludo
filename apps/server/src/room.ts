@@ -36,6 +36,12 @@ export const cryptoRng: Rng = {
 
 const activeCodes = new Set<string>();
 
+/** Server-side only (environment), never from clients: speeds bots up for end-to-end tests. */
+const BOT_PACE = (() => {
+  const v = Number(process.env.LUDO_BOT_PACE);
+  return Number.isFinite(v) && v > 0 && v <= 1 ? v : 1;
+})();
+
 export function generateRoomCode(isTaken: (code: string) => boolean = (c) => activeCodes.has(c)): string {
   for (let attempt = 0; attempt < 1000; attempt++) {
     let code = '';
@@ -74,6 +80,7 @@ export class LudoRoom extends Room<{ state: LudoStateType }> {
       rng: cryptoRng,
       now: () => Date.now(),
       newId: () => randomUUID().slice(0, 8),
+      botPace: BOT_PACE,
     });
 
     this.onMessage('cmd', (client, payload) => {

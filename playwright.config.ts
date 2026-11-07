@@ -23,7 +23,7 @@ export default defineConfig({
   projects: [{ name: 'chromium', use: { ...devices['Desktop Chrome'] } }],
   webServer: [
     {
-      command: `PORT=${SERVER_PORT} npm run server`,
+      command: `PORT=${SERVER_PORT} LUDO_BOT_PACE=0.05 npm run server`,
       url: `http://localhost:${SERVER_PORT}/healthz`,
       reuseExistingServer: false,
       timeout: 60_000,

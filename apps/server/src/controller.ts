@@ -93,6 +93,8 @@ export interface ControllerDeps {
   newId: () => string;
   /** The bot's decision function (injected so tests can script it). */
   bot?: (state: GameState, rng: Rng) => Action | null;
+  /** Multiplier for bot pacing delays (1 = normal; tests use a small value). */
+  botPace?: number;
 }
 
 /** Per-seat automation state for human seats during a game. */
@@ -271,7 +273,7 @@ export class RoomController {
     // Nobody watching: the game pauses instead of bots racing ahead.
     if (this.connectedMembers().length === 0) return null;
     const seat = g.turn.seat;
-    const pace = g.turn.phase.kind === 'awaitRoll' ? BOT_ROLL_DELAY_MS : BOT_MOVE_DELAY_MS;
+    const pace = (g.turn.phase.kind === 'awaitRoll' ? BOT_ROLL_DELAY_MS : BOT_MOVE_DELAY_MS) * (this.deps.botPace ?? 1);
     if (this.bots.has(seat)) return { at: this.decisionAt + pace, cause: 'bot' };
     const c = this.control[seat];
     if (c?.autoplay) return { at: this.decisionAt + pace, cause: 'autoplay' };
@@ -327,7 +329,8 @@ export class RoomController {
     const isTurnRoll = action.type === 'roll' && g.turn.phase.kind === 'awaitRoll' && g.turn.phase.reason === 'turn';
     const result = apply(g, action, this.deps.rng);
     if (!result.ok) throw new Error(`Bot chose an illegal action: ${result.error.code}`);
-    if (isTurnRoll) (this.stats[seat] ??= emptyStats()).botTurns += 1;
+    // Only turns played *for a human* count as bot turns (bot seats always play themselves).
+    if (isTurnRoll && !this.bots.has(seat)) (this.stats[seat] ??= emptyStats()).botTurns += 1;
     this.afterGameAction(result.state, [{ type: 'BotActed', seat, cause: wake.cause }, ...result.events]);
   }
 

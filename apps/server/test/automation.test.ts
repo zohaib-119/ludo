@@ -111,7 +111,7 @@ describe('bot seats', () => {
     expect(bot.length).toBeGreaterThan(0);
     expect(bot.every((e) => e.type === 'BotActed' && e.seat === 'yellow' && e.cause === 'bot')).toBe(true);
     expect(events.at(-1)).toMatchObject({ type: 'TurnStarted', seat: 'red' });
-    expect(h.view().game!.stats.yellow!.botTurns).toBe(1);
+    expect(h.view().game!.stats.yellow!.botTurns).toBe(0); // bot seats don't count: only turns played for humans
     expect(h.ctrl.nextWakeAt()).toBeNull(); // Ali's turn, no timer
   });
 
@@ -263,6 +263,7 @@ describe('disconnect takeover', () => {
     expect(h.view().seats.red).toMatchObject({ connected: false, botControlled: true });
     h.wake();
     expect(h.events()[0]).toEqual({ type: 'BotActed', seat: 'red', cause: 'offline' });
+    expect(h.view().game!.stats.red!.botTurns).toBe(1); // a human's turn played by the bot
   });
 
   it('O6 a human-vs-bot game finishes with the human on autoplay', () => {
