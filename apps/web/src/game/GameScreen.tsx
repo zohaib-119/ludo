@@ -10,9 +10,11 @@ import { useStore } from 'zustand';
 import { sound } from '../audio/sound';
 import { t } from '../i18n/messages';
 import { useSettings } from '../lib/settings';
+import { BOARD_THEMES } from '../lib/themes';
 import { sendCommand } from '../net/commands';
 import { getConnection, useConnection } from '../net/session';
 import { Announcer } from '../ui/Announcer';
+import { AppearanceButton } from '../ui/Appearance';
 import { ChatButton, ChatPanel, useIsDesktop } from '../ui/ChatControls';
 import { Button, IconButton, Logo, cx } from '../ui/kit';
 import { Board } from './Board';
@@ -47,6 +49,7 @@ export function GameScreen() {
   const status = useConnection((s) => s.status);
   const game = view.game!;
   const settings = useSettings();
+  const boardTheme = BOARD_THEMES[settings.boardTheme] ?? BOARD_THEMES.classic;
   const systemReduced = usePrefersReducedMotion();
   const reduced = settings.reducedMotion ?? systemReduced;
 
@@ -205,6 +208,7 @@ export function GameScreen() {
         </div>
         <div className="flex items-center gap-1">
           {!desktop && <ChatButton />}
+          <AppearanceButton />
           <IconButton label={t('game.menu')} onClick={() => setMenuOpen(true)} data-testid="game-menu">
             <Menu className="size-5" />
           </IconButton>
@@ -221,7 +225,10 @@ export function GameScreen() {
           style={{ gridArea: 'board' }}
           className="relative mx-auto aspect-square w-full max-w-[min(100%,calc(100dvh-330px))] lg:max-w-[min(100%,calc(100dvh-84px))]"
         >
-          <div className="size-full overflow-hidden rounded-[1.6rem] bg-[#e9dfcd] p-[1.2%] shadow-lift ring-1 ring-[#d4c7b0]">
+          <div
+            className="size-full overflow-hidden rounded-[1.6rem] p-[1.2%] shadow-lift"
+            style={{ background: boardTheme.frame, boxShadow: `0 0 0 1px ${boardTheme.frameRing}, var(--shadow-lift)` }}
+          >
             <Board
               pieces={game.pieces}
               progress={pb.progress}
@@ -233,6 +240,8 @@ export function GameScreen() {
               preview={preview}
               locked={locked}
               colorBlind={settings.colorBlindMarkers}
+              theme={boardTheme}
+              pieceStyle={settings.pieceStyle}
               reducedMotion={reduced}
               onPieceTap={onPieceTap}
               onChoose={move}

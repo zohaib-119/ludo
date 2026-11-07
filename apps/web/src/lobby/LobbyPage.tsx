@@ -6,6 +6,7 @@ import { lastRoom } from '../lib/identity';
 import { sendCommand } from '../net/commands';
 import { getConnection, useConnection } from '../net/session';
 import { Avatar, Badge, Button, Card, Dot, Logo, SectionTitle, Sheet } from '../ui/kit';
+import { AppearanceButton } from '../ui/Appearance';
 import { ChatButton, ChatPanel, useIsDesktop } from '../ui/ChatControls';
 import { isHost, me, occupiedColors, startBlocker } from './logic';
 import { RulesPanel } from './RulesPanel';
@@ -94,6 +95,7 @@ export function TopBar({ code, inGame }: { code: string; inGame: boolean }) {
       </div>
       <div className="flex items-center gap-1">
         {!desktop && <ChatButton />}
+        <AppearanceButton />
         <Button variant="ghost" size="sm" onClick={() => setConfirm(true)} icon={<LogOut className="size-4" />}>
           {t('room.leave')}
         </Button>

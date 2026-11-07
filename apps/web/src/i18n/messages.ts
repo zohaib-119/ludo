@@ -222,6 +222,13 @@ const en = {
   'a11y.youCaptured': 'You captured a piece.',
   'a11y.yourPieceCaptured': 'Your piece was captured.',
 
+  // Appearance (this browser only)
+  'look.title': 'Themes',
+  'look.board': 'Board',
+  'look.pieces': 'Pieces',
+  'look.dice': 'Dice',
+  'look.private': 'Only you see your choice — it is saved on this device.',
+
   // Help
   'help.link': 'How to play',
 

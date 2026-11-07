@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import { readJson, writeJson } from './storage';
+import type { BoardThemeId, DiceStyleId, PieceStyleId } from './themes';
 
 export interface PersonalSettings {
   soundVolume: number; // 0..1
@@ -9,6 +10,10 @@ export interface PersonalSettings {
   colorBlindMarkers: boolean;
   /** null = follow the OS. */
   reducedMotion: boolean | null;
+  /** Personal look (this browser only). */
+  boardTheme: BoardThemeId;
+  pieceStyle: PieceStyleId;
+  diceStyle: DiceStyleId;
 }
 
 const KEY = 'dodice.settings';
@@ -19,6 +24,9 @@ const DEFAULTS: PersonalSettings = {
   autoMove: true,
   colorBlindMarkers: false,
   reducedMotion: null,
+  boardTheme: 'classic',
+  pieceStyle: 'glossy',
+  diceStyle: 'tinted',
 };
 
 interface SettingsStore extends PersonalSettings {

@@ -8,13 +8,16 @@ import { ArrowRight, BookOpen, LogIn, Plus } from 'lucide-react';
 import { motion } from 'motion/react';
 import { type FormEvent, useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router';
-import { BoardArt, BoardDefs } from '../game/BoardArt';
+import { BoardArt, BoardDefs, PieceShape } from '../game/BoardArt';
+import { useSettings } from '../lib/settings';
+import { BOARD_THEMES } from '../lib/themes';
 import { Die } from '../game/Dice';
 import { t } from '../i18n/messages';
 import { type Profile, isValidName, lastRoom, loadProfile, playerToken, saveProfile } from '../lib/identity';
 import { storagePersists } from '../lib/storage';
 import { serverUrl } from '../net/config';
 import { getConnection } from '../net/session';
+import { AppearanceButton } from '../ui/Appearance';
 import { Avatar, Button, Sheet, TextField, cx } from '../ui/kit';
 import { toast } from '../ui/toast';
 
@@ -92,12 +95,15 @@ export function HomePage() {
         className="relative z-10 flex flex-col items-center gap-1 px-6 text-sm"
         style={{ paddingBottom: 'max(1rem, env(safe-area-inset-bottom))' }}
       >
-        <Link
-          to="/how-to-play"
-          className="inline-flex items-center gap-1.5 font-semibold text-accent underline-offset-4 hover:underline"
-        >
-          <BookOpen className="size-4" /> {t('help.link')}
-        </Link>
+        <div className="flex items-center gap-5">
+          <Link
+            to="/how-to-play"
+            className="inline-flex items-center gap-1.5 font-semibold text-accent underline-offset-4 hover:underline"
+          >
+            <BookOpen className="size-4" /> {t('help.link')}
+          </Link>
+          <AppearanceButton variant="link" />
+        </div>
         <span className="text-muted">{t('home.features')}</span>
       </footer>
 
@@ -123,6 +129,8 @@ const HERO_PIECES: Array<{ color: Color; progress: number; slot?: number }> = [
 ];
 
 function Hero() {
+  const theme = BOARD_THEMES[useSettings((st) => st.boardTheme)] ?? BOARD_THEMES.classic;
+  const pieceStyle = useSettings((st) => st.pieceStyle);
   const [dice, setDice] = useState(() => [
     { id: 1, value: 6 },
     { id: 2, value: 6 },
@@ -138,15 +146,13 @@ function Hero() {
         className="overflow-hidden rounded-[1.4rem] shadow-lift ring-1 ring-line"
       >
         <svg viewBox="-0.25 -0.25 15.5 15.5" className="block w-full" role="img" aria-label="Ludo board">
-          <BoardDefs />
-          <BoardArt />
+          <BoardDefs theme={theme} />
+          <BoardArt theme={theme} />
           {HERO_PIECES.map((p, i) => {
             const pt = pointFor(p.color, p.progress, p.slot ?? 0);
             return (
               <g key={i} transform={`translate(${pt.x} ${pt.y})`}>
-                <ellipse cx={0.03} cy={0.27} rx={0.32} ry={0.12} fill="black" opacity={0.18} />
-                <circle r={0.36} fill={`url(#piece-${p.color})`} />
-                <circle r={0.15} fill="white" opacity={0.3} />
+                <PieceShape color={p.color} r={0.36} style={pieceStyle} theme={theme} />
               </g>
             );
           })}

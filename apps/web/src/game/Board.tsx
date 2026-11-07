@@ -6,10 +6,9 @@
 import { type Color, COLUMN_CELLS, type LegalMove, type Piece, pathBetween, pointFor } from '@ludo/engine';
 import { motion } from 'motion/react';
 import { memo, useMemo } from 'react';
-import { BASE, BoardArt, BoardDefs, DARK } from './BoardArt';
+import { BOARD_THEMES, type BoardTheme, type PieceStyleId } from '../lib/themes';
+import { BoardArt, BoardDefs, PieceShape } from './BoardArt';
 import { placePieces, rotatePoint } from './geometry';
-
-const GLYPH: Record<Color, string> = { red: '●', green: '▲', yellow: '■', blue: '◆' };
 
 export interface BoardProps {
   pieces: Piece[];
@@ -28,6 +27,9 @@ export interface BoardProps {
   /** Colours that still need a capture before entering their column. */
   locked: Color[];
   colorBlind: boolean;
+  /** Personal look (defaults: Classic board, glossy pieces). */
+  theme?: BoardTheme;
+  pieceStyle?: PieceStyleId;
   reducedMotion: boolean;
   onPieceTap: (pieceId: string) => void;
   onChoose: (move: LegalMove) => void;
@@ -36,6 +38,8 @@ export interface BoardProps {
 
 export function Board(props: BoardProps) {
   const { pieces, progress, rotation, movable, selected, options, preview } = props;
+  const theme = props.theme ?? BOARD_THEMES.classic;
+  const pieceStyle = props.pieceStyle ?? 'glossy';
   const placed = useMemo(() => placePieces(pieces, progress, rotation), [pieces, progress, rotation]);
   const selectedPlaced = placed.find((p) => p.piece.id === selected);
 
@@ -49,18 +53,20 @@ export function Board(props: BoardProps) {
         if (e.target === e.currentTarget) props.onBackgroundTap();
       }}
     >
-      <BoardDefs />
+      <BoardDefs theme={theme} />
 
-      <BoardArt rotation={rotation} activeColor={props.activeColor} />
+      <BoardArt rotation={rotation} activeColor={props.activeColor} theme={theme} />
 
       {/* Kill-to-enter padlocks at the column entrances. */}
       {props.locked.map((c) => {
         const p = rotatePoint(COLUMN_CELLS[c][0]!, rotation);
-        return <Padlock key={c} x={p.x} y={p.y} color={DARK[c]} />;
+        return <Padlock key={c} x={p.x} y={p.y} color={theme.dark[c]} />;
       })}
 
       {/* Preview: path trail and ghost at the destination. */}
-      {preview && selectedPlaced && <Preview move={preview} piece={selectedPlaced.piece} rotation={rotation} />}
+      {preview && selectedPlaced && (
+        <Preview move={preview} piece={selectedPlaced.piece} rotation={rotation} theme={theme} />
+      )}
 
       {/* Pieces, in a stable order so stacks overlap consistently. */}
       {/* Movable pieces are drawn last so they sit on top of anything sharing their square. */}
@@ -76,6 +82,8 @@ export function Board(props: BoardProps) {
             movable={movable.has(p.piece.id)}
             selected={selected === p.piece.id}
             colorBlind={props.colorBlind}
+            theme={theme}
+            pieceStyle={pieceStyle}
             reducedMotion={props.reducedMotion}
             onTap={props.onPieceTap}
           />
@@ -145,22 +153,32 @@ function Padlock({ x, y, color }: { x: number; y: number; color: string }) {
   );
 }
 
-function Preview({ move, piece, rotation }: { move: LegalMove; piece: Piece; rotation: number }) {
+function Preview({
+  move,
+  piece,
+  rotation,
+  theme,
+}: {
+  move: LegalMove;
+  piece: Piece;
+  rotation: number;
+  theme: BoardTheme;
+}) {
   const trail = pathBetween(move.from, move.to).slice(0, -1);
   const dest = rotatePoint(pointFor(piece.color, move.to, 0), rotation);
   return (
     <g pointerEvents="none">
       {trail.map((p) => {
         const c = rotatePoint(pointFor(piece.color, p, 0), rotation);
-        return <circle key={p} cx={c.x} cy={c.y} r={0.12} fill={BASE[piece.color]} opacity={0.45} />;
+        return <circle key={p} cx={c.x} cy={c.y} r={0.12} fill={theme.base[piece.color]} opacity={0.45} />;
       })}
       <circle
         cx={dest.x}
         cy={dest.y}
         r={0.36}
-        fill={BASE[piece.color]}
+        fill={theme.base[piece.color]}
         opacity={0.35}
-        stroke={DARK[piece.color]}
+        stroke={theme.dark[piece.color]}
         strokeWidth={0.05}
         strokeDasharray="0.12 0.08"
       />
@@ -187,6 +205,8 @@ const PieceView = memo(function PieceView({
   colorBlind,
   reducedMotion,
   onTap,
+  theme,
+  pieceStyle,
 }: {
   piece: Piece;
   x: number;
@@ -197,6 +217,8 @@ const PieceView = memo(function PieceView({
   colorBlind: boolean;
   reducedMotion: boolean;
   onTap: (id: string) => void;
+  theme: BoardTheme;
+  pieceStyle: PieceStyleId;
 }) {
   const home = piece.progress === 56;
   const r = 0.36 * scale * (home ? 0.7 : 1);
@@ -240,7 +262,6 @@ const PieceView = memo(function PieceView({
         animate={{ scale: 1, y: 0 }}
         transition={{ type: 'spring', stiffness: 800, damping: 22 }}
       >
-        <ellipse cx={0.03} cy={r * 0.75} rx={r * 0.9} ry={r * 0.35} fill="black" opacity={0.2} />
         {movable && (
           <circle
             r={r + 0.12}
@@ -250,13 +271,7 @@ const PieceView = memo(function PieceView({
             className={selected ? undefined : 'animate-pulse'}
           />
         )}
-        <circle r={r} fill={`url(#piece-${piece.color})`} stroke={DARK[piece.color]} strokeWidth={0.05} />
-        <circle r={r * 0.42} fill="white" opacity={0.28} />
-        {colorBlind && (
-          <text y={r * 0.32} textAnchor="middle" fontSize={r * 0.9} fill="white" opacity={0.9}>
-            {GLYPH[piece.color]}
-          </text>
-        )}
+        <PieceShape color={piece.color} r={r} style={pieceStyle} theme={theme} colorBlind={colorBlind} />
         {/* A movable piece answers to a tap anywhere on its square, not just on the piece. */}
         {movable && <rect x={-0.55} y={-0.55} width={1.1} height={1.1} fill="transparent" />}
       </motion.g>

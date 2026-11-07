@@ -5,6 +5,8 @@
 import type { Color } from '@ludo/engine';
 import { motion } from 'motion/react';
 import { useRef } from 'react';
+import { useSettings } from '../lib/settings';
+import { type DiceStyleId, diceLook } from '../lib/themes';
 import { cx } from '../ui/kit';
 
 /** Rotation that brings each value's face to the front. */
@@ -34,10 +36,6 @@ const PIPS: Record<number, number[]> = {
   6: [0, 2, 3, 5, 6, 8],
 };
 
-// Dice are physical objects: the same bright palette in light and dark themes.
-const FACE_TINT: Record<Color, string> = { red: '#ffd8d8', green: '#c9f5d1', yellow: '#fff1b3', blue: '#c4e3ff' };
-const PIP_COLOR: Record<Color, string> = { red: '#a61e1e', green: '#1b5e2e', yellow: '#8a6700', blue: '#105a9c' };
-
 export function Die({
   id,
   value,
@@ -46,6 +44,7 @@ export function Die({
   size = 56,
   voided = false,
   reducedMotion = false,
+  diceStyle,
 }: {
   /** Unique per rolled die: a new id means a new roll. */
   id: number;
@@ -55,14 +54,18 @@ export function Die({
   size?: number;
   voided?: boolean;
   reducedMotion?: boolean;
+  /** Override the player's chosen dice style (used by previews). */
+  diceStyle?: DiceStyleId;
 }) {
   // A freshly rolled die tumbles a few turns and lands on its value.
   const [fx, fy] = FACE_ROTATION[value] ?? [0, 0];
   const target = { x: (2 + (id % 2)) * 360 + fx, y: (1 + (id % 3 === 0 ? 1 : 0)) * 360 + fy };
   const startedRolling = useRef(rolling);
   const half = size / 2;
-  const face = color ? FACE_TINT[color] : '#fbf8f2';
-  const pip = color ? PIP_COLOR[color] : '#1d1b18';
+  const chosen = useSettings((st) => st.diceStyle);
+  const look = diceLook(diceStyle ?? chosen, color);
+  const face = look.face;
+  const pip = look.pip;
   return (
     <div
       className={cx('relative transition-[filter,opacity] duration-300', voided && 'opacity-40 grayscale')}
@@ -86,7 +89,7 @@ export function Die({
             style={{
               transform: `${f.transform} translateZ(${half}px)`,
               background: face,
-              boxShadow: 'inset 0 -3px 0 rgb(0 0 0 / 0.12), inset 0 0 0 1px rgb(0 0 0 / 0.08)',
+              boxShadow: `inset 0 -3px 0 ${look.edge}, inset 0 0 0 1px ${look.edge}`,
               backfaceVisibility: 'hidden',
             }}
           >
@@ -95,7 +98,12 @@ export function Die({
                 {PIPS[f.value]!.includes(i) && (
                   <span
                     className="block rounded-full"
-                    style={{ width: size * 0.16, height: size * 0.16, background: pip }}
+                    style={{
+                      width: size * 0.16,
+                      height: size * 0.16,
+                      background: pip,
+                      boxShadow: look.glow ? `0 0 ${size * 0.12}px ${look.glow}` : undefined,
+                    }}
                   />
                 )}
               </span>

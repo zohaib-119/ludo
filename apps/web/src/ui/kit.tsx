@@ -249,11 +249,14 @@ export function Sheet({
   onClose,
   title,
   children,
+  wide = false,
 }: {
   open: boolean;
   onClose: () => void;
   title: string;
   children: ReactNode;
+  /** A wider dialog on larger screens (e.g. the appearance picker). */
+  wide?: boolean;
 }) {
   useEffect(() => {
     if (!open) return;
@@ -281,7 +284,10 @@ export function Sheet({
             animate={{ y: 0, opacity: 1 }}
             exit={{ y: 30, opacity: 0 }}
             transition={{ type: 'spring', stiffness: 420, damping: 36 }}
-            className="relative max-h-[85vh] w-full overflow-y-auto rounded-t-3xl bg-surface p-5 shadow-lift sm:max-w-md sm:rounded-3xl"
+            className={cx(
+              'relative max-h-[85vh] w-full overflow-y-auto rounded-t-3xl bg-surface p-5 shadow-lift sm:rounded-3xl',
+              wide ? 'sm:max-w-2xl' : 'sm:max-w-md',
+            )}
             style={{ paddingBottom: 'max(1.25rem, env(safe-area-inset-bottom))' }}
           >
             <div className="mx-auto mb-3 h-1.5 w-10 rounded-full bg-surface-3 sm:hidden" aria-hidden />
