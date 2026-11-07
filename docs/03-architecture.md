@@ -71,7 +71,7 @@ ludo/
 ### 4.1 Room lifecycle
 
 - One room type, `ludo`. One room instance per game, identified by a **6-character room code** (alphabet without look-alikes: `ABCDEFGHJKMNPQRSTUVWXYZ23456789`).
-- Creating: the client calls a create endpoint; the room's `onCreate` sets `this.roomId` to a freshly generated code (retried on collision) and the client then joins it by ID.
+- Creating: the client calls `client.create('ludo', joinOptions)`; the room's `onCreate` sets `this.roomId` to a freshly generated code (retried on collision) and the creator joins as host.
 - Joining: `client.joinById(code, { playerToken, name, avatar })`.
 - `maxClients = 4` humans plus reconnecting clients. Bots don't use connections.
 - `autoDispose = false`. The room disposes itself when:
@@ -92,7 +92,7 @@ ludo/
 
 | Layer | Handles | Mechanism |
 |---|---|---|
-| 1. Transport auto-reconnect | Network blips, Wi-Fi ↔ mobile switches, short sleeps | Colyseus SDK reconnects automatically after an abnormal close. Server `onDrop` marks the seat `connected=false` and calls `allowReconnection(client, 120)`; `onReconnect` marks it connected. State listeners on the client survive. |
+| 1. Transport auto-reconnect | Network blips, Wi-Fi ↔ mobile switches, short sleeps | Colyseus SDK reconnects automatically after an abnormal close (close codes 1001, 1005, 1006, 4010 only). Server `onDrop` marks the seat `connected=false` and calls `allowReconnection(client, 120)`; `onReconnect` marks it connected. State listeners on the client survive. **Client settings:** the SDK defaults are `minUptime` 5 s (no auto-reconnect for younger connections), 15 retries, 5 s max delay; the web client sets `minUptime` to 1 s and raises retries, and falls back to layer 2 when they run out. |
 | 2. Token rejoin | Page refresh, app killed, reconnection window expired | Client stores `{ roomCode, playerToken }` in `localStorage`. On loading `/r/:code` it calls `joinById` with the token; the server rebinds the seat (§4.2). `onLeave` therefore **never frees a seat during a game** — it only marks it offline. |
 | 3. Server restart | Deploys, crashes | v1: games are lost; clients show "server restarted". Milestone M8: room snapshot persisted after every action and restored on boot under the same room code (see roadmap). |
 
@@ -115,7 +115,8 @@ message ──▶ validate sender owns the acting seat (or host for host actions
         ──▶ schedule timers / bot for the new acting seat
 ```
 
-- The engine's own state is a plain object. The Schema is a **projection** of it, rebuilt by a single `syncSchema(state)` function, so there is only one source of truth.
+- All room logic lives in `RoomController` (`apps/server/src/controller.ts`), a plain class with an injected clock, RNG and id generator, tested without a network. `LudoRoom` (`room.ts`) is a thin Colyseus adapter: it maps sessions to members, forwards `cmd` messages, and after every change writes `controller.view()` as JSON into the synced state (05-protocol §2), then broadcasts queued messages with `afterNextPatch`.
+- One live session per member: a new connection for the same player token closes an older tab (`kicked: otherTab`) or cancels a pending reconnection slot.
 - Every action is handled synchronously in one tick, so actions can never interleave.
 
 ### 4.5 Dice
@@ -197,11 +198,11 @@ Scaling beyond one process (Redis presence + driver) is supported by Colyseus bu
 - Server metrics logged per room: actions per minute, reconnects, average reconnect time, timeouts, bot takeovers.
 - Client sends nothing by default. An optional error reporter can be added later.
 
-## 9. Things to verify against Colyseus docs when building
+## 9. Verified against Colyseus 0.18 (M2 spike)
 
-These are based on the 0.17/0.18 release notes and docs and should be confirmed during M2:
-- Setting a custom `this.roomId` in `onCreate` and joining by it.
-- `onDrop` / `allowReconnection(client, seconds)` / `onReconnect` behaviour and the client's automatic reconnection callbacks.
-- Whether `allowReconnection` supports a manual (unbounded) mode; not required by this design because of layer 2.
-- Schema 5 syntax and the 63-field limit per Schema class.
-- `room.request()` / handler return values (useful for acknowledging actions).
+Confirmed with real servers and SDK clients in tests: custom `roomId` in `onCreate` and `joinById`; `onDrop` → `allowReconnection(client, seconds)` → `onReconnect`; request/reply via `room.request()` with handler return values; `afterNextPatch` ordering of messages after state.
+
+Learned:
+- Colyseus calls `process.send()` when it exists (PM2 integration), which breaks Vitest's child-process pool; tests run with `pool: 'threads'`.
+- `express` must be a direct server dependency (it is only an optional peer of `@colyseus/core`).
+- Schema 5 `t.number()` has no default (undefined) unless `.default(0)` is given.

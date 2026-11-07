@@ -6,60 +6,28 @@ Transport: Colyseus room `ludo`, joined by room code. Synced state uses Colyseus
 
 | Step | Client call | Server |
 |---|---|---|
-| Create room | `POST /api/rooms` → `{ code }`, then join by ID | `onCreate` sets `roomId = code`, creator becomes host on join |
+| Create room | `client.create('ludo', { playerToken, name, avatar })` | `onCreate` generates the code and sets `roomId = code`; the creator joins as host. Create options are never trusted (no client-chosen codes). |
 | Check room | `GET /api/rooms/:code` → `{ exists, phase, seatsFree }` | Used by Home "Continue game" and the join screen |
 | Join / rejoin | `joinById(code, { playerToken, name, avatar })` | §4.2 of 03-architecture: rebinds an existing seat or adds a member |
 
 Join errors (close codes / error messages): `ROOM_NOT_FOUND`, `GAME_IN_PROGRESS`, `ROOM_FULL`, `NAME_INVALID`.
 
-## 2. Synced state (Schema)
+## 2. Synced state
 
-The Schema is a projection of the engine state plus room data. Shown as TypeScript-like pseudo-types.
+The Colyseus Schema has just two fields:
 
 ```ts
-RoomState {
-  phase: 'lobby' | 'playing' | 'finished'
-  code: string
-  hostId: string                       // member id (not the token)
-  settings: SettingsSchema             // engine settings + turnTimer + disconnectTakeover + preset
-  members: Map<memberId, Member>       // everyone connected or holding a seat
-  seats: Map<Color, Seat>              // occupied seats only
-  game: GameSchema | null              // null in lobby
-  serverTime: number                   // for clock offset
-}
-
-Member { id, name, avatar, connected, ready, seat: Color | '' }
-
-Seat {
-  color, memberId | '' (bots have none), isBot, connected,
-  autoplay, botControlled          // bot currently playing for this human
-  offlineSince: number             // 0 when online
-  timeouts: number                 // consecutive timeouts
-}
-
-GameSchema {
-  version: number
-  pieces: Array<{ id, color, progress }>
-  players: Map<Color, { hasKilled, finishedRank, handoverDelayLeft }>
-  turn: {
-    seat, controls,
-    phase: 'awaitRoll' | 'awaitMove' | 'gameOver',
-    rollReason: 'turn' | 'reroll' | 'bonus' | 'bonusReroll' | '',
-    bank: number[],                // values only
-    lastRoll: number[],            // for dice display
-    deadline: number               // server ms timestamp, 0 = no timer
-    takeoverAt: number             // when the bot takes over an offline seat, 0 = n/a
-  }
-  legalMoves: Array<{ pieceId, value, to, captures: string[], finishes }>
-  rankings: Color[]
-  winningTeam: Color[]
-  stats: Map<Color, { captures, lost, sixes, voids, botTurns }>
-}
+LudoState { revision: number; view: string }   // view = JSON.stringify(RoomView)
 ```
 
+`RoomView` (defined in `packages/protocol/src/index.ts`) is the complete public picture of the room: code, phase, host, settings and detected preset, members, seats, the game (pieces, players, turn, bank, legal moves, rankings, stats) and rematch votes. `revision` increments on every change.
+
+Why one JSON view instead of a field-by-field Schema mirror: the state is a few kilobytes and changes about once a second, so delta encoding saves nothing worth having, while a second model would have to be kept in sync with the engine by hand. Colyseus still provides join-time full state, reconnection and ordering. If bandwidth ever matters, the view can be split into Schema fields without changing the client contract.
+
 Notes:
-- `legalMoves` is only meaningful for the acting seat but is synced to everyone (it reveals nothing secret and lets spectating UIs show hints later).
-- `version` is what the client sends back as `stateVersion`.
+- `game.legalMoves` lists exactly the moves the server will accept for the acting seat.
+- `game.version` is what the client sends back as `stateVersion`.
+- `serverTime` is the server clock when the view last changed, for clock-offset estimation.
 
 ## 3. Client → server messages
 
@@ -82,7 +50,7 @@ Notes:
 | `chat` | `{ text }` | member | any |
 | `react` | `{ emoji }` | member | any |
 
-Commands that change game state are answered via `room.request` style acknowledgements: `{ ok: true }` or `{ ok: false, code, message }`. The client re-enables input on either.
+All commands go through one message type, `cmd`, sent with `room.request('cmd', command)`. Every command is answered with `{ ok: true }` or `{ ok: false, code, message }`; the client re-enables input on either. Bot-related commands (`addBot`, `setAutoplay`, `hostBotTakeover`) arrive with M3. `applyPreset { preset }` sets the preset rule fields, and `leaveRoom` leaves explicitly (lobby: frees the seat; in game: the seat stays for the bot).
 
 ## 4. Server → client messages
 

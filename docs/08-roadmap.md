@@ -12,6 +12,7 @@ Each milestone ends with something that works and is tested. Later milestones ne
 ## Status
 
 - **M1 complete (2026-11-07):** engine, 57 rule tests, 14 geometry tests, 3 property tests (200 random full games checked after every action, 300 random nonsense-action runs, 3,000 brute-force playability comparisons). Mutation check: deliberately broken team captures and bank legality were both caught.
+- **M2 complete (2026-11-07):** Colyseus 0.18 server. Room logic in a network-free `RoomController` (37 tests with a fake clock: joining, seats, settings and presets, starting, game actions, stale/duplicate protection, rematch, host transfer, leaving, chat, rate limits, disposal) plus 10 integration tests with real WebSocket clients (room codes, refused joins, event ordering, network drop + auto-reconnect, page refresh, second tab, leaving, HTTP endpoints). Mutation check: accepting stale versions, and not replacing an older connection, were both caught.
 
 ## M1 — Rules engine
 - `@ludo/engine` per 04-engine: geometry, setup, moves, playability search, reducer, teams, events.
