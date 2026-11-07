@@ -83,7 +83,7 @@ A board theme sets the paper, tray, track, grid, frame and its own tuning of the
 ## 5. Dice
 
 - Rendered as **3D CSS cubes** (CSS transforms, no WebGL) with rounded edges and pips. Each face is pre-built; a roll animates random tumbling for ~700 ms then eases to the face matching the server value.
-- Dice are coloured in the current player's colour (light face, dark pips).
+- Dice sit on a tray in the rolling player's colour (their deep shade, rimmed in their bright one) labelled "Your dice" or "Sara's dice"; the tray keeps a fixed height.
 - **Bank chips:** after landing, dice shrink into numbered chips in the bank row. The selected chip is raised and outlined. Used chips fly to the piece they moved and fade.
 - **Re-roll:** the double six (or single six) glows gold before sliding into the bank.
 - **Void:** dice shake left-right, turn grey, a strike line draws through them.
@@ -145,6 +145,10 @@ The board never scrolls and is always fully visible. Tap targets are at least 44
 - Focus rings use `--accent`, 2 px, always visible on keyboard focus.
 - Contrast: text meets WCAG AA in both themes.
 
-## 10. Branding
+## 10. Avatars
+
+Generated with DiceBear in the browser (no network): Avataaars (Pablo Stanley) and ToonHead (Johan Melin, CC BY 4.0, credited on How to play) for players, Bottts (Pablo Stanley) for bots. Expressions and skin tones are limited to friendly, natural ones. Stored as `style:seed`; the server accepts only player styles with a short alphanumeric seed. The picker shows 16 hand-picked avatars and a "More" button that rolls 15 new ones while keeping yours.
+
+## 11. Branding
 
 Name: **DoDice Ludo**. Simple logo: four coloured pieces arranged in a diamond. App icon and PWA manifest so it can be added to the home screen.
