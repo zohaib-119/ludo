@@ -221,17 +221,25 @@ describe('Playback', () => {
     expect(pb.store.getState().tray.map((d) => d.value)).toEqual([3]);
   });
 
-  it('banners: double six vs single six; the tray clears when a turn starts', async () => {
+  it('re-rolls and bonus rolls show no banner; the tray clears when a turn starts', async () => {
     const { pb, settle } = harness();
     pb.sync(view(0, {}));
-    pb.push(msg(1, [{ type: 'Rolled', seat: 'red', values: [6, 6], diceCount: 2, reason: 'turn' }, { type: 'RerollGranted', seat: 'red' }]));
+    pb.push(
+      msg(1, [
+        { type: 'Rolled', seat: 'red', values: [6, 6], diceCount: 2, reason: 'turn' },
+        { type: 'RerollGranted', seat: 'red' },
+        { type: 'Rolled', seat: 'red', values: [6], diceCount: 1, reason: 'reroll' },
+        { type: 'RerollGranted', seat: 'red' },
+        { type: 'BonusGranted', seat: 'red', reason: 'capture' },
+      ]),
+    );
     await settle();
-    expect(pb.store.getState().banner?.text).toBe('Double six! Roll again');
-    pb.push(msg(2, [{ type: 'Rolled', seat: 'red', values: [6], diceCount: 1, reason: 'reroll' }, { type: 'RerollGranted', seat: 'red' }]));
-    await settle();
-    expect(pb.store.getState().banner?.text).toBe('Six! Roll again'); // even with three dice on the tray
+    expect(pb.store.getState().banner).toBeNull();
     expect(pb.store.getState().tray).toHaveLength(3);
-    pb.push(msg(3, [{ type: 'TurnStarted', seat: 'yellow', controls: 'yellow' }]));
+    // They still appear in the game log.
+    expect(pb.store.getState().log.map((l) => l.text)).toContain('red rolls again');
+    expect(pb.store.getState().log.map((l) => l.text)).toContain('red earned a bonus roll');
+    pb.push(msg(2, [{ type: 'TurnStarted', seat: 'yellow', controls: 'yellow' }]));
     await settle();
     expect(pb.store.getState()).toMatchObject({ tray: [], traySeat: 'yellow' });
   });

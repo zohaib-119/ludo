@@ -371,10 +371,6 @@ export function estimateAnimationMs(events: RoomEvent[], timing: AnimationTiming
       case 'Rolled':
         ms += timing.roll;
         break;
-      case 'RerollGranted':
-      case 'BonusGranted':
-        ms += timing.banner * 0.6;
-        break;
       case 'RollVoided':
         ms += timing.void;
         break;

@@ -94,8 +94,6 @@ export class Playback {
   private generation = 0;
   private nextId = 1;
   private latest: GameView | null = null;
-  /** Dice in the most recent roll (1 or 2), for the right re-roll banner. */
-  private lastRollCount = 2;
   private opts: Required<Omit<PlaybackOptions, 'onEvent'>> & Pick<PlaybackOptions, 'onEvent'>;
 
   constructor(options: PlaybackOptions) {
@@ -228,16 +226,10 @@ export class Playback {
         await this.wait(T.turn, gen);
         return;
       case 'Rolled': {
-        this.lastRollCount = e.values.length;
         const fresh = e.values.map((value) => ({ id: this.nextId++, value, rolling: true, void: false }));
         this.store.setState((s) => ({ tray: [...s.tray, ...fresh], traySeat: e.seat, banner: null }));
         await this.wait(T.roll, gen);
         this.store.setState((s) => ({ tray: s.tray.map((d) => (d.rolling ? { ...d, rolling: false } : d)) }));
-        return;
-      }
-      case 'RerollGranted': {
-        this.showBanner(t(this.lastRollCount === 1 ? 'game.banner.six' : 'game.banner.doubleSix'), 'good');
-        await this.wait(T.banner * 0.6, gen);
         return;
       }
       case 'RollVoided': {
@@ -276,10 +268,6 @@ export class Playback {
           progress: { ...s.progress, ...Object.fromEntries(e.victims.map((v) => [v, -1])) },
         }));
         await this.wait(T.capture, gen);
-        return;
-      case 'BonusGranted':
-        this.showBanner(t(e.reason === 'capture' ? 'game.banner.captureBonus' : 'game.banner.finishBonus'), 'good');
-        await this.wait(T.banner * 0.6, gen);
         return;
       case 'PlayerFinished':
         this.showBanner(t('game.banner.finished', { name: name(e.color), rank: ordinal(e.rank) }), 'good');

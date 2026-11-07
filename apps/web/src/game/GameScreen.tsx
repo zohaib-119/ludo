@@ -5,7 +5,7 @@ import type { Color, LegalMove } from '@ludo/engine';
 import type { Command } from '@ludo/protocol';
 import { ListOrdered, Menu } from 'lucide-react';
 import { AnimatePresence, motion } from 'motion/react';
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useStore } from 'zustand';
 import { t } from '../i18n/messages';
 import { useSettings } from '../lib/settings';
@@ -143,16 +143,6 @@ export function GameScreen() {
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
   }, [awaitingRoll, roll]);
-
-  // "Your turn!" once per turn.
-  const announced = useRef<string | null>(null);
-  useEffect(() => {
-    if (!myTurn || !caughtUp || game.turn.phase !== 'awaitRoll' || game.turn.rollReason !== 'turn') return;
-    const key = `${game.version}`;
-    if (announced.current === key) return;
-    announced.current = key;
-    playback.showBanner(t('game.banner.yourTurn'), 'info');
-  }, [myTurn, caughtUp, game.turn.phase, game.turn.rollReason, game.version, playback]);
 
   // --- Layout ------------------------------------------------------------------
   const corners = useMemo(() => {
