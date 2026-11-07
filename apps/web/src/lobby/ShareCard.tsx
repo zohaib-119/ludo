@@ -1,8 +1,8 @@
 import { Check, Copy, Link2, QrCode, Share2 } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import { type ReactNode, useEffect, useState } from 'react';
 import { t } from '../i18n/messages';
 import { roomLink } from '../net/config';
-import { Button, Card, Sheet } from '../ui/kit';
+import { Card, Sheet } from '../ui/kit';
 import { toast } from '../ui/toast';
 
 async function copy(text: string): Promise<boolean> {
@@ -53,38 +53,40 @@ export function ShareCard({ code }: { code: string }) {
           {code}
         </button>
       </div>
-      <div className="flex flex-nowrap justify-center gap-1.5 sm:justify-end">
-        <Button
-          variant="secondary"
-          size="sm"
+      {/* Phones: an equal-width row of compact buttons (icon over label) that always fits.
+          Wider screens: the usual row of buttons. */}
+      <div
+        className="grid w-full gap-1.5 sm:flex sm:w-auto sm:flex-nowrap sm:justify-end"
+        style={{ gridTemplateColumns: `repeat(${canShare ? 4 : 3}, minmax(0, 1fr))` }}
+        data-testid="share-actions"
+      >
+        <ShareAction
           onClick={() => doCopy('code')}
           icon={copied === 'code' ? <Check className="size-4 text-success" /> : <Copy className="size-4" />}
-        >
-          {copied === 'code' ? t('lobby.copied') : t('lobby.copyCode')}
-        </Button>
-        <Button
-          variant="secondary"
-          size="sm"
+          label={copied === 'code' ? t('lobby.copied') : t('lobby.copyCode')}
+          short={copied === 'code' ? t('lobby.copied') : t('lobby.copyCodeShort')}
+        />
+        <ShareAction
           onClick={() => doCopy('link')}
           icon={copied === 'link' ? <Check className="size-4 text-success" /> : <Link2 className="size-4" />}
-        >
-          {copied === 'link' ? t('lobby.copied') : t('lobby.copyLink')}
-        </Button>
+          label={copied === 'link' ? t('lobby.copied') : t('lobby.copyLink')}
+          short={copied === 'link' ? t('lobby.copied') : t('lobby.copyLinkShort')}
+        />
         {canShare && (
-          <Button
-            variant="secondary"
-            size="sm"
-            icon={<Share2 className="size-4" />}
+          <ShareAction
             onClick={() =>
               navigator.share({ title: t('appName'), text: t('lobby.shareText', { code }), url: link }).catch(() => {})
             }
-          >
-            {t('lobby.share')}
-          </Button>
+            icon={<Share2 className="size-4" />}
+            label={t('lobby.share')}
+          />
         )}
-        <Button variant="secondary" size="sm" onClick={() => setQrOpen(true)} icon={<QrCode className="size-4" />}>
-          {t('lobby.qr')}
-        </Button>
+        <ShareAction
+          onClick={() => setQrOpen(true)}
+          icon={<QrCode className="size-4" />}
+          label={t('lobby.qr')}
+          short={t('lobby.qrShort')}
+        />
       </div>
       <Sheet open={qrOpen} onClose={() => setQrOpen(false)} title={t('lobby.qrTitle')}>
         <div className="flex flex-col items-center gap-3">
@@ -96,5 +98,32 @@ export function ShareCard({ code }: { code: string }) {
         </div>
       </Sheet>
     </Card>
+  );
+}
+
+function ShareAction({
+  onClick,
+  icon,
+  label,
+  short,
+}: {
+  onClick: () => void;
+  icon: ReactNode;
+  label: string;
+  /** Shorter label for phones, where four buttons share one row. */
+  short?: string;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className="flex min-w-0 flex-col items-center justify-center gap-1 rounded-lg border border-line bg-surface px-1 py-1.5 text-xs font-semibold text-text shadow-soft transition-colors hover:bg-surface-2 active:translate-y-px sm:h-9 sm:flex-row sm:gap-1.5 sm:px-3 sm:py-0 sm:text-sm"
+    >
+      {icon}
+      <span className="max-w-full truncate sm:hidden" aria-hidden={short ? true : undefined}>
+        {short ?? label}
+      </span>
+      <span className={short ? 'sr-only sm:not-sr-only sm:truncate' : 'hidden sm:inline sm:truncate'}>{label}</span>
+    </button>
   );
 }

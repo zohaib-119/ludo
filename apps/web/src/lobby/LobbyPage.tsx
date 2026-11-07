@@ -38,7 +38,7 @@ export function LobbyPage() {
             {/* Everyone in the room. Always shown, one fixed-height line, so the seat board never moves. */}
             <div className="mt-3 border-t border-line pt-2">
               <ul
-                className="flex h-7 items-center gap-1.5 overflow-x-auto"
+                className="-mx-1 flex h-8 items-center gap-1.5 overflow-x-auto px-1"
                 aria-label={t('lobby.inRoom')}
                 data-testid="room-members"
               >

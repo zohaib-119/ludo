@@ -76,6 +76,9 @@ const en = {
   // Lobby
   'lobby.roomCode': 'Room code',
   'lobby.copyCode': 'Copy code',
+  'lobby.copyCodeShort': 'Code',
+  'lobby.copyLinkShort': 'Link',
+  'lobby.qrShort': 'QR',
   'lobby.copyLink': 'Copy link',
   'lobby.share': 'Share',
   'lobby.qr': 'QR code',
