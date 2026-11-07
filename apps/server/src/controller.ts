@@ -7,7 +7,6 @@
 import {
   type Action,
   type Color,
-  type GameEvent,
   type GameState,
   type Rng,
   COLORS,
