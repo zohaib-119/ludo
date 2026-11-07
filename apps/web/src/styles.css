@@ -146,6 +146,12 @@ body,
   min-height: 100%;
 }
 
+/* Always reserve the scrollbar's space, so content appearing or disappearing
+   never shifts the page (and the board) sideways. */
+html {
+  scrollbar-gutter: stable;
+}
+
 body {
   margin: 0;
   background-color: var(--bg);
