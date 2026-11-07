@@ -47,9 +47,12 @@ import {
 } from '@ludo/protocol';
 
 export const HOST_TRANSFER_MS = 60_000;
-/** Bot pacing so humans can follow (docs/06-bot.md §4). */
-export const BOT_ROLL_DELAY_MS = 700;
-export const BOT_MOVE_DELAY_MS = 900;
+/**
+ * Bot pacing (docs/06-bot.md §4): quicker than a person, slow enough that
+ * everyone can follow each roll and each move.
+ */
+export const BOT_ROLL_DELAY_MS = 1100;
+export const BOT_MOVE_DELAY_MS = 1300;
 /** Consecutive timeouts before a seat is put on autoplay. */
 export const TIMEOUTS_FOR_AUTOPLAY = 2;
 export const DISPOSE_IDLE_MS: Record<RoomPhase, number> = {
