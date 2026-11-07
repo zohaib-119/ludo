@@ -4,7 +4,7 @@ import { motion } from 'motion/react';
 import { type ReactNode, useEffect, useRef, useState } from 'react';
 import { type MessageKey, t } from '../i18n/messages';
 import { sendCommand } from '../net/commands';
-import { Badge, Card, IconButton, InfoButton, SectionTitle, Segmented, Switch } from '../ui/kit';
+import { Badge, Card, IconButton, SectionTitle, Segmented, Switch } from '../ui/kit';
 
 type Patch = Partial<RoomSettings>;
 
@@ -32,7 +32,7 @@ export function RulesPanel({ settings, preset, editable }: { settings: RoomSetti
 
       <Group title={t('rules.group.dice')}>
         <Row label="rules.diceMode" value={settings.diceMode}>
-          <div className="w-40">
+          <div className="w-44 shrink-0">
             <Segmented<1 | 2>
               label={t('rules.diceMode')}
               size="sm"
@@ -83,7 +83,7 @@ export function RulesPanel({ settings, preset, editable }: { settings: RoomSetti
               </div>
             </Row>
             {settings.teamHandover === 'delayed' && (
-              <Row label="rules.teamHandoverDelayRounds" value={settings.teamHandoverDelayRounds} help={false}>
+              <Row label="rules.teamHandoverDelayRounds" value={settings.teamHandoverDelayRounds}>
                 <Stepper
                   value={settings.teamHandoverDelayRounds}
                   min={1}
@@ -148,13 +148,11 @@ function Row({
   value,
   children,
   stacked,
-  help = true,
 }: {
   label: string;
   value: unknown;
   children: ReactNode;
   stacked?: boolean;
-  help?: boolean;
 }) {
   const key = (label.startsWith('rules.') ? label : `rules.${label}`) as MessageKey;
   const helpKey = `${key}.help` as MessageKey;
@@ -180,9 +178,9 @@ function Row({
         />
       )}
       <div className={stacked ? 'relative space-y-2' : 'relative flex items-center justify-between gap-3'}>
-        <div className="flex min-w-0 items-center gap-1">
-          <span className="text-[15px] font-medium leading-snug">{t(key)}</span>
-          {help && <InfoButton title={t(key)} text={t(helpKey)} />}
+        <div className="min-w-0">
+          <p className="text-[15px] font-medium leading-snug">{t(key)}</p>
+          <p className="mt-0.5 text-[13px] leading-snug text-muted">{t(helpKey)}</p>
         </div>
         {children}
       </div>

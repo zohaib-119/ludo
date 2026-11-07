@@ -23,7 +23,9 @@ Status: agreed in discussion, ready for the rules engine to be built from it.
 | `teamHandover` | `immediate` / `delayed` | Team mode only |
 | `teamHandoverDelayRounds` | number (default 4) | Used when `delayed` |
 | `turnTimer` | off / 15 / 30 / 45 / 60 s | Default off. See 12 |
-| `disconnectTakeover` | 15 / 30 / 60 s / never | Default 30 s. See 12 |
+| `disconnectTakeover` | 15 / 30 / 60 s / never | Default 60 s. See 12 |
+
+**Defaults for a new room** (the Hardcore preset; only the host can change them, everyone else sees them read-only): 2 dice, no bonus rolls, two dice to the end (`singleDieWhenAllInColumn` off), capture before entering the home column on, teams off, turn timer off, bot takes over offline players after 60 s.
 
 ## 3. Turn flow
 
@@ -123,7 +125,7 @@ A mixed stack has one piece from each teammate on the same square.
 - `turnTimer` (host setting): off / 15 / 30 / 45 / 60 seconds, **off by default**. The timer counts down each decision (a roll or a move) separately.
 - If the timer runs out, the bot makes that one decision for the player.
 - After 2 timeouts in a row, the player is put on **autoplay**: the bot plays all their turns until they tap "I'm back".
-- `disconnectTakeover` (host setting): 15 / 30 / 60 seconds / never, **30 seconds by default**. Once a disconnected player's turn has waited this long, the bot plays for them until they reconnect. They get control back at the start of their next turn.
+- `disconnectTakeover` (host setting): 15 / 30 / 60 seconds / never, **60 seconds by default**. Once a disconnected player's turn has waited this long, the bot plays for them until they reconnect. They get control back at the start of their next turn.
 - With the timer off and takeover set to never, the game simply waits for the player. The host can always tap "Let bot play" for a disconnected player.
 - The host can fill empty seats with bots in the lobby.
 - The bot follows exactly the same rules as a human player. One difficulty level ("Normal") in v1. A reinforcement-learning bot may come later.

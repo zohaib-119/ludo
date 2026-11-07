@@ -28,10 +28,21 @@ export interface RoomSettings extends Settings {
   disconnectTakeover: (typeof TAKEOVER_OPTIONS)[number];
 }
 
+/**
+ * What every new room starts with (the host can change it in the lobby):
+ * 2 dice, no bonus rolls, two dice to the end, capture before entering the
+ * home column, no teams, no turn timer, bot covers offline players after 60 s.
+ */
 export const DEFAULT_ROOM_SETTINGS: Readonly<RoomSettings> = {
   ...DEFAULT_SETTINGS,
+  diceMode: 2,
+  extraTurnOnCapture: false,
+  extraTurnOnFinish: false,
+  singleDieWhenAllInColumn: false,
+  killRequiredToEnterColumn: true,
+  teamMode: false,
   turnTimer: 0,
-  disconnectTakeover: 30,
+  disconnectTakeover: 60,
 };
 
 export type PresetId = 'classic' | 'twoDice' | 'hardcore';
@@ -230,7 +241,7 @@ export interface GameView {
   version: number;
   seats: Color[];
   pieces: Piece[];
-  players: Partial<Record<Color, { hasKilled: boolean; finishedRank: number | null; handoverDelayLeft: number }>>;
+  players: Partial<Record<Color, { hasKilled: boolean; finishedRank: number | null; handoverDelayLeft: number; eliminated: boolean }>>;
   turn: {
     seat: Color;
     controls: Color;

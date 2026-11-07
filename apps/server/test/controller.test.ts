@@ -241,11 +241,22 @@ describe('settings', () => {
   it('R3 presets set the rule fields and are detected', () => {
     const h = setup();
     const a = h.join('Ali');
-    expect(h.view().preset).toBe('twoDice');
-    h.must(a, { type: 'applyPreset', preset: 'hardcore' });
+    // New rooms start on Hardcore: 2 dice, no bonuses, two dice to the end, capture to enter, takeover 60 s.
     expect(h.view().preset).toBe('hardcore');
-    expect(h.view().settings).toMatchObject({ killRequiredToEnterColumn: true, extraTurnOnCapture: false });
-    h.must(a, { type: 'updateSettings', settings: { extraTurnOnCapture: true } });
+    expect(h.view().settings).toMatchObject({
+      diceMode: 2,
+      extraTurnOnCapture: false,
+      extraTurnOnFinish: false,
+      singleDieWhenAllInColumn: false,
+      killRequiredToEnterColumn: true,
+      teamMode: false,
+      turnTimer: 0,
+      disconnectTakeover: 60,
+    });
+    h.must(a, { type: 'applyPreset', preset: 'twoDice' });
+    expect(h.view().preset).toBe('twoDice');
+    expect(h.view().settings).toMatchObject({ killRequiredToEnterColumn: false, extraTurnOnCapture: true });
+    h.must(a, { type: 'updateSettings', settings: { extraTurnOnCapture: false } });
     expect(h.view().preset).toBe('custom');
     h.must(a, { type: 'applyPreset', preset: 'classic' });
     expect(h.view().preset).toBe('classic');

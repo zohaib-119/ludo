@@ -56,21 +56,25 @@ describe('RulesPanel', () => {
     fireEvent.click(screen.getByRole('switch', { name: 'Capture before entering home column' }));
     fireEvent.click(screen.getByRole('radio', { name: '1 die' }));
     fireEvent.click(within(screen.getByRole('radiogroup', { name: 'Turn timer' })).getByRole('radio', { name: '30s' }));
-    fireEvent.click(screen.getByRole('radio', { name: 'Hardcore' }));
+    fireEvent.click(screen.getByRole('radio', { name: 'Two Dice' }));
     expect(sent).toEqual([
-      { type: 'updateSettings', settings: { killRequiredToEnterColumn: true } },
+      { type: 'updateSettings', settings: { killRequiredToEnterColumn: false } },
       { type: 'updateSettings', settings: { diceMode: 1 } },
       { type: 'updateSettings', settings: { turnTimer: 30 } },
-      { type: 'applyPreset', preset: 'hardcore' },
+      { type: 'applyPreset', preset: 'twoDice' },
     ]);
   });
 
-  it('is read-only for guests', () => {
+  it('is read-only for guests: everything visible, every control disabled, nothing sent', () => {
     const { view } = lobbyView();
     render(<RulesPanel settings={view.settings} preset={view.preset} editable={false} />);
     expect(screen.getByText('Set by the host')).toBeTruthy();
     for (const sw of screen.getAllByRole('switch')) expect((sw as HTMLButtonElement).disabled).toBe(true);
     for (const r of screen.getAllByRole('radio')) expect((r as HTMLButtonElement).disabled).toBe(true);
+    for (const g of screen.getAllByRole('radiogroup')) expect(g.getAttribute('aria-disabled')).toBe('true');
+    fireEvent.click(screen.getByRole('switch', { name: 'Team mode' }));
+    fireEvent.click(screen.getByRole('radio', { name: 'Classic' }));
+    expect(sent).toEqual([]);
   });
 
   it('shows team options only with team mode, and the delay only when delayed', () => {
@@ -98,15 +102,28 @@ describe('RulesPanel', () => {
     expect(container.querySelectorAll('[data-testid=rule-flash]')).toHaveLength(0);
     rerender(<RulesPanel settings={view.settings} preset={view.preset} editable={false} />);
     expect(container.querySelectorAll('[data-testid=rule-flash]')).toHaveLength(0);
-    rerender(<RulesPanel settings={{ ...view.settings, extraTurnOnCapture: false }} preset="custom" editable={false} />);
+    rerender(<RulesPanel settings={{ ...view.settings, extraTurnOnCapture: true }} preset="custom" editable={false} />);
     expect(container.querySelectorAll('[data-testid=rule-flash]')).toHaveLength(1);
   });
 
-  it('every rule has an explanation', () => {
+  it('every rule shows a plain explanation right under it (no info buttons)', () => {
     const { view } = lobbyView();
-    render(<RulesPanel settings={{ ...view.settings, teamMode: true }} preset="custom" editable />);
-    const infoButtons = screen.getAllByRole('button', { name: /^More info:/ });
-    expect(infoButtons.length).toBeGreaterThanOrEqual(8);
+    render(<RulesPanel settings={{ ...view.settings, teamMode: true, teamHandover: 'delayed' }} preset="custom" editable />);
+    for (const text of [
+      'Roll 1 die, or roll 2 and play each die as its own move.',
+      'Capturing an enemy piece gives you an extra roll straight away.',
+      'Getting a piece home gives you an extra roll straight away.',
+      'Once all your remaining pieces are in the coloured home column, roll just one die.',
+      'Capture an enemy piece first, or your pieces wait at the entrance. If nothing is left to capture, you are out.',
+      'Red + Yellow against Green + Blue. Team-mates never capture each other; both must finish to win.',
+      'A finished player then plays their team-mate’s pieces on their own turns.',
+      'How many of their own turns a finished player sits out before helping.',
+      'Time for each roll or move. If it runs out, the bot plays that move for you.',
+      'If someone is disconnected on their turn, the bot plays for them until they are back.',
+    ]) {
+      expect(screen.getByText(text)).toBeTruthy();
+    }
+    expect(screen.queryByRole('button', { name: /More info/ })).toBeNull();
   });
 });
 

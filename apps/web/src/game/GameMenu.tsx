@@ -7,7 +7,7 @@ import { type Theme, useSettings } from '../lib/settings';
 import { RulesPanel } from '../lobby/RulesPanel';
 import { sendCommand } from '../net/commands';
 import { getConnection, useConnection } from '../net/session';
-import { Button, InfoButton, Segmented, Sheet, Switch } from '../ui/kit';
+import { Button, Segmented, Sheet, Switch } from '../ui/kit';
 
 export function GameMenu({ open, onClose }: { open: boolean; onClose: () => void }) {
   const view = useConnection((s) => s.view)!;
@@ -45,14 +45,16 @@ export function GameMenu({ open, onClose }: { open: boolean; onClose: () => void
           )}
           <div className="divide-y divide-line rounded-2xl bg-surface-2 px-4">
             <label className="flex items-center justify-between gap-3 py-3">
-              <span className="flex items-center gap-1 font-medium">
-                {t('game.quickMove')} <InfoButton title={t('game.quickMove')} text={t('game.quickMove.help')} />
+              <span className="min-w-0">
+                <span className="block font-medium">{t('game.quickMove')}</span>
+                <span className="mt-0.5 block text-[13px] leading-snug text-muted">{t('game.quickMove.help')}</span>
               </span>
               <Switch label={t('game.quickMove')} checked={settings.quickMove} onChange={(v) => settings.update({ quickMove: v })} />
             </label>
             <label className="flex items-center justify-between gap-3 py-3">
-              <span className="flex items-center gap-1 font-medium">
-                {t('game.autoMove')} <InfoButton title={t('game.autoMove')} text={t('game.autoMove.help')} />
+              <span className="min-w-0">
+                <span className="block font-medium">{t('game.autoMove')}</span>
+                <span className="mt-0.5 block text-[13px] leading-snug text-muted">{t('game.autoMove.help')}</span>
               </span>
               <Switch label={t('game.autoMove')} checked={settings.autoMove} onChange={(v) => settings.update({ autoMove: v })} />
             </label>

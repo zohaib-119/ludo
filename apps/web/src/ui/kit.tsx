@@ -3,7 +3,7 @@
  * accessible: real buttons, labelled switches, focus rings, 44px targets.
  */
 import type { Color } from '@ludo/engine';
-import { Info, Loader2, X } from 'lucide-react';
+import { Loader2, X } from 'lucide-react';
 import { AnimatePresence, motion } from 'motion/react';
 import {
   type ButtonHTMLAttributes,
@@ -13,7 +13,6 @@ import {
   forwardRef,
   useEffect,
   useId,
-  useState,
 } from 'react';
 import { createPortal } from 'react-dom';
 import { t } from '../i18n/messages';
@@ -173,7 +172,7 @@ export function Switch({
       className={cx(
         'relative inline-flex h-7 w-12 shrink-0 items-center rounded-full transition-colors duration-200',
         checked ? 'bg-accent' : 'bg-surface-3',
-        disabled && 'cursor-default opacity-70',
+        disabled && 'cursor-not-allowed opacity-50 saturate-50',
       )}
     >
       <motion.span
@@ -202,7 +201,12 @@ export function Segmented<T extends string | number>({
 }) {
   const group = useId();
   return (
-    <div role="radiogroup" aria-label={label} className="flex rounded-xl bg-surface-2 p-1">
+    <div
+      role="radiogroup"
+      aria-label={label}
+      aria-disabled={disabled || undefined}
+      className={cx('flex rounded-xl bg-surface-2 p-1', disabled && 'cursor-not-allowed opacity-55 saturate-50')}
+    >
       {options.map((o) => {
         const active = o.value === value;
         return (
@@ -214,11 +218,11 @@ export function Segmented<T extends string | number>({
             disabled={disabled}
             onClick={() => onChange?.(o.value)}
             className={cx(
-              'relative flex-1 rounded-lg font-semibold transition-colors',
+              'relative flex-1 whitespace-nowrap rounded-lg font-semibold transition-colors',
               size === 'sm' ? 'h-8 px-2 text-xs' : 'h-9 px-3 text-sm',
               active ? 'text-text' : 'text-muted hover:text-text',
               disabled && !active && 'hover:text-muted',
-              disabled && 'cursor-default',
+              disabled && 'cursor-not-allowed',
             )}
           >
             {active && (
@@ -293,21 +297,6 @@ export function Sheet({
       )}
     </AnimatePresence>,
     document.body,
-  );
-}
-
-/** Small "i" button that explains a rule in a sheet. */
-export function InfoButton({ title, text }: { title: string; text: string }) {
-  const [open, setOpen] = useState(false);
-  return (
-    <>
-      <IconButton label={`${t('info')}: ${title}`} onClick={() => setOpen(true)} className="size-8 rounded-lg">
-        <Info className="size-4" />
-      </IconButton>
-      <Sheet open={open} onClose={() => setOpen(false)} title={title}>
-        <p className="leading-relaxed text-muted">{text}</p>
-      </Sheet>
-    </>
   );
 }
 
