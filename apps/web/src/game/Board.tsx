@@ -3,42 +3,12 @@
  * Static art is drawn in canonical orientation inside a rotated group; pieces
  * and overlays use rotated coordinates so numbers and bubbles stay upright.
  */
-import {
-  type Color,
-  COLORS,
-  COLUMN_CELLS,
-  type LegalMove,
-  type Piece,
-  START,
-  SAFE_SQUARES,
-  TRACK_CELLS,
-  YARD_ORIGIN,
-  pathBetween,
-  pointFor,
-  yardSlot,
-} from '@ludo/engine';
+import { type Color, COLUMN_CELLS, type LegalMove, type Piece, pathBetween, pointFor } from '@ludo/engine';
 import { motion } from 'motion/react';
 import { memo, useMemo } from 'react';
+import { BASE, BoardArt, BoardDefs, DARK } from './BoardArt';
 import { placePieces, rotatePoint } from './geometry';
 
-const BASE: Record<Color, string> = {
-  red: 'var(--red)',
-  green: 'var(--green)',
-  yellow: 'var(--yellow)',
-  blue: 'var(--blue)',
-};
-const LIGHT: Record<Color, string> = {
-  red: 'var(--red-light)',
-  green: 'var(--green-light)',
-  yellow: 'var(--yellow-light)',
-  blue: 'var(--blue-light)',
-};
-const DARK: Record<Color, string> = {
-  red: 'var(--red-dark)',
-  green: 'var(--green-dark)',
-  yellow: 'var(--yellow-dark)',
-  blue: 'var(--blue-dark)',
-};
 const GLYPH: Record<Color, string> = { red: '●', green: '▲', yellow: '■', blue: '◆' };
 
 export interface BoardProps {
@@ -79,17 +49,9 @@ export function Board(props: BoardProps) {
         if (e.target === e.currentTarget) props.onBackgroundTap();
       }}
     >
-      <defs>
-        {COLORS.map((c) => (
-          <radialGradient key={c} id={`piece-${c}`} cx="0.35" cy="0.3" r="0.75">
-            <stop offset="0" stopColor="white" stopOpacity="0.65" />
-            <stop offset="0.35" stopColor={BASE[c]} />
-            <stop offset="1" stopColor={DARK[c]} />
-          </radialGradient>
-        ))}
-      </defs>
+      <BoardDefs />
 
-      <StaticBoard rotation={rotation} activeColor={props.activeColor} />
+      <BoardArt rotation={rotation} activeColor={props.activeColor} />
 
       {/* Kill-to-enter padlocks at the column entrances. */}
       {props.locked.map((c) => {
@@ -161,130 +123,6 @@ export function Board(props: BoardProps) {
         </g>
       )}
     </svg>
-  );
-}
-
-// ---------------------------------------------------------------------------
-// Static art (memoised: only changes with rotation / active colour)
-// ---------------------------------------------------------------------------
-
-const StaticBoard = memo(function StaticBoard({
-  rotation,
-  activeColor,
-}: {
-  rotation: number;
-  activeColor: Color | null;
-}) {
-  return (
-    <g transform={`rotate(${rotation} 7.5 7.5)`}>
-      <rect x={-0.25} y={-0.25} width={15.5} height={15.5} rx={0.6} fill="var(--surface)" />
-      {/* Track squares */}
-      {TRACK_CELLS.map((c, i) => {
-        const start = COLORS.find((col) => START[col] === i);
-        return (
-          <rect
-            key={i}
-            x={c.x - 0.5 + 0.03}
-            y={c.y - 0.5 + 0.03}
-            width={0.94}
-            height={0.94}
-            rx={0.14}
-            fill={start ? LIGHT[start] : 'var(--surface-2)'}
-          />
-        );
-      })}
-      {/* Start arrows */}
-      {COLORS.map((col) => {
-        const a = TRACK_CELLS[START[col]]!;
-        const b = TRACK_CELLS[(START[col] + 1) % 52]!;
-        const angle = (Math.atan2(b.y - a.y, b.x - a.x) * 180) / Math.PI;
-        return (
-          <path
-            key={`arrow-${col}`}
-            d="M -0.22 -0.18 L 0.18 0 L -0.22 0.18"
-            fill="none"
-            stroke={BASE[col]}
-            strokeWidth={0.1}
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            transform={`translate(${a.x} ${a.y}) rotate(${angle})`}
-          />
-        );
-      })}
-      {/* Safe stars (not on start squares) */}
-      {[...SAFE_SQUARES]
-        .filter((i) => !COLORS.some((col) => START[col] === i))
-        .map((i) => {
-          const c = TRACK_CELLS[i]!;
-          return <Star key={`star-${i}`} x={c.x} y={c.y} />;
-        })}
-      {/* Home columns */}
-      {COLORS.map((col) =>
-        COLUMN_CELLS[col].map((c, i) => (
-          <rect
-            key={`${col}-col-${i}`}
-            x={c.x - 0.47}
-            y={c.y - 0.47}
-            width={0.94}
-            height={0.94}
-            rx={0.14}
-            fill={BASE[col]}
-            opacity={0.88}
-          />
-        )),
-      )}
-      {/* Centre: home triangles */}
-      <polygon points="6,9 9,9 7.5,7.5" fill={BASE.red} />
-      <polygon points="6,6 6,9 7.5,7.5" fill={BASE.green} />
-      <polygon points="6,6 9,6 7.5,7.5" fill={BASE.yellow} />
-      <polygon points="9,6 9,9 7.5,7.5" fill={BASE.blue} />
-      <polygon points="6,6 9,6 9,9 6,9" fill="none" stroke="var(--surface)" strokeWidth={0.08} />
-      {/* Yards */}
-      {COLORS.map((col) => {
-        const o = YARD_ORIGIN[col];
-        const active = activeColor === col;
-        return (
-          <g key={`yard-${col}`}>
-            <rect x={o.x + 0.06} y={o.y + 0.06} width={5.88} height={5.88} rx={0.7} fill={BASE[col]} />
-            {active && (
-              <rect
-                x={o.x + 0.06}
-                y={o.y + 0.06}
-                width={5.88}
-                height={5.88}
-                rx={0.7}
-                fill="none"
-                stroke="white"
-                strokeWidth={0.14}
-                className="animate-pulse"
-                opacity={0.8}
-              />
-            )}
-            <rect x={o.x + 0.9} y={o.y + 0.9} width={4.2} height={4.2} rx={0.6} fill="var(--surface)" />
-            {[0, 1, 2, 3].map((i) => {
-              const s = yardSlot(col, i);
-              return (
-                <circle key={i} cx={s.x} cy={s.y} r={0.5} fill={LIGHT[col]} stroke={BASE[col]} strokeWidth={0.06} />
-              );
-            })}
-          </g>
-        );
-      })}
-    </g>
-  );
-});
-
-function Star({ x, y }: { x: number; y: number }) {
-  const pts: string[] = [];
-  for (let i = 0; i < 10; i++) {
-    const r = i % 2 === 0 ? 0.36 : 0.15;
-    const a = (Math.PI / 5) * i - Math.PI / 2;
-    pts.push(`${x + r * Math.cos(a)},${y + r * Math.sin(a)}`);
-  }
-  return (
-    <polygon points={pts.join(' ')} fill="var(--text-muted)" opacity={0.55}>
-      <title>Safe square</title>
-    </polygon>
   );
 }
 
@@ -387,6 +225,7 @@ const PieceView = memo(function PieceView({
         }
       }}
       data-testid={`piece-${piece.id}`}
+      data-progress={piece.progress}
       data-movable={movable || undefined}
     >
       {/* Hop: a small squash-and-lift each time the piece lands on a new square. */}
