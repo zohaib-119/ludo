@@ -70,19 +70,30 @@ Open http://localhost:5173, press **Create game**, and share the room link. Frie
 
 For browser tests, install Chromium once with `npx playwright install chromium`.
 
-## Deploying
+## Deploying: Render (game server) and Vercel (web app)
 
-The web app is a static site and the game server is a small Node process, so they can be hosted separately:
+The game server needs a host that keeps WebSocket connections open, so it goes on **Render**. The web app is a static site, so it goes on **Vercel**. Both read their settings from this repo ([render.yaml](render.yaml), [vercel.json](vercel.json)) and redeploy on every push.
 
-```bash
-# Web app: build with the server's address baked in, then host apps/web/dist anywhere static
-VITE_SERVER_URL=https://your-game-server.example.com npm run build -w @ludo/web
+**1. Game server on Render**
 
-# Game server: any host that keeps WebSocket connections open
-PORT=8080 npm run server
-```
+1. Push the repo to GitHub.
+2. In Render: **New → Blueprint**, pick the repo, and apply. This creates the `dodice-ludo-server` web service from `render.yaml` (build `npm ci`, start `npm run server`, health check `/healthz`, Node 22).
+3. When it's live, copy its address, for example `https://dodice-ludo-server.onrender.com`, and open `/healthz` on it to check that it answers `{"ok":true}`.
 
-Rooms live in the server's memory. If the server restarts, players are reconnected to a fresh copy of their room automatically, but a game in progress has to be started again.
+Prefer to click through instead of using a Blueprint? Create a **Web Service** with runtime Node, build command `npm ci`, start command `npm run server` and health check path `/healthz`. Render sets `PORT` itself.
+
+**2. Web app on Vercel**
+
+1. In Vercel: **Add New → Project**, import the same repo, and leave **Root Directory** as the repo root. The build settings come from `vercel.json`.
+2. Under **Environment Variables**, add `VITE_SERVER_URL` with the Render address from step 1 (no trailing slash).
+3. Deploy. Room links like `/r/ABC123` work on refresh, and the service worker is never cached, so updates reach players.
+
+`VITE_SERVER_URL` is built into the app, so after changing it, redeploy on Vercel.
+
+**Good to know**
+
+- **Free Render instances sleep** after about 15 minutes without traffic, and the first visit then takes up to a minute to wake it. The app handles this: it starts waking the server as soon as the home page opens and shows "Waking up the server…" until it answers.
+- **Rooms live in the server's memory.** On a restart or deploy, connected players are put back into their room automatically (same code, seats, rules and bots), but a game in progress has to be started again. So deploy when nobody is mid-game, or use a paid instance, which doesn't sleep.
 
 ## How it's built
 

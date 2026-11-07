@@ -13,6 +13,8 @@ export function createServer() {
         next();
       });
       app.get('/healthz', (_req, res) => {
+        // The web app pings this from its own origin to wake a sleeping host early.
+        res.setHeader('Access-Control-Allow-Origin', '*');
         res.json({ ok: true });
       });
       /** Does a room exist, and can a new player still join it? */

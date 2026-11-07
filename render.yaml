@@ -1,0 +1,13 @@
+# Render Blueprint: the game server (the web app is hosted on Vercel, see README).
+services:
+  - type: web
+    name: dodice-ludo-server
+    runtime: node
+    plan: free
+    buildCommand: npm ci
+    startCommand: npm run server
+    healthCheckPath: /healthz
+    autoDeploy: true
+    envVars:
+      - key: NODE_VERSION
+        value: '22'
