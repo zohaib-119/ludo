@@ -254,6 +254,19 @@ describe('Playback', () => {
     expect(pb.store.getState().log[0]!.text).toBe('red is out — nothing left to capture');
   });
 
+  it('calls the step hook on every square (for hop sounds)', async () => {
+    const steps: Array<[number, number]> = [];
+    const pb = new Playback({ nameOf: (c) => c, sleep: async () => {}, onStep: (_id, step, total) => steps.push([step, total]) });
+    pb.sync(view(0, { 'red-0': 4 }));
+    pb.push(msg(1, [{ type: 'Moved', seat: 'red', pieceId: 'red-0', color: 'red', from: 4, to: 7, value: 3 }]));
+    await new Promise((r) => setTimeout(r, 10));
+    expect(steps).toEqual([
+      [1, 3],
+      [2, 3],
+      [3, 3],
+    ]);
+  });
+
   it('a snap rebuilds the tray from the bank', () => {
     const { pb } = harness();
     const v = view(7, {});

@@ -20,7 +20,18 @@ export function RulesPanel({ settings, preset, editable }: { settings: RoomSetti
 
   return (
     <Card>
-      <SectionTitle aside={!editable && <Badge>{t('rules.readOnly')}</Badge>}>{t('rules.title')}</SectionTitle>
+      <SectionTitle
+        aside={
+          <span className="flex items-center gap-2">
+            <a href="/how-to-play" target="_blank" rel="noopener" className="text-sm font-semibold text-accent underline-offset-4 hover:underline">
+              {t('help.link')}
+            </a>
+            {!editable && <Badge>{t('rules.readOnly')}</Badge>}
+          </span>
+        }
+      >
+        {t('rules.title')}
+      </SectionTitle>
 
       <Segmented<PresetId | 'custom'>
         label={t('rules.preset')}

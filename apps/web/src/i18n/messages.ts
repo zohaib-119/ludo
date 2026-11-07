@@ -228,12 +228,36 @@ const en = {
   'notice.reconnected': '{name} is back',
   'notice.disconnected': '{name} lost connection',
 
+  // Screen reader
+  'a11y.yourTurn': 'Your turn. Press Space to roll.',
+  'a11y.youRolled': 'You rolled {dice}.',
+  'a11y.youCaptured': 'You captured a piece.',
+  'a11y.yourPieceCaptured': 'Your piece was captured.',
+
+  // Help
+  'help.link': 'How to play',
+
+  // Chat
+  'chat.title': 'Chat',
+  'chat.react': 'Reactions',
+  'chat.empty': 'No messages yet. Say hi!',
+  'chat.placeholder': 'Message',
+  'chat.send': 'Send',
+
   // Settings
   'settings.theme': 'Theme',
   'settings.theme.system': 'System',
   'settings.theme.light': 'Light',
   'settings.theme.dark': 'Dark',
   'settings.sound': 'Sound',
+  'settings.sound.help': 'Dice, moves and captures — you hear every player’s turn.',
+  'settings.volume': 'Volume',
+  'settings.haptics': 'Vibration',
+  'settings.haptics.help': 'A short buzz on your turn and when your piece is captured (phones).',
+  'settings.colorBlind': 'Colour-blind markers',
+  'settings.colorBlind.help': 'Adds a shape to every piece: red ●, green ▲, yellow ■, blue ◆.',
+  'settings.reducedMotion': 'Reduce motion',
+  'settings.reducedMotion.help': 'Pieces jump straight to their square and dice show their value at once.',
 
   // Errors
   'error.RATE_LIMITED': 'Slow down a little.',

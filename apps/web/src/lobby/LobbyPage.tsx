@@ -6,6 +6,7 @@ import { lastRoom } from '../lib/identity';
 import { sendCommand } from '../net/commands';
 import { getConnection, useConnection } from '../net/session';
 import { Avatar, Badge, Button, Card, Dot, Logo, SectionTitle, Sheet } from '../ui/kit';
+import { ChatControls } from '../ui/ChatControls';
 import { isHost, me, occupiedColors, startBlocker } from './logic';
 import { RulesPanel } from './RulesPanel';
 import { SeatBoard } from './SeatBoard';
@@ -71,9 +72,12 @@ export function TopBar({ code, inGame }: { code: string; inGame: boolean }) {
           Do<span className="text-accent">Dice</span>
         </span>
       </div>
-      <Button variant="ghost" size="sm" onClick={() => setConfirm(true)} icon={<LogOut className="size-4" />}>
-        {t('room.leave')}
-      </Button>
+      <div className="flex items-center gap-1">
+        <ChatControls />
+        <Button variant="ghost" size="sm" onClick={() => setConfirm(true)} icon={<LogOut className="size-4" />}>
+          {t('room.leave')}
+        </Button>
+      </div>
       <Sheet open={confirm} onClose={() => setConfirm(false)} title={t('room.leave')}>
         <p className="mb-5 text-muted">{inGame ? t('room.leaveConfirmGame') : t('room.leaveConfirmLobby')}</p>
         <div className="flex gap-2">

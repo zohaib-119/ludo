@@ -1,16 +1,20 @@
 import { LIMITS, type NoticeMessage, parseRoomCode } from '@ludo/protocol';
 import { motion } from 'motion/react';
-import { type FormEvent, type ReactNode, useEffect, useState } from 'react';
+import { type FormEvent, type ReactNode, Suspense, lazy, useEffect, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router';
-import { GameScreen } from '../game/GameScreen';
 import { type MessageKey, t } from '../i18n/messages';
 import { isValidName, lastRoom, loadProfile, playerToken, saveProfile } from '../lib/identity';
 import { LobbyPage } from '../lobby/LobbyPage';
 import type { FailReason } from '../net/connection';
+import { listenToChat, useChat } from '../net/chat';
 import { getConnection, useConnection } from '../net/session';
 import { Avatar, Button, Card, Logo, Spinner, TextField } from '../ui/kit';
 import { toast } from '../ui/toast';
+import { FloatingEmojis } from '../ui/ChatControls';
 import { ConnectionBanner } from './ConnectionBanner';
+
+// The game screen (board, dice, animations) loads only when a game starts.
+const GameScreen = lazy(() => import('../game/GameScreen').then((m) => ({ default: m.GameScreen })));
 
 export function RoomPage() {
   const params = useParams();
@@ -40,6 +44,12 @@ export function RoomPage() {
 
   useRoomNotices();
 
+  // Chat and reactions for the whole room session (lobby, game and results).
+  useEffect(() => {
+    useChat.getState().reset();
+    return listenToChat();
+  }, [code]);
+
   if (!code) return <Failure reason="ROOM_NOT_FOUND" />;
   if (!named) return <NamePrompt code={code} onDone={() => setNamed(true)} />;
   if (status === 'failed' && failure) return <Failure reason={failure} />;
@@ -55,7 +65,20 @@ export function RoomPage() {
   return (
     <>
       <ConnectionBanner />
-      {view.phase === 'lobby' || !view.game ? <LobbyPage /> : <GameScreen />}
+      {view.phase === 'lobby' || !view.game ? (
+        <LobbyPage />
+      ) : (
+        <Suspense
+          fallback={
+            <Centered>
+              <Spinner className="size-8" />
+            </Centered>
+          }
+        >
+          <GameScreen />
+        </Suspense>
+      )}
+      <UnseatedReactions />
     </>
   );
 }
@@ -214,5 +237,19 @@ function NamePrompt({ code, onDone }: { code: string; onDone: () => void }) {
         </Card>
       </motion.div>
     </main>
+  );
+}
+
+/** Reactions from people without a seat (and everyone in the lobby) float from the top of the screen. */
+function UnseatedReactions() {
+  const reactions = useChat((s) => s.reactions);
+  const phase = useConnection((s) => s.view?.phase);
+  const shown = phase === 'lobby' ? reactions : reactions.filter((r) => r.color === null);
+  return (
+    <div className="pointer-events-none fixed inset-x-0 top-24 z-40 h-0">
+      <div className="relative mx-auto h-0 w-40">
+        <FloatingEmojis emojis={shown} />
+      </div>
+    </div>
   );
 }

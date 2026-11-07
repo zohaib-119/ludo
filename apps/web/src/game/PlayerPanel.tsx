@@ -1,10 +1,16 @@
 import { type Color, OPPOSITE } from '@ludo/engine';
 import type { GameView, RoomView } from '@ludo/protocol';
 import { Lock, LockOpen } from 'lucide-react';
+import { AnimatePresence, motion } from 'motion/react';
+import { useSettings } from '../lib/settings';
+import { useChat } from '../net/chat';
+import { FloatingEmojis } from '../ui/ChatControls';
 import { t } from '../i18n/messages';
 import { Badge, cx, pieceColor } from '../ui/kit';
 import { ordinal } from './log';
 import { useNow } from './useNow';
+
+const GLYPH: Record<Color, string> = { red: '●', green: '▲', yellow: '■', blue: '◆' };
 
 export function PlayerPanel({
   color,
@@ -36,11 +42,15 @@ export function PlayerPanel({
   const finished = player?.finishedRank != null && !out;
   const mate = view.settings.teamMode ? OPPOSITE[color] : null;
   const playingFor = finished && mate && active && game.turn.controls === mate;
+  const memberId = seat?.memberId ?? null;
+  const reactions = useChat((s) => s.reactions).filter((r) => memberId !== null && r.from === memberId);
+  const bubble = useChat((s) => (memberId ? s.bubbles[memberId] : undefined));
+  const colorBlind = useSettings((s) => s.colorBlindMarkers);
 
   return (
     <div
       className={cx(
-        'flex min-w-0 items-center gap-2.5 rounded-2xl border bg-surface p-2 pr-3 shadow-soft transition-shadow',
+        'relative flex min-w-0 items-center gap-2.5 rounded-2xl border bg-surface p-2 pr-3 shadow-soft transition-shadow',
         align === 'right' && 'flex-row-reverse text-right',
         active ? 'border-transparent' : 'border-line',
       )}
@@ -48,6 +58,24 @@ export function PlayerPanel({
       data-testid={`panel-${color}`}
       data-active={active || undefined}
     >
+      <FloatingEmojis emojis={reactions} />
+      <AnimatePresence>
+        {bubble && (
+          <motion.p
+            key={bubble.id}
+            initial={{ opacity: 0, y: 6, scale: 0.95 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: -4 }}
+            className={cx(
+              'absolute top-full z-20 mt-1.5 max-w-[90%] truncate rounded-2xl bg-text px-3 py-1.5 text-xs font-medium text-bg shadow-lift',
+              align === 'right' ? 'right-2' : 'left-2',
+            )}
+            data-testid={`bubble-${color}`}
+          >
+            {bubble.text}
+          </motion.p>
+        )}
+      </AnimatePresence>
       <div className="relative shrink-0">
         <span
           className="flex size-11 items-center justify-center rounded-full text-2xl"
@@ -81,6 +109,11 @@ export function PlayerPanel({
       </div>
       <div className="min-w-0 flex-1">
         <p className="truncate font-display text-[15px] font-bold leading-tight">
+          {colorBlind && (
+            <span className="mr-1" style={{ color: pieceColor(color) }} aria-hidden>
+              {GLYPH[color]}
+            </span>
+          )}
           {seat?.name ?? color}
           {isMe && <span className="ml-1 text-xs font-semibold text-accent">({t('lobby.you')})</span>}
         </p>

@@ -1,5 +1,4 @@
 import { Check, Copy, Link2, QrCode, Share2 } from 'lucide-react';
-import QRCode from 'qrcode';
 import { useEffect, useState } from 'react';
 import { t } from '../i18n/messages';
 import { roomLink } from '../net/config';
@@ -24,7 +23,9 @@ export function ShareCard({ code }: { code: string }) {
 
   useEffect(() => {
     if (!qrOpen || qr) return;
-    QRCode.toDataURL(link, { margin: 1, width: 480, color: { dark: '#1d1b18', light: '#ffffff' } })
+    // Loaded only when the QR sheet opens.
+    import('qrcode')
+      .then((QRCode) => QRCode.toDataURL(link, { margin: 1, width: 480, color: { dark: '#1d1b18', light: '#ffffff' } }))
       .then(setQr)
       .catch(() => setQr(null));
   }, [qrOpen, qr, link]);

@@ -73,8 +73,10 @@ export interface PlaybackOptions {
   timing?: Timing;
   /** Names for log lines and banners. */
   nameOf: (c: Color) => string;
-  /** Hooks for sounds and haptics (M6). */
+  /** Hooks for sounds and haptics. */
   onEvent?: (e: RoomEvent) => void;
+  /** Called on each square a moving piece lands on (1-based step of `total`). */
+  onStep?: (pieceId: string, step: number, total: number) => void;
   sleep?: (ms: number) => Promise<void>;
 }
 
@@ -94,7 +96,7 @@ export class Playback {
   private generation = 0;
   private nextId = 1;
   private latest: GameView | null = null;
-  private opts: Required<Omit<PlaybackOptions, 'onEvent'>> & Pick<PlaybackOptions, 'onEvent'>;
+  private opts: Required<Omit<PlaybackOptions, 'onEvent' | 'onStep'>> & Pick<PlaybackOptions, 'onEvent' | 'onStep'>;
 
   constructor(options: PlaybackOptions) {
     this.opts = {
@@ -110,6 +112,20 @@ export class Playback {
 
   setNames(nameOf: (c: Color) => string): void {
     this.opts.nameOf = nameOf;
+  }
+
+  get nameOf(): (c: Color) => string {
+    return this.opts.nameOf;
+  }
+
+  setHooks(hooks: Pick<PlaybackOptions, 'onEvent' | 'onStep'>): void {
+    this.opts.onEvent = hooks.onEvent;
+    this.opts.onStep = hooks.onStep;
+  }
+
+  /** Current animation timing (sounds sync to it). */
+  get timing(): Timing {
+    return this.opts.timing;
   }
 
   /** The newest synced game view. */
@@ -255,9 +271,11 @@ export class Playback {
           await this.wait(T.enter, gen);
           return;
         }
-        for (const p of pathBetween(e.from, e.to)) {
+        const path = pathBetween(e.from, e.to);
+        for (const [i, p] of path.entries()) {
           if (gen !== this.generation) return;
           this.setProgress(e.pieceId, p);
+          this.opts.onStep?.(e.pieceId, i + 1, path.length);
           await this.wait(T.hop, gen);
         }
         return;

@@ -1,8 +1,8 @@
 import { AVATARS, LIMITS, parseRoomCode } from '@ludo/protocol';
-import { ArrowRight, Plus } from 'lucide-react';
+import { ArrowRight, BookOpen, Plus } from 'lucide-react';
 import { motion } from 'motion/react';
 import { type FormEvent, useEffect, useState } from 'react';
-import { useNavigate } from 'react-router';
+import { Link, useNavigate } from 'react-router';
 import { t } from '../i18n/messages';
 import { type Profile, isValidName, lastRoom, loadProfile, playerToken, saveProfile } from '../lib/identity';
 import { type Theme, useSettings } from '../lib/settings';
@@ -164,7 +164,10 @@ export function HomePage() {
 
       {!persists && <p className="mt-4 rounded-xl bg-warning-soft px-4 py-3 text-sm text-warning">{t('home.storageWarning')}</p>}
 
-      <footer className="mt-auto flex justify-center pt-10">
+      <footer className="mt-auto flex flex-col items-center gap-4 pt-10">
+        <Link to="/how-to-play" className="inline-flex items-center gap-1.5 font-semibold text-accent underline-offset-4 hover:underline">
+          <BookOpen className="size-4" /> {t('help.link')}
+        </Link>
         <ThemeSwitch />
       </footer>
 

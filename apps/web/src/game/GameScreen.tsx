@@ -7,11 +7,14 @@ import { ListOrdered, Menu } from 'lucide-react';
 import { AnimatePresence, motion } from 'motion/react';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useStore } from 'zustand';
+import { sound } from '../audio/sound';
 import { t } from '../i18n/messages';
 import { useSettings } from '../lib/settings';
 import { sendCommand } from '../net/commands';
 import { getConnection, useConnection } from '../net/session';
-import { Button, IconButton, Logo, cx, pieceColor } from '../ui/kit';
+import { Announcer } from '../ui/Announcer';
+import { ChatControls } from '../ui/ChatControls';
+import { Button, IconButton, Logo, cx } from '../ui/kit';
 import { Board } from './Board';
 import { movablePieceIds, onlyMove, valuesForPiece } from './choices';
 import { Die } from './Dice';
@@ -21,6 +24,7 @@ import { LogSheet } from './LogSheet';
 import { NORMAL_TIMING, Playback, REDUCED_TIMING, type TrayDie } from './playback';
 import { PlayerPanel } from './PlayerPanel';
 import { Results } from './Results';
+import { useGameSounds } from './useGameSounds';
 import { formatSeconds, useNow } from './useNow';
 
 function usePrefersReducedMotion(): boolean {
@@ -64,6 +68,7 @@ export function GameScreen() {
     };
   }, [playback]);
   useEffect(() => playback.sync(game), [playback, game]);
+  useGameSounds(playback, mySeat);
   const pb = useStore(playback.store);
 
   // --- Whose turn, and can I act? ---------------------------------------------
@@ -74,7 +79,7 @@ export function GameScreen() {
   const canAct = myTurn && caughtUp && status === 'connected' && !pending;
   const awaitingMove = canAct && game.turn.phase === 'awaitMove';
   const awaitingRoll = canAct && game.turn.phase === 'awaitRoll';
-  const moves = awaitingMove ? game.legalMoves : [];
+  const moves = useMemo(() => (awaitingMove ? game.legalMoves : []), [awaitingMove, game.legalMoves]);
 
   const [selected, setSelected] = useState<string | null>(null);
   const [chosenValue, setChosenValue] = useState<number | null>(null);
@@ -183,6 +188,7 @@ export function GameScreen() {
           <span className="room-code text-sm text-muted">{view.code}</span>
         </div>
         <div className="flex items-center gap-1">
+          <ChatControls />
           <IconButton label={t('game.log')} onClick={() => setLogOpen(true)}>
             <ListOrdered className="size-5" />
           </IconButton>
@@ -276,6 +282,7 @@ export function GameScreen() {
         </div>
       </main>
 
+      <Announcer />
       <GameMenu open={menuOpen} onClose={() => setMenuOpen(false)} />
       <LogSheet open={logOpen} onClose={() => setLogOpen(false)} lines={pb.log} />
       {showResults && <Results />}
@@ -319,6 +326,12 @@ function ActionArea({
   const now = useNow(250, deadline > 0) + clockOffset;
   const left = deadline > 0 ? deadline - now : 0;
   const size = tray.length <= 2 ? 54 : tray.length <= 4 ? 44 : 36;
+
+  // Last 5 seconds of my own decision: a soft tick each second.
+  const secondsLeft = deadline > 0 && (awaitingRoll || awaitingMove) ? Math.ceil(left / 1000) : null;
+  useEffect(() => {
+    if (secondsLeft !== null && secondsLeft > 0 && secondsLeft <= 5) sound.play('tick');
+  }, [secondsLeft]);
 
   const rollLabel =
     game.turn.rollReason === 'reroll' || game.turn.rollReason === 'bonusReroll'

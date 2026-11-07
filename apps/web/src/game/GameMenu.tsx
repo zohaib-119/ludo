@@ -1,4 +1,4 @@
-import { Bot, Flag, LogOut, ScrollText } from 'lucide-react';
+import { BookOpen, Bot, Flag, LogOut, ScrollText } from 'lucide-react';
 import { useState } from 'react';
 import { useNavigate } from 'react-router';
 import { t } from '../i18n/messages';
@@ -7,6 +7,7 @@ import { type Theme, useSettings } from '../lib/settings';
 import { RulesPanel } from '../lobby/RulesPanel';
 import { sendCommand } from '../net/commands';
 import { getConnection, useConnection } from '../net/session';
+import { sound } from '../audio/sound';
 import { Button, Segmented, Sheet, Switch } from '../ui/kit';
 
 export function GameMenu({ open, onClose }: { open: boolean; onClose: () => void }) {
@@ -14,6 +15,7 @@ export function GameMenu({ open, onClose }: { open: boolean; onClose: () => void
   const memberId = useConnection((s) => s.memberId);
   const navigate = useNavigate();
   const settings = useSettings();
+  const reducedBySystem = typeof window !== 'undefined' && window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
   const [sub, setSub] = useState<'none' | 'rules' | 'leave' | 'end'>('none');
   const host = view.hostId === memberId;
   const mySeat = view.members.find((m) => m.id === memberId)?.seat ?? null;
@@ -58,6 +60,41 @@ export function GameMenu({ open, onClose }: { open: boolean; onClose: () => void
               </span>
               <Switch label={t('game.autoMove')} checked={settings.autoMove} onChange={(v) => settings.update({ autoMove: v })} />
             </label>
+            <ToggleRow
+              title={t('settings.sound')}
+              help={t('settings.sound.help')}
+              checked={settings.soundVolume > 0}
+              onChange={(v) => settings.update({ soundVolume: v ? 0.8 : 0 })}
+            />
+            {settings.soundVolume > 0 && (
+              <label className="flex items-center gap-3 pb-3">
+                <span className="sr-only">{t('settings.volume')}</span>
+                <input
+                  type="range"
+                  min={0.1}
+                  max={1}
+                  step={0.1}
+                  value={settings.soundVolume}
+                  onChange={(e) => settings.update({ soundVolume: Number(e.target.value) })}
+                  onPointerUp={() => sound.play('pop')}
+                  aria-label={t('settings.volume')}
+                  className="w-full accent-[var(--accent)]"
+                />
+              </label>
+            )}
+            <ToggleRow title={t('settings.haptics')} help={t('settings.haptics.help')} checked={settings.haptics} onChange={(v) => settings.update({ haptics: v })} />
+            <ToggleRow
+              title={t('settings.colorBlind')}
+              help={t('settings.colorBlind.help')}
+              checked={settings.colorBlindMarkers}
+              onChange={(v) => settings.update({ colorBlindMarkers: v })}
+            />
+            <ToggleRow
+              title={t('settings.reducedMotion')}
+              help={t('settings.reducedMotion.help')}
+              checked={settings.reducedMotion ?? reducedBySystem}
+              onChange={(v) => settings.update({ reducedMotion: v })}
+            />
             <div className="py-3">
               <Segmented<Theme>
                 label={t('settings.theme')}
@@ -68,9 +105,19 @@ export function GameMenu({ open, onClose }: { open: boolean; onClose: () => void
               />
             </div>
           </div>
-          <Button variant="ghost" full icon={<ScrollText className="size-4" />} onClick={() => setSub('rules')}>
-            {t('game.rules')}
-          </Button>
+          <div className="flex gap-2">
+            <Button variant="ghost" full icon={<ScrollText className="size-4" />} onClick={() => setSub('rules')}>
+              {t('game.rules')}
+            </Button>
+            <a
+              href="/how-to-play"
+              target="_blank"
+              rel="noopener"
+              className="inline-flex h-11 w-full items-center justify-center gap-2 rounded-xl font-semibold hover:bg-surface-2"
+            >
+              <BookOpen className="size-4" /> {t('help.link')}
+            </a>
+          </div>
           {host && playing && (
             <div className="space-y-2 rounded-2xl border border-line p-3">
               <p className="text-xs font-bold uppercase tracking-[0.14em] text-muted">{t('game.hostTools')}</p>
@@ -133,5 +180,17 @@ export function GameMenu({ open, onClose }: { open: boolean; onClose: () => void
         </div>
       </Sheet>
     </>
+  );
+}
+
+function ToggleRow({ title, help, checked, onChange }: { title: string; help: string; checked: boolean; onChange: (v: boolean) => void }) {
+  return (
+    <label className="flex items-center justify-between gap-3 py-3">
+      <span className="min-w-0">
+        <span className="block font-medium">{title}</span>
+        <span className="mt-0.5 block text-[13px] leading-snug text-muted">{help}</span>
+      </span>
+      <Switch label={title} checked={checked} onChange={onChange} />
+    </label>
   );
 }
