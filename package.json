@@ -13,7 +13,8 @@
     "sim": "tsx packages/engine/scripts/simulate.ts",
     "server": "npm run start -w @ludo/server",
     "arena": "tsx packages/bot/scripts/arena.ts",
-    "e2e": "playwright test"
+    "e2e": "playwright test",
+    "dev:web": "npm run dev -w @ludo/web"
   },
   "devDependencies": {
     "@playwright/test": "^1.65.0",
