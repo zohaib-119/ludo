@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { DEFAULT_SETTINGS } from '@ludo/engine';
-import { PRESETS, parseRoomCode, presetOf } from '../src';
+import { ANIMATION_TIMING, PRESETS, estimateAnimationMs, parseRoomCode, presetOf } from '../src';
 
 describe('parseRoomCode', () => {
   it('accepts codes in any case, with spaces or dashes', () => {
@@ -31,5 +31,20 @@ describe('presets', () => {
   });
   it('anything else is custom', () => {
     expect(presetOf({ ...DEFAULT_SETTINGS, ...PRESETS.hardcore, extraTurnOnFinish: true })).toBe('custom');
+  });
+});
+
+describe('estimateAnimationMs', () => {
+  it('adds up what the client animates for each event', () => {
+    const T = ANIMATION_TIMING;
+    expect(estimateAnimationMs([])).toBe(0);
+    expect(
+      estimateAnimationMs([
+        { type: 'Rolled', seat: 'red', values: [3, 6], diceCount: 2, reason: 'turn' },
+        { type: 'Moved', seat: 'red', pieceId: 'red-0', color: 'red', from: -1, to: 0, value: 6 },
+        { type: 'Moved', seat: 'red', pieceId: 'red-0', color: 'red', from: 0, to: 3, value: 3 },
+        { type: 'Captured', victims: ['yellow-0'], at: 3, creditedTo: ['red'], kind: 'landing' },
+      ]),
+    ).toBe(T.roll + (T.useDie + T.enter) + (T.useDie + 3 * T.hop) + T.capture);
   });
 });

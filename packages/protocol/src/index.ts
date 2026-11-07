@@ -330,5 +330,70 @@ export interface ServerMessages {
   kicked: KickedMessage;
 }
 
+// ---------------------------------------------------------------------------
+// Animation timing, shared so the server can pace bots to what players see
+// ---------------------------------------------------------------------------
+
+export interface AnimationTiming {
+  roll: number;
+  /** Pause after a die leaves the tray, before its piece starts moving. */
+  useDie: number;
+  /** How long void dice stay dimmed before they are cleared. */
+  void: number;
+  hop: number;
+  enter: number;
+  capture: number;
+  banner: number;
+  playerFinished: number;
+  turn: number;
+}
+
+export const ANIMATION_TIMING: Readonly<AnimationTiming> = {
+  roll: 700,
+  useDie: 220,
+  void: 800,
+  hop: 110,
+  enter: 300,
+  capture: 480,
+  banner: 900,
+  playerFinished: 1400,
+  turn: 150,
+};
+
+/** How long the web client takes to animate these events (mirrors its playback). */
+export function estimateAnimationMs(events: RoomEvent[], timing: AnimationTiming = ANIMATION_TIMING): number {
+  let ms = 0;
+  for (const e of events) {
+    switch (e.type) {
+      case 'TurnStarted':
+        ms += timing.turn;
+        break;
+      case 'Rolled':
+        ms += timing.roll;
+        break;
+      case 'RerollGranted':
+      case 'BonusGranted':
+        ms += timing.banner * 0.6;
+        break;
+      case 'RollVoided':
+        ms += timing.void;
+        break;
+      case 'Moved':
+        ms += timing.useDie + (e.from === -1 ? timing.enter : timing.hop * (e.to - e.from));
+        break;
+      case 'Captured':
+        ms += timing.capture;
+        break;
+      case 'PlayerFinished':
+      case 'PlayerEliminated':
+        ms += timing.playerFinished;
+        break;
+      default:
+        break;
+    }
+  }
+  return ms;
+}
+
 /** Close code the server uses when a join is refused; reason carries the ErrorCode. */
 export const JOIN_REFUSED_CLOSE_CODE = 4401;

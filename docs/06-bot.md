@@ -58,7 +58,7 @@ Against random players over 100 games each (`npm run arena`): 1-die 4-player 83 
 
 ## 4. Pacing
 
-Bots act after a delay so humans can follow: 1.1 s before a roll, 1.3 s before a move (constants in `apps/server/src/controller.ts`). If the room has no connected humans, bots stop acting until someone returns.
+Every bot action (a roll, or playing one die) waits until players have seen the previous action animate, then 1 more second (`BOT_GAP_MS`). The server estimates the animation length with `estimateAnimationMs()` from `@ludo/protocol`, using the same timings the web client animates with. If the room has no connected humans, bots stop acting until someone returns.
 
 ## 5. Timer behaviour (server)
 

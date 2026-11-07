@@ -43,16 +43,16 @@ import {
   type RoomView,
   TAKEOVER_OPTIONS,
   TURN_TIMER_OPTIONS,
+  estimateAnimationMs,
   presetOf,
 } from '@ludo/protocol';
 
 export const HOST_TRANSFER_MS = 60_000;
 /**
- * Bot pacing (docs/06-bot.md §4): quicker than a person, slow enough that
- * everyone can follow each roll and each move.
+ * Bot pacing (docs/06-bot.md §4): every bot action (a roll, or playing one die)
+ * waits until players have seen the previous action animate, plus this gap.
  */
-export const BOT_ROLL_DELAY_MS = 1100;
-export const BOT_MOVE_DELAY_MS = 1300;
+export const BOT_GAP_MS = 1000;
 /** Consecutive timeouts before a seat is put on autoplay. */
 export const TIMEOUTS_FOR_AUTOPLAY = 2;
 export const DISPOSE_IDLE_MS: Record<RoomPhase, number> = {
@@ -141,6 +141,8 @@ export class RoomController {
   private control: Partial<Record<Color, SeatControl>> = {};
   /** When the current decision (roll or move) became due. */
   private decisionAt = 0;
+  /** How long clients take to animate the last action (for bot pacing). */
+  private lastAnimationMs = 0;
   private game: GameState | null = null;
   private stats: Partial<Record<Color, PlayerStats>> = {};
   private endedByHost = false;
@@ -276,7 +278,7 @@ export class RoomController {
     // Nobody watching: the game pauses instead of bots racing ahead.
     if (this.connectedMembers().length === 0) return null;
     const seat = g.turn.seat;
-    const pace = (g.turn.phase.kind === 'awaitRoll' ? BOT_ROLL_DELAY_MS : BOT_MOVE_DELAY_MS) * (this.deps.botPace ?? 1);
+    const pace = (this.lastAnimationMs + BOT_GAP_MS) * (this.deps.botPace ?? 1);
     if (this.bots.has(seat)) return { at: this.decisionAt + pace, cause: 'bot' };
     const c = this.control[seat];
     if (c?.autoplay) return { at: this.decisionAt + pace, cause: 'autoplay' };
@@ -345,6 +347,7 @@ export class RoomController {
   private afterGameAction(next: GameState, events: RoomEvent[]): void {
     this.game = next;
     this.decisionAt = this.deps.now();
+    this.lastAnimationMs = estimateAnimationMs(events);
     this.recordStats(events);
     // Control returns to a reconnected player at the start of their next turn.
     for (const e of events) {
@@ -613,6 +616,7 @@ export class RoomController {
     if (!created.ok) return fail('CANNOT_START', created.error.message);
     this.game = created.state;
     this.decisionAt = this.deps.now();
+    this.lastAnimationMs = estimateAnimationMs(created.events);
     this.control = {};
     this.stats = Object.fromEntries(created.state.seats.map((c) => [c, emptyStats()]));
     this.phase = 'playing';

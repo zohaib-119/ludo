@@ -5,7 +5,8 @@
 import { describe, expect, it } from 'vitest';
 import { type Color, type Rng, seededRng } from '@ludo/engine';
 import type { Command, RoomEvent, RoomSettings, RoomView } from '@ludo/protocol';
-import { BOT_MOVE_DELAY_MS, BOT_ROLL_DELAY_MS, type Out, RoomController } from '../src/controller';
+import { estimateAnimationMs } from '@ludo/protocol';
+import { BOT_GAP_MS, type Out, RoomController } from '../src/controller';
 
 function harness(dice: number[] = [], seed = 7) {
   let now = 5_000_000;
@@ -100,8 +101,11 @@ describe('bot seats', () => {
     h.must(h.humans.Ali!, { type: 'roll', stateVersion: 0 });
     expect(turn(h).seat).toBe('yellow');
     const start = h.now;
-    expect(h.ctrl.nextWakeAt()).toBe(start + BOT_ROLL_DELAY_MS);
-    h.advance(BOT_ROLL_DELAY_MS - 1);
+    // The bot waits for Ali's roll to finish animating (roll, void, turn change), then 1 s more.
+    const delay = estimateAnimationMs(h.events()) + BOT_GAP_MS;
+    expect(delay).toBe(700 + 800 + 150 + 1000);
+    expect(h.ctrl.nextWakeAt()).toBe(start + delay);
+    h.advance(delay - 1);
     h.ctrl.tick();
     expect(turn(h).seat).toBe('yellow'); // not yet
     h.events();
@@ -157,11 +161,12 @@ describe('turn timer and autoplay', () => {
   it('T2 two timeouts in a row switch on autoplay; "I\'m back" switches it off at once', () => {
     const h = game({ yellow: 'Sara' }, { turnTimer: 15 }, [6, 3]);
     h.wake(); // timeout 1: roll
+    h.events(); // only the latest action's animation matters for pacing
     h.wake(); // timeout 2: move
     expect(h.view().seats.red).toMatchObject({ timeouts: 2, autoplay: true });
     expect(turn(h).deadline).toBe(0);
-    // Autoplay plays at bot pace.
-    expect(h.ctrl.nextWakeAt()).toBe(h.now + BOT_MOVE_DELAY_MS);
+    // Autoplay plays at bot pace: after the last move's animation, plus the gap.
+    expect(h.ctrl.nextWakeAt()).toBe(h.now + estimateAnimationMs(h.events()) + BOT_GAP_MS);
     h.must(h.humans.Ali!, { type: 'setAutoplay', on: false });
     expect(h.view().seats.red).toMatchObject({ autoplay: false, timeouts: 0 });
     expect(turn(h).deadline).toBe(h.now + 15_000);
