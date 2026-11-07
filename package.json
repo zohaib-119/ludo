@@ -9,7 +9,7 @@
   "scripts": {
     "test": "vitest run",
     "test:watch": "vitest",
-    "typecheck": "tsc -p packages/engine --noEmit && tsc -p packages/engine/tsconfig.test.json --noEmit && tsc -p packages/protocol --noEmit && tsc -p packages/bot/tsconfig.test.json --noEmit && tsc -p apps/server --noEmit",
+    "typecheck": "tsc -p packages/engine --noEmit && tsc -p packages/engine/tsconfig.test.json --noEmit && tsc -p packages/protocol --noEmit && tsc -p packages/bot/tsconfig.test.json --noEmit && tsc -p apps/server --noEmit && tsc -p apps/web --noEmit",
     "sim": "tsx packages/engine/scripts/simulate.ts",
     "server": "npm run start -w @ludo/server",
     "arena": "tsx packages/bot/scripts/arena.ts",
