@@ -179,3 +179,55 @@ test('the room page fits one screen on desktop', async ({ browser }) => {
     await ctx.close();
   }
 });
+
+test('themes are personal: chosen on one device, saved there, and the other player keeps theirs', async ({
+  browser,
+}) => {
+  const host = await player(browser, 'Zohaib');
+  await host.page.goto('/');
+  await host.page.getByTestId('appearance-button').click();
+  await host.page.getByTestId('look-board-night').click();
+  await host.page.getByTestId('look-pieces-coin').click();
+  await host.page.getByTestId('look-dice-casino').click();
+  await host.page.keyboard.press('Escape');
+  await host.page.getByTestId('open-create').click();
+  await host.page.getByTestId('create-submit').click();
+  await expect(host.page.getByTestId('seat-board')).toBeVisible();
+  const code = host.page.url().split('/r/')[1]!;
+  const guest = await player(browser, 'Sara');
+  await guest.page.goto(`/r/${code}`);
+  await guest.page
+    .getByTestId('seat-yellow')
+    .getByRole('button', { name: /Tap to sit/ })
+    .click();
+  // In the lobby, my own seat has an ✕ to stand up, like a bot's.
+  await host.page
+    .getByTestId('seat-red')
+    .getByRole('button', { name: /Tap to sit/ })
+    .click();
+  await host.page.getByTestId('seat-x-red').click();
+  await expect(host.page.getByTestId('seat-red').getByRole('button', { name: /Tap to sit/ })).toBeVisible();
+  await host.page
+    .getByTestId('seat-red')
+    .getByRole('button', { name: /Tap to sit/ })
+    .click();
+  await expect(guest.page.getByTestId('seat-x-red')).toHaveCount(0); // not the guest's seat to clear
+  await guest.page.getByTestId('ready-button').click();
+  await host.page.getByRole('button', { name: 'Start game' }).click();
+
+  // Same game, two looks: the host's night board vs the guest's classic one.
+  const paper = (p: typeof host.page) => p.locator('[aria-label="Ludo board"] rect').first().getAttribute('fill');
+  await expect(host.page.getByTestId('action-area')).toBeVisible();
+  await expect(guest.page.getByTestId('action-area')).toBeVisible();
+  expect(await paper(host.page)).toBe('#1B1F2E');
+  expect(await paper(guest.page)).toBe('#FFFDF8');
+  // Survives a reload.
+  await host.page.reload();
+  await expect(host.page.getByTestId('action-area')).toBeVisible();
+  expect(await paper(host.page)).toBe('#1B1F2E');
+  expect(await host.page.evaluate(() => JSON.parse(localStorage.getItem('dodice.settings')!))).toMatchObject({
+    boardTheme: 'night',
+    pieceStyle: 'coin',
+    diceStyle: 'casino',
+  });
+});

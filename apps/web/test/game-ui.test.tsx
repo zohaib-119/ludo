@@ -160,41 +160,61 @@ describe('board', () => {
     { id: 'yellow-0', color: 'yellow' as const, progress: 36 }, // same square as red-0 (absolute 10)
     { id: 'red-1', color: 'red' as const, progress: -1 },
   ];
-  const renderBoard = (movable: string[]) =>
-    render(
-      <Board
-        pieces={pieces}
-        progress={{}}
-        rotation={0}
-        activeColor="red"
-        movable={new Set(movable)}
-        selected={null}
-        options={[]}
-        preview={null}
-        locked={[]}
-        colorBlind={false}
-        reducedMotion
-        onPieceTap={() => {}}
-        onChoose={() => {}}
-        onBackgroundTap={() => {}}
-      />,
-    );
+  const renderBoard = (movable: string[]) => render(boardWith(movable));
+  const boardWith = (movable: string[]) => (
+    <Board
+      pieces={pieces}
+      progress={{}}
+      rotation={0}
+      activeColor="red"
+      movable={new Set(movable)}
+      selected={null}
+      options={[]}
+      preview={null}
+      locked={[]}
+      colorBlind={false}
+      reducedMotion
+      onPieceTap={() => {}}
+      onChoose={() => {}}
+      onBackgroundTap={() => {}}
+    />
+  );
 
-  it('safe squares are plain gold squares, no stars', () => {
+  it('safe squares take the colour of the home column next to them, no stars', async () => {
+    const { COLUMN_CELLS, TRACK_CELLS } = await import('@ludo/engine');
+    const { BOARD_THEMES } = await import('../src/lib/themes');
     const { container } = renderBoard([]);
     expect(container.querySelectorAll('polygon').length).toBe(4); // only the four centre triangles
-    expect(container.querySelectorAll('rect[fill="#F4DE9C"]').length).toBe(4);
+    const safe = [...container.querySelectorAll('rect[data-safe]')];
+    expect(safe.map((r) => r.getAttribute('data-safe')).sort()).toEqual(['blue', 'green', 'red', 'yellow']);
+    for (const rect of safe) {
+      const color = rect.getAttribute('data-safe') as 'red';
+      expect(rect.getAttribute('fill')).toBe(BOARD_THEMES.classic.base[color]);
+      const x = Number(rect.getAttribute('x')) + 0.5;
+      const y = Number(rect.getAttribute('y')) + 0.5;
+      expect(TRACK_CELLS.some((c) => c.x === x && c.y === y)).toBe(true);
+      // Touches that colour's finishing column.
+      expect(COLUMN_CELLS[color].some((c) => Math.abs(c.x - x) + Math.abs(c.y - y) === 1)).toBe(true);
+    }
   });
 
   it('my movable piece sits on top of a shared square and only it takes taps', () => {
-    const { container } = renderBoard(['red-0']);
+    const { container, rerender } = renderBoard(['red-0']);
     const order = [...container.querySelectorAll('[data-testid^=piece-]')].map((el) => el.getAttribute('data-testid'));
     expect(order.at(-1)).toBe('piece-red-0'); // drawn last = on top
-    const style = (id: string) =>
-      (container.querySelector(`[data-testid=piece-${id}]`) as SVGElement).style.pointerEvents;
-    expect(style('red-0')).toBe('auto');
-    expect(style('yellow-0')).toBe('none');
-    expect(style('red-1')).toBe('none');
+    const takesTaps = (id: string) =>
+      container.querySelector(`[data-testid=piece-${id}]`)!.classList.contains('pointer-events-auto');
+    const passesThrough = (id: string) =>
+      container.querySelector(`[data-testid=piece-${id}]`)!.classList.contains('pointer-events-none');
+    expect(takesTaps('red-0')).toBe(true);
+    expect(passesThrough('red-0')).toBe(false);
+    expect(passesThrough('yellow-0')).toBe(true);
+    expect(passesThrough('red-1')).toBe(true);
+    // A piece that becomes movable later takes taps too (and stops when it no longer is).
+    rerender(boardWith(['red-1']));
+    expect(takesTaps('red-1')).toBe(true);
+    expect(passesThrough('red-0')).toBe(true);
+    rerender(boardWith(['red-0']));
     // The movable piece's tap target covers its whole square.
     const hit = container.querySelector('[data-testid=piece-red-0] rect[fill=transparent]');
     expect(Number(hit?.getAttribute('width'))).toBeGreaterThanOrEqual(1);
@@ -213,5 +233,122 @@ describe('seat cards', () => {
     const team = blue.getByText('Team B');
     const you = blue.getByText('You');
     expect(team.parentElement).toBe(you.parentElement); // same badge row
+  });
+
+  it('a ✕ on my own seat stands me up; the host gets a ✕ on bots; no Stand up button', () => {
+    let id = 0;
+    const ctrl = new RoomController('ABCDEF', { rng: seededRng(1), now: () => 1000, newId: () => `m${++id}` });
+    const host = (ctrl.join({ playerToken: 'token-host-1', name: 'zohaib' }) as { memberId: string }).memberId;
+    const guest = (ctrl.join({ playerToken: 'token-guest-1', name: 'ali' }) as { memberId: string }).memberId;
+    ctrl.command(host, { type: 'takeSeat', color: 'red' });
+    ctrl.command(guest, { type: 'takeSeat', color: 'green' });
+    ctrl.command(host, { type: 'addBot', color: 'yellow' });
+
+    const { unmount } = render(<SeatBoard view={ctrl.view()} memberId={guest} />);
+    // The only way to stand up is the ✕ on the seat itself.
+    expect(screen.getAllByRole('button', { name: /stand up/i })).toEqual([screen.getByTestId('seat-x-green')]);
+    // A guest only gets a ✕ on their own seat.
+    expect(screen.queryByTestId('seat-x-red')).toBeNull();
+    expect(screen.queryByTestId('seat-x-yellow')).toBeNull();
+    fireEvent.click(screen.getByTestId('seat-x-green'));
+    expect(sent).toEqual([{ type: 'leaveSeat' }]);
+    unmount();
+
+    sent.length = 0;
+    render(<SeatBoard view={ctrl.view()} memberId={host} />);
+    fireEvent.click(screen.getByTestId('seat-x-red'));
+    fireEvent.click(screen.getByTestId('seat-x-yellow'));
+    expect(sent).toEqual([{ type: 'leaveSeat' }, { type: 'removeSeat', color: 'yellow' }]);
+  });
+});
+
+describe('auto mode', () => {
+  it('shows no bar or badge while on; it is turned off from the menu', () => {
+    const { view, me } = gameView();
+    const red = view.seats.red!;
+    const auto = { ...view, seats: { ...view.seats, red: { ...red, autoplay: true, botControlled: true } } };
+    showView(auto, me);
+    render(
+      <MemoryRouter>
+        <GameScreen />
+      </MemoryRouter>,
+    );
+    expect(screen.queryByTestId('im-back')).toBeNull();
+    expect(screen.queryByText(/autoplay/i)).toBeNull();
+    expect(screen.queryByText(/I'm back/i)).toBeNull();
+  });
+});
+
+describe('themes', () => {
+  it('the picker saves board, piece and dice choices in this browser only', async () => {
+    const { AppearanceButton } = await import('../src/ui/Appearance');
+    const { useSettings } = await import('../src/lib/settings');
+    const { BOARD_THEMES, PIECE_STYLES, DICE_STYLES } = await import('../src/lib/themes');
+    render(<AppearanceButton />);
+    fireEvent.click(screen.getByTestId('appearance-button'));
+    // Every design is offered.
+    for (const id of Object.keys(BOARD_THEMES)) expect(screen.getByTestId(`look-board-${id}`)).toBeTruthy();
+    for (const { id } of PIECE_STYLES) expect(screen.getByTestId(`look-pieces-${id}`)).toBeTruthy();
+    for (const { id } of DICE_STYLES) expect(screen.getByTestId(`look-dice-${id}`)).toBeTruthy();
+
+    fireEvent.click(screen.getByTestId('look-board-night'));
+    fireEvent.click(screen.getByTestId('look-pieces-gem'));
+    fireEvent.click(screen.getByTestId('look-dice-neon'));
+    expect(screen.getByTestId('look-board-night').getAttribute('aria-checked')).toBe('true');
+    expect(screen.getByTestId('look-board-classic').getAttribute('aria-checked')).toBe('false');
+    const { boardTheme, pieceStyle, diceStyle } = useSettings.getState();
+    expect({ boardTheme, pieceStyle, diceStyle }).toEqual({
+      boardTheme: 'night',
+      pieceStyle: 'gem',
+      diceStyle: 'neon',
+    });
+    const saved = JSON.parse(localStorage.getItem('dodice.settings') ?? '{}');
+    expect(saved).toMatchObject({ boardTheme: 'night', pieceStyle: 'gem', diceStyle: 'neon' });
+    expect(sent).toEqual([]); // nothing goes to the server
+    useSettings.getState().update({ boardTheme: 'classic', pieceStyle: 'glossy', diceStyle: 'tinted' });
+  });
+
+  it('every board theme and piece style renders the board with its own colours', async () => {
+    const { BOARD_THEMES, PIECE_STYLES } = await import('../src/lib/themes');
+    const pieces = (['red', 'green', 'yellow', 'blue'] as const).flatMap((color) =>
+      [0, 1].map((i) => ({ id: `${color}-${i}`, color, progress: i === 0 ? -1 : 3 })),
+    );
+    for (const theme of Object.values(BOARD_THEMES)) {
+      for (const { id } of PIECE_STYLES) {
+        const { container, unmount } = render(
+          <Board
+            pieces={pieces}
+            progress={{}}
+            rotation={0}
+            activeColor="red"
+            movable={new Set(['red-1'])}
+            selected={null}
+            options={[]}
+            preview={null}
+            locked={['green']}
+            colorBlind
+            reducedMotion
+            onPieceTap={() => {}}
+            onChoose={() => {}}
+            onBackgroundTap={() => {}}
+            theme={theme}
+            pieceStyle={id}
+          />,
+        );
+        expect(container.querySelectorAll('[data-testid^=piece-]').length).toBe(8);
+        const safe = container.querySelector('rect[data-safe=blue]');
+        expect(safe?.getAttribute('fill')).toBe(theme.base.blue);
+        unmount();
+      }
+    }
+  });
+
+  it('dice styles give every colour a readable face', async () => {
+    const { DICE_STYLES, diceLook } = await import('../src/lib/themes');
+    for (const { id } of DICE_STYLES)
+      for (const c of ['red', 'green', 'yellow', 'blue', null] as const) {
+        const look = diceLook(id, c);
+        expect(look.face).not.toBe(look.pip);
+      }
   });
 });
