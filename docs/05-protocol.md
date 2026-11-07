@@ -50,7 +50,7 @@ Notes:
 | `chat` | `{ text }` | member | any |
 | `react` | `{ emoji }` | member | any |
 
-All commands go through one message type, `cmd`, sent with `room.request('cmd', command)`. Every command is answered with `{ ok: true }` or `{ ok: false, code, message }`; the client re-enables input on either. Bot-related commands (`addBot`, `setAutoplay`, `hostBotTakeover`) arrive with M3. `applyPreset { preset }` sets the preset rule fields, and `leaveRoom` leaves explicitly (lobby: frees the seat; in game: the seat stays for the bot).
+All commands go through one message type, `cmd`, sent with `room.request('cmd', command)`. Every command is answered with `{ ok: true }` or `{ ok: false, code, message }`; the client re-enables input on either. `applyPreset { preset }` sets the preset rule fields, and `leaveRoom` leaves explicitly (lobby: frees the seat; in game: the seat stays for the bot).
 
 ## 4. Server → client messages
 
@@ -62,7 +62,7 @@ All commands go through one message type, `cmd`, sent with `room.request('cmd', 
 | `notice` | `{ code, params }` | Toast-worthy room events: `playerReconnected`, `botTookOver`, `hostChanged`, `settingsChanged`, `serverShutdown` |
 | `kicked` | `{ reason: 'otherTab' \| 'removedByHost' \| 'roomClosed' }` | Followed by close |
 
-`GameEvent` is exactly the engine event union (04-engine §9), plus room-level events: `BotActed { seat, cause: 'timeout' | 'offline' | 'autoplay' | 'bot' }`.
+`RoomEvent` is the engine event union (04-engine §9) plus the room-level `BotActed { seat, cause: 'bot' | 'timeout' | 'offline' | 'autoplay' }`, which precedes the engine events of the decision the bot made. Seats in the view carry `autoplay`, `botControlled` and `timeouts`; the turn carries `deadline` and `takeoverAt` (server timestamps, 0 when not applicable).
 
 ## 5. Error codes
 

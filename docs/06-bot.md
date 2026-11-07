@@ -52,9 +52,13 @@ Weights are constants in one file, tuned by self-play (07-testing §5).
 
 v1 ships **Normal** only. Easy (random legal move 40 % of the time) is trivial to add later. A future RL bot replaces the evaluation function with a trained network; the interface stays the same.
 
+### 3.3 Measured strength (M3)
+
+Against random players over 100 games each (`npm run arena`): 1-die 4-player 83 % wins, 2-dice 4-player 95 %, 2-dice with kill-to-enter 95 %, 1-vs-1 96 %, bot team vs random team 99 %. Decision time is under 4 ms even with large 2-dice banks.
+
 ## 4. Pacing
 
-Bots act after a delay so humans can follow: roll 700 ms, move 600–900 ms (+400 ms if it captures). If the room has no connected humans, bots stop acting until someone returns.
+Bots act after a delay so humans can follow: 700 ms before a roll, 900 ms before a move (constants in `apps/server/src/controller.ts`). If the room has no connected humans, bots stop acting until someone returns.
 
 ## 5. Timer behaviour (server)
 
@@ -62,7 +66,8 @@ Bots act after a delay so humans can follow: roll 700 ms, move 600–900 ms (+40
 |---|---|
 | `turnTimer = off` | No deadline for connected humans |
 | `turnTimer = N s` | Each decision (roll or move) gets N seconds. Deadline synced as `turn.deadline`. Last 5 s: ticking sound and red ring. On expiry: bot makes **that one decision**, `timeouts++`, event `BotActed { cause: 'timeout' }`. Any manual action resets `timeouts` to 0. |
-| 2 consecutive timeouts | Seat enters autoplay. Player sees a full-width bar "Autoplay is on — **I'm back**". Tapping it turns autoplay off from the next decision. |
+| 2 consecutive timeouts | Seat enters autoplay. Player sees a full-width bar "Autoplay is on — **I'm back**". Tapping it turns autoplay off **immediately**, resets the timeout count and starts a fresh timer for the current decision. |
+| Timer vs. takeover | The decision timer also runs for an offline player; whichever of the timer and the takeover grace period ends first applies. |
 
 ## 6. Disconnect behaviour (server)
 
