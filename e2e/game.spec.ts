@@ -119,7 +119,7 @@ test('when a player drops, others see who we wait for, and the host can let the 
     .click();
   // Takeover "never": the game must wait for Sara until the host steps in.
   await host.page
-    .getByRole('radiogroup', { name: 'Bot plays for offline players after' })
+    .getByRole('radiogroup', { name: 'Bot for offline players' })
     .getByRole('radio', { name: 'Never' })
     .click();
   const guest = await player(browser, 'Sara');

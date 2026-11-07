@@ -56,7 +56,7 @@ describe('RulesPanel', () => {
   it('lets the host change rules and presets', () => {
     const { view } = lobbyView();
     render(<RulesPanel settings={view.settings} preset={view.preset} editable />);
-    fireEvent.click(screen.getByRole('switch', { name: 'Capture before entering home column' }));
+    fireEvent.click(screen.getByRole('switch', { name: 'Capture before entering home' }));
     fireEvent.click(screen.getByRole('radio', { name: '1 die' }));
     fireEvent.click(within(screen.getByRole('radiogroup', { name: 'Turn timer' })).getByRole('radio', { name: '30s' }));
     fireEvent.click(screen.getByRole('radio', { name: 'Two Dice' }));
@@ -106,7 +106,7 @@ describe('RulesPanel', () => {
   it('hides the endgame rule in 1-die mode', () => {
     const { view } = lobbyView();
     render(<RulesPanel settings={{ ...view.settings, diceMode: 1 }} preset="classic" editable />);
-    expect(screen.queryByText('One die when all pieces are in the home column')).toBeNull();
+    expect(screen.queryByText('One die in the home column')).toBeNull();
   });
 
   it('highlights a rule only when its value changes', () => {
@@ -121,25 +121,27 @@ describe('RulesPanel', () => {
     expect(container.querySelectorAll('[data-testid=rule-flash]')).toHaveLength(1);
   });
 
-  it('every rule shows a plain explanation right under it (no info buttons)', () => {
+  it('is compact: one short label per rule, no explanations and no info buttons', () => {
     const { view } = lobbyView();
     render(
       <RulesPanel settings={{ ...view.settings, teamMode: true, teamHandover: 'delayed' }} preset="custom" editable />,
     );
-    for (const text of [
-      'Roll 1 die, or roll 2 and play each die as its own move.',
-      'Capturing an enemy piece gives you an extra roll straight away.',
-      'Getting a piece home gives you an extra roll straight away.',
-      'Once all your remaining pieces are in the coloured home column, roll just one die.',
-      'Capture an enemy piece first, or your pieces wait at the entrance. If nothing is left to capture, you are out.',
-      'Red + Yellow against Green + Blue. Team-mates never capture each other; both must finish to win.',
-      'A finished player then plays their team-mate’s pieces on their own turns.',
-      'How many of their own turns a finished player sits out before helping.',
-      'Time for each roll or move. If it runs out, the bot plays that move for you.',
-      'If someone is disconnected on their turn, the bot plays for them until they are back.',
+    for (const label of [
+      'Team mode',
+      'When a player finishes',
+      'Rounds to wait',
+      'Dice',
+      'Bonus roll for a capture',
+      'Bonus roll for reaching home',
+      'One die in the home column',
+      'Capture before entering home',
+      'Turn timer',
+      'Bot for offline players',
     ]) {
-      expect(screen.getByText(text)).toBeTruthy();
+      expect(screen.getByText(label)).toBeTruthy();
     }
+    expect(screen.queryByText(/extra roll straight away/)).toBeNull();
+    expect(screen.queryByText(/your pieces wait at the entrance/)).toBeNull();
     expect(screen.queryByRole('button', { name: /More info/ })).toBeNull();
   });
 });

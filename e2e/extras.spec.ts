@@ -26,8 +26,10 @@ test('chat and reactions: a chat column on desktop, a chat sheet with unread cou
   await expect(guest.page.getByTestId('chat-panel')).toBeVisible(); // desktop: always on screen
   await expect(guest.page.getByTestId('chat-button')).toBeHidden();
 
-  // Lobby: the guest writes in the column; the phone host gets an unread count.
-  await guest.page.getByTestId('chat-input').fill('salam! ready?');
+  // Lobby: the guest clicks somewhere else, then just types — it goes into the chat column.
+  await guest.page.getByTestId('seat-board').click({ position: { x: 5, y: 5 } });
+  await guest.page.keyboard.type('salam! ready?');
+  await expect(guest.page.getByTestId('chat-input')).toHaveValue('salam! ready?');
   await guest.page.keyboard.press('Enter');
   await expect(guest.page.getByTestId('chat-log')).toContainText('salam! ready?');
   await expect(host.page.getByTestId('chat-unread')).toHaveText('1');
@@ -132,6 +134,43 @@ test('the landing page fits one screen and opens create/join dialogs', async ({ 
     await page.getByTestId('open-join').click();
     await expect(page.getByRole('dialog', { name: 'Join a game' })).toBeVisible();
     await expect(page.getByTestId('join-code')).toBeVisible();
+    await ctx.close();
+  }
+});
+
+test('the room page fits one screen on desktop', async ({ browser }) => {
+  for (const viewport of [
+    { width: 1280, height: 720 },
+    { width: 1366, height: 768 },
+    { width: 1920, height: 1080 },
+  ]) {
+    const ctx = await browser.newContext({ viewport });
+    await ctx.addInitScript(() =>
+      localStorage.setItem('dodice.profile', JSON.stringify({ name: 'Zohaib', avatar: '🦊' })),
+    );
+    const page = await ctx.newPage();
+    await page.goto('/');
+    await page.getByTestId('open-create').click();
+    await page.getByTestId('create-submit').click();
+    await expect(page.getByTestId('seat-board')).toBeVisible();
+    const overflow = await page.evaluate(() => document.documentElement.scrollHeight - window.innerHeight);
+    expect(overflow, `no page scroll at ${viewport.width}×${viewport.height}`).toBeLessThanOrEqual(0);
+    for (const id of ['seat-board', 'rules-panel', 'chat-panel']) await expect(page.getByTestId(id)).toBeInViewport();
+    await expect(page.getByRole('button', { name: 'Start game' })).toBeInViewport();
+    // The share buttons sit on one line, and the rules never scroll sideways (even with team options).
+    await page.getByRole('switch', { name: 'Team mode' }).click();
+    await page.getByRole('radio', { name: 'Wait first' }).click();
+    const layout = await page.evaluate(() => {
+      const share = [...document.querySelectorAll('button')].filter((b) =>
+        /Copy code|Copy link|QR code/.test(b.textContent ?? ''),
+      );
+      const rules = document.querySelector('[data-testid=rules-panel] .overflow-y-auto')!;
+      return {
+        shareRows: new Set(share.map((b) => Math.round(b.getBoundingClientRect().top))).size,
+        sideways: rules.scrollWidth - rules.clientWidth,
+      };
+    });
+    expect(layout).toEqual({ shareRows: 1, sideways: 0 });
     await ctx.close();
   }
 });
