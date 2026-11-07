@@ -46,6 +46,40 @@ export function RulesPanel({
         {t('rules.title')}
       </SectionTitle>
 
+      <Group title={t('rules.group.teams')} first>
+        <ToggleRow k="teamMode" settings={settings} disabled={disabled} update={update} />
+        {settings.teamMode && (
+          <>
+            <Row label="rules.teamHandover" value={settings.teamHandover}>
+              <div className="w-56">
+                <Segmented<'immediate' | 'delayed'>
+                  label={t('rules.teamHandover')}
+                  size="sm"
+                  value={settings.teamHandover}
+                  disabled={disabled}
+                  onChange={(v) => update({ teamHandover: v })}
+                  options={[
+                    { value: 'immediate', label: t('rules.teamHandover.immediate') },
+                    { value: 'delayed', label: t('rules.teamHandover.delayed') },
+                  ]}
+                />
+              </div>
+            </Row>
+            {settings.teamHandover === 'delayed' && (
+              <Row label="rules.teamHandoverDelayRounds" value={settings.teamHandoverDelayRounds}>
+                <Stepper
+                  value={settings.teamHandoverDelayRounds}
+                  min={1}
+                  max={10}
+                  disabled={disabled}
+                  onChange={(v) => update({ teamHandoverDelayRounds: v })}
+                />
+              </Row>
+            )}
+          </>
+        )}
+      </Group>
+
       <Segmented<PresetId | 'custom'>
         label={t('rules.preset')}
         value={preset}
@@ -85,40 +119,6 @@ export function RulesPanel({
 
       <Group title={t('rules.group.kill')}>
         <ToggleRow k="killRequiredToEnterColumn" settings={settings} disabled={disabled} update={update} />
-      </Group>
-
-      <Group title={t('rules.group.teams')}>
-        <ToggleRow k="teamMode" settings={settings} disabled={disabled} update={update} />
-        {settings.teamMode && (
-          <>
-            <Row label="rules.teamHandover" value={settings.teamHandover}>
-              <div className="w-56">
-                <Segmented<'immediate' | 'delayed'>
-                  label={t('rules.teamHandover')}
-                  size="sm"
-                  value={settings.teamHandover}
-                  disabled={disabled}
-                  onChange={(v) => update({ teamHandover: v })}
-                  options={[
-                    { value: 'immediate', label: t('rules.teamHandover.immediate') },
-                    { value: 'delayed', label: t('rules.teamHandover.delayed') },
-                  ]}
-                />
-              </div>
-            </Row>
-            {settings.teamHandover === 'delayed' && (
-              <Row label="rules.teamHandoverDelayRounds" value={settings.teamHandoverDelayRounds}>
-                <Stepper
-                  value={settings.teamHandoverDelayRounds}
-                  min={1}
-                  max={10}
-                  disabled={disabled}
-                  onChange={(v) => update({ teamHandoverDelayRounds: v })}
-                />
-              </Row>
-            )}
-          </>
-        )}
       </Group>
 
       <Group title={t('rules.group.time')}>
@@ -178,9 +178,9 @@ function ToggleRow({
   );
 }
 
-function Group({ title, children }: { title: string; children: ReactNode }) {
+function Group({ title, children, first = false }: { title: string; children: ReactNode; first?: boolean }) {
   return (
-    <div className="mt-5">
+    <div className={first ? 'mb-5' : 'mt-5'}>
       <h3 className="mb-1 text-xs font-bold uppercase tracking-[0.14em] text-muted">{title}</h3>
       <div className="space-y-0.5">{children}</div>
     </div>
