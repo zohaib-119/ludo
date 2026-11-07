@@ -133,14 +133,27 @@ export function GameScreen() {
     return () => clearTimeout(id);
   }, [awaitingMove, settings.autoMove, game.legalMoves, move]);
 
-  // Keyboard: Space/Enter rolls, Escape clears the selection.
+  // Keyboard: Space rolls whenever it's your turn to roll — wherever focus is, even in an empty
+  // chat box (once you start typing a message, Space types a space). Enter rolls outside text
+  // boxes and buttons. Escape clears the selection.
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
+      if (e.ctrlKey || e.metaKey || e.altKey) return;
       const target = e.target as HTMLElement | null;
-      if (target && ['INPUT', 'TEXTAREA', 'BUTTON'].includes(target.tagName)) return;
-      if ((e.key === ' ' || e.key === 'Enter') && awaitingRoll) {
+      const inText = Boolean(
+        target && (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable),
+      );
+      if (document.querySelector('[role=dialog]')) return; // a sheet or the results are open
+      if (e.key === ' ' && awaitingRoll) {
+        if (inText && (target as HTMLInputElement).value !== '') return;
+        e.preventDefault(); // also stops Space from "clicking" a focused button
+        roll();
+        return;
+      }
+      if (e.key === 'Enter' && awaitingRoll && !inText && target?.tagName !== 'BUTTON') {
         e.preventDefault();
         roll();
+        return;
       }
       if (e.key === 'Escape') {
         setSelected(null);
