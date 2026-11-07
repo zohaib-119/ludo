@@ -10,7 +10,6 @@ import { listenToChat, useChat } from '../net/chat';
 import { getConnection, useConnection } from '../net/session';
 import { Avatar, Button, Card, Logo, Spinner, TextField } from '../ui/kit';
 import { toast } from '../ui/toast';
-import { FloatingEmojis } from '../ui/ChatControls';
 import { ConnectionBanner } from './ConnectionBanner';
 
 // The game screen (board, dice, animations) loads only when a game starts.
@@ -78,7 +77,6 @@ export function RoomPage() {
           <GameScreen />
         </Suspense>
       )}
-      <UnseatedReactions />
     </>
   );
 }
@@ -249,19 +247,5 @@ function NamePrompt({ code, onDone }: { code: string; onDone: () => void }) {
         </Card>
       </motion.div>
     </main>
-  );
-}
-
-/** Reactions from people without a seat (and everyone in the lobby) float from the top of the screen. */
-function UnseatedReactions() {
-  const reactions = useChat((s) => s.reactions);
-  const phase = useConnection((s) => s.view?.phase);
-  const shown = phase === 'lobby' ? reactions : reactions.filter((r) => r.color === null);
-  return (
-    <div className="pointer-events-none fixed inset-x-0 top-24 z-40 h-0">
-      <div className="relative mx-auto h-0 w-40">
-        <FloatingEmojis emojis={shown} />
-      </div>
-    </div>
   );
 }

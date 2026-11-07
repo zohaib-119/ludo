@@ -19,7 +19,8 @@ export type SoundName =
   | 'win'
   | 'out'
   | 'pop'
-  | 'message';
+  | 'message'
+  | 'reaction';
 
 type Ctx = AudioContext;
 
@@ -114,8 +115,16 @@ class SoundEngine {
         this.tone(t, 660, 0.08, 0.18, 'sine', 990);
         break;
       case 'message':
-        this.tone(t, 740, 0.12, 0.14, 'sine');
-        this.tone(t + 0.07, 988, 0.14, 0.12, 'sine');
+        // A bright three-note "marimba" notification, unlike any game sound.
+        [1174.66, 1567.98, 2349.32].forEach((f, i) => {
+          this.tone(t + i * 0.075, f, 0.22, 0.2 - i * 0.04, 'sine');
+          this.tone(t + i * 0.075, f * 2, 0.08, 0.05, 'triangle');
+        });
+        break;
+      case 'reaction':
+        // A playful double bubble-pop.
+        this.tone(t, 380, 0.09, 0.22, 'sine', 1150);
+        this.tone(t + 0.1, 520, 0.1, 0.18, 'sine', 1500);
         break;
     }
   }

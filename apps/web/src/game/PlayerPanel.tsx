@@ -4,7 +4,6 @@ import { Lock, LockOpen } from 'lucide-react';
 import { AnimatePresence, motion } from 'motion/react';
 import { useSettings } from '../lib/settings';
 import { useChat } from '../net/chat';
-import { FloatingEmojis } from '../ui/ChatControls';
 import { t } from '../i18n/messages';
 import { Badge, cx, pieceColor } from '../ui/kit';
 import { ordinal } from './log';
@@ -43,7 +42,6 @@ export function PlayerPanel({
   const mate = view.settings.teamMode ? OPPOSITE[color] : null;
   const playingFor = finished && mate && active && game.turn.controls === mate;
   const memberId = seat?.memberId ?? null;
-  const reactions = useChat((s) => s.reactions).filter((r) => memberId !== null && r.from === memberId);
   const bubble = useChat((s) => (memberId ? s.bubbles[memberId] : undefined));
   const colorBlind = useSettings((s) => s.colorBlindMarkers);
 
@@ -58,7 +56,6 @@ export function PlayerPanel({
       data-testid={`panel-${color}`}
       data-active={active || undefined}
     >
-      <FloatingEmojis emojis={reactions} />
       <AnimatePresence>
         {bubble && (
           <motion.p

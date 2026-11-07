@@ -6,7 +6,7 @@ import { lastRoom } from '../lib/identity';
 import { sendCommand } from '../net/commands';
 import { getConnection, useConnection } from '../net/session';
 import { Avatar, Badge, Button, Card, Dot, Logo, SectionTitle, Sheet } from '../ui/kit';
-import { ChatControls } from '../ui/ChatControls';
+import { ChatButton, ChatPanel, useIsDesktop } from '../ui/ChatControls';
 import { isHost, me, occupiedColors, startBlocker } from './logic';
 import { RulesPanel } from './RulesPanel';
 import { SeatBoard } from './SeatBoard';
@@ -19,11 +19,12 @@ export function LobbyPage() {
   const self = me(view, memberId);
   const watchers = view.members.filter((m) => !m.seat);
   const seatedCount = occupiedColors(view).length;
+  const desktop = useIsDesktop();
 
   return (
     <div className="min-h-dvh pb-36">
       <TopBar code={view.code} inGame={false} />
-      <main className="mx-auto grid w-full max-w-5xl gap-4 px-4 lg:grid-cols-[minmax(0,1fr)_minmax(0,420px)] lg:items-start">
+      <main className="mx-auto grid w-full max-w-[1500px] gap-4 px-4 lg:grid-cols-[minmax(0,1fr)_minmax(0,400px)_320px] lg:items-start">
         <div className="space-y-4">
           <ShareCard code={view.code} />
           <Card>
@@ -56,6 +57,13 @@ export function LobbyPage() {
           </Card>
         </div>
         <RulesPanel settings={view.settings} preset={view.preset} editable={host} />
+        {desktop && (
+          <aside className="sticky top-4 h-[calc(100dvh-11rem)]">
+            <Card className="flex h-full flex-col">
+              <ChatPanel className="flex-1" />
+            </Card>
+          </aside>
+        )}
       </main>
       <ActionBar host={host} seated={Boolean(self?.seat)} ready={self?.ready ?? false} />
     </div>
@@ -64,6 +72,7 @@ export function LobbyPage() {
 
 export function TopBar({ code, inGame }: { code: string; inGame: boolean }) {
   const navigate = useNavigate();
+  const desktop = useIsDesktop();
   const [confirm, setConfirm] = useState(false);
   const leave = async () => {
     setConfirm(false);
@@ -72,7 +81,7 @@ export function TopBar({ code, inGame }: { code: string; inGame: boolean }) {
     navigate('/');
   };
   return (
-    <header className="mx-auto flex w-full max-w-5xl items-center justify-between gap-3 px-4 py-3">
+    <header className="mx-auto flex w-full max-w-[1500px] items-center justify-between gap-3 px-4 py-3">
       <div className="flex items-center gap-2.5">
         <Logo size={30} />
         <span className="font-display text-lg font-extrabold">
@@ -80,7 +89,7 @@ export function TopBar({ code, inGame }: { code: string; inGame: boolean }) {
         </span>
       </div>
       <div className="flex items-center gap-1">
-        <ChatControls />
+        {!desktop && <ChatButton />}
         <Button variant="ghost" size="sm" onClick={() => setConfirm(true)} icon={<LogOut className="size-4" />}>
           {t('room.leave')}
         </Button>
@@ -120,7 +129,7 @@ function ActionBar({ host, seated, ready }: { host: boolean; seated: boolean; re
       className="fixed inset-x-0 bottom-0 z-30 border-t border-line bg-surface/85 backdrop-blur-md"
       style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}
     >
-      <div className="mx-auto flex w-full max-w-5xl flex-col gap-2 px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
+      <div className="mx-auto flex w-full max-w-[1500px] flex-col gap-2 px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
         <p className="text-center text-sm text-muted sm:text-left" data-testid="lobby-status">
           {host ? (blocker ?? ' ') : seated ? t('lobby.waitingForHost', { name: hostName }) : t('lobby.sitToPlay')}
         </p>
