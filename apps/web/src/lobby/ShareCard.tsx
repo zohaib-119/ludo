@@ -40,18 +40,20 @@ export function ShareCard({ code }: { code: string }) {
   };
 
   return (
-    <Card className="text-center">
-      <p className="text-xs font-bold uppercase tracking-[0.2em] text-muted">{t('lobby.roomCode')}</p>
-      <button
-        type="button"
-        onClick={() => doCopy('code')}
-        className="room-code mx-auto mt-1 block rounded-xl px-3 text-[2.6rem] leading-tight transition-colors hover:bg-surface-2 sm:text-5xl"
-        aria-label={`${t('lobby.copyCode')}: ${code}`}
-        data-testid="room-code"
-      >
-        {code}
-      </button>
-      <div className="mt-3 flex flex-wrap justify-center gap-2">
+    <Card className="flex flex-wrap items-center justify-center gap-x-4 gap-y-2 p-3! sm:justify-between sm:p-4!">
+      <div className="text-center sm:text-left">
+        <p className="text-[11px] font-bold tracking-[0.2em] text-muted uppercase">{t('lobby.roomCode')}</p>
+        <button
+          type="button"
+          onClick={() => doCopy('code')}
+          className="room-code -ml-1 block rounded-xl px-1 text-[2.1rem] leading-tight transition-colors hover:bg-surface-2"
+          aria-label={`${t('lobby.copyCode')}: ${code}`}
+          data-testid="room-code"
+        >
+          {code}
+        </button>
+      </div>
+      <div className="flex flex-nowrap justify-center gap-1.5 sm:justify-end">
         <Button
           variant="secondary"
           size="sm"

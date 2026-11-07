@@ -32,14 +32,22 @@ const tint: Record<Color, string> = {
   blue: 'var(--blue-light)',
 };
 
-export function SeatBoard({ view, memberId }: { view: RoomView; memberId: string | null }) {
+export function SeatBoard({
+  view,
+  memberId,
+  className,
+}: {
+  view: RoomView;
+  memberId: string | null;
+  className?: string;
+}) {
   const host = isHost(view, memberId);
   const suggested = suggestedColor(view, memberId);
   const mySeat = view.members.find((m) => m.id === memberId)?.seat ?? null;
 
   return (
     <div
-      className="relative mx-auto grid aspect-square w-full max-w-[420px] grid-cols-2 gap-2.5 sm:gap-3"
+      className={cx('relative mx-auto grid aspect-square w-full max-w-[340px] grid-cols-2 gap-2.5', className)}
       data-testid="seat-board"
     >
       {CORNERS.map((color) => (

@@ -21,30 +21,32 @@ export function LobbyPage() {
   const seatedCount = occupiedColors(view).length;
   const desktop = useIsDesktop();
 
+  // Desktop: exactly one screen (no page scroll). Phones: a compact stacked page.
   return (
-    <div className="min-h-dvh pb-36">
+    <div className="flex min-h-dvh flex-col pb-36 lg:h-dvh lg:min-h-0 lg:overflow-hidden lg:pb-0">
       <TopBar code={view.code} inGame={false} />
-      <main className="mx-auto grid w-full max-w-[1500px] gap-4 px-4 lg:grid-cols-[minmax(0,1fr)_minmax(0,400px)_320px] lg:items-start">
-        <div className="space-y-4">
+      <main className="mx-auto grid w-full max-w-[1500px] flex-1 gap-4 px-4 lg:min-h-0 lg:grid-cols-[minmax(0,1fr)_300px_260px] xl:grid-cols-[minmax(0,1fr)_360px_320px] lg:pb-[5.75rem]">
+        <div className="flex min-h-0 flex-col gap-3">
           <ShareCard code={view.code} />
-          <Card>
+          <Card className="flex min-h-0 flex-1 flex-col">
             <SectionTitle aside={<span className="text-sm font-semibold text-muted">{seatedCount}/4</span>}>
               {t('lobby.seats')}
             </SectionTitle>
-            <SeatBoard view={view} memberId={memberId} />
+            <div className="flex min-h-0 flex-1 items-center justify-center">
+              <SeatBoard view={view} memberId={memberId} className="lg:w-[min(100%,calc(100dvh-24rem))]" />
+            </div>
             {!view.settings.teamMode && seatedCount <= 2 && (
-              <p className="mt-3 text-center text-sm text-muted">{t('lobby.twoPlayerHint')}</p>
+              <p className="mt-3 text-center text-xs text-muted">{t('lobby.twoPlayerHint')}</p>
             )}
             {watchers.length > 0 && (
-              <div className="mt-4 border-t border-line pt-3">
-                <p className="mb-2 text-xs font-bold uppercase tracking-[0.14em] text-muted">{t('lobby.watching')}</p>
-                <ul className="flex flex-wrap gap-2">
+              <div className="mt-3 border-t border-line pt-2">
+                <ul className="flex flex-wrap gap-1.5" aria-label={t('lobby.watching')}>
                   {watchers.map((m) => (
                     <li
                       key={m.id}
-                      className="flex items-center gap-2 rounded-full bg-surface-2 py-1 pl-1 pr-3 text-sm font-medium"
+                      className="flex items-center gap-1.5 rounded-full bg-surface-2 py-0.5 pr-2.5 pl-0.5 text-xs font-medium"
                     >
-                      <Avatar emoji={m.avatar} size={26} />
+                      <Avatar emoji={m.avatar} size={22} />
                       {m.name}
                       {m.id === memberId && <Badge tone="accent">{t('lobby.you')}</Badge>}
                       {m.isHost && <Badge>{t('lobby.host')}</Badge>}
@@ -56,11 +58,13 @@ export function LobbyPage() {
             )}
           </Card>
         </div>
-        <RulesPanel settings={view.settings} preset={view.preset} editable={host} />
+        <div className="min-h-0">
+          <RulesPanel settings={view.settings} preset={view.preset} editable={host} />
+        </div>
         {desktop && (
-          <aside className="sticky top-4 h-[calc(100dvh-11rem)]">
+          <aside className="min-h-0">
             <Card className="flex h-full flex-col">
-              <ChatPanel className="flex-1" />
+              <ChatPanel className="flex-1" captureTyping />
             </Card>
           </aside>
         )}
