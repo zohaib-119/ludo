@@ -2,7 +2,7 @@ import { LIMITS, type NoticeMessage, parseRoomCode } from '@ludo/protocol';
 import { motion } from 'motion/react';
 import { type FormEvent, type ReactNode, useEffect, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router';
-import { GamePlaceholder } from '../game/GamePlaceholder';
+import { GameScreen } from '../game/GameScreen';
 import { type MessageKey, t } from '../i18n/messages';
 import { isValidName, lastRoom, loadProfile, playerToken, saveProfile } from '../lib/identity';
 import { LobbyPage } from '../lobby/LobbyPage';
@@ -55,7 +55,7 @@ export function RoomPage() {
   return (
     <>
       <ConnectionBanner />
-      {view.phase === 'lobby' ? <LobbyPage /> : <GamePlaceholder />}
+      {view.phase === 'lobby' || !view.game ? <LobbyPage /> : <GameScreen />}
     </>
   );
 }
