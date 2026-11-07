@@ -213,12 +213,12 @@ const PieceView = memo(function PieceView({
       animate={{ x, y }}
       transition={transition}
       // Only my movable pieces take taps; everything else lets them through to what's underneath.
-      style={{ pointerEvents: movable ? 'auto' : 'none' }}
+      // (A class, not style: Motion keeps the first style value it saw for a non-animated key.)
       role={movable ? 'button' : undefined}
       tabIndex={movable ? 0 : undefined}
       aria-label={label}
       aria-pressed={movable ? selected : undefined}
-      className={movable ? 'cursor-pointer outline-none' : undefined}
+      className={movable ? 'pointer-events-auto cursor-pointer outline-none' : 'pointer-events-none'}
       onClick={(e) => {
         e.stopPropagation();
         if (movable) onTap(piece.id);
