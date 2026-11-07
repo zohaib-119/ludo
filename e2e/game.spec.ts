@@ -39,6 +39,7 @@ async function actOnce(page: Page): Promise<boolean> {
 }
 
 test('playing turns against bots: roll, dice, move, log', async ({ browser }) => {
+  test.setTimeout(150_000);
   const host = await hostWithBots(browser, 'red', ['green', 'yellow', 'blue']);
   const page = host.page;
   // Wait for our turn (the first player is random), then roll.
@@ -50,15 +51,20 @@ test('playing turns against bots: roll, dice, move, log', async ({ browser }) =>
     await actOnce(page);
     await page.getByRole('button', { name: 'Game log' }).click();
     const log = page.getByTestId('game-log');
-    await expect(log).toContainText(/Zohaib (moved|brought a piece out)/, { timeout: 500 });
-    await expect(log).toContainText(/Bot \w+ rolled/, { timeout: 500 });
-  }).toPass({ timeout: 90_000, intervals: [700] });
-  await page.keyboard.press('Escape');
+    try {
+      await expect(log).toContainText(/Zohaib (moved|brought a piece out)/, { timeout: 500 });
+      await expect(log).toContainText(/Bot \w+ rolled/, { timeout: 500 });
+    } finally {
+      await page.keyboard.press('Escape'); // close the log before the next try
+      await expect(log).toBeHidden();
+    }
+  }).toPass({ timeout: 120_000, intervals: [700] });
   // Bots really took turns and the turn came back to us.
   await expect(page.getByTestId('panel-red')).toBeVisible();
 });
 
 test('a full game on autoplay ends in results; play again starts a new game', async ({ browser }) => {
+  test.setTimeout(240_000);
   const host = await hostWithBots(browser, 'yellow', ['red', 'green', 'blue']);
   const page = host.page;
   await page.getByTestId('game-menu').click();
