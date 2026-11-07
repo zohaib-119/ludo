@@ -12,9 +12,11 @@
     "typecheck": "tsc -p packages/engine --noEmit && tsc -p packages/engine/tsconfig.test.json --noEmit && tsc -p packages/protocol --noEmit && tsc -p packages/bot/tsconfig.test.json --noEmit && tsc -p apps/server --noEmit",
     "sim": "tsx packages/engine/scripts/simulate.ts",
     "server": "npm run start -w @ludo/server",
-    "arena": "tsx packages/bot/scripts/arena.ts"
+    "arena": "tsx packages/bot/scripts/arena.ts",
+    "e2e": "playwright test"
   },
   "devDependencies": {
+    "@playwright/test": "^1.65.0",
     "@types/node": "^22.20.5",
     "fast-check": "^3.23.2",
     "tsx": "^4.19.2",
