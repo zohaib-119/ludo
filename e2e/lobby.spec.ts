@@ -39,6 +39,11 @@ test('four players: create, join by link, seats, rules un-ready everyone, start'
   }
   for (const c of ['green', 'yellow', 'blue']) await expect(seat(host.page, c)).toContainText('Ready');
   await expect(host.page.getByRole('button', { name: 'Start game' })).toBeEnabled();
+  // Four people in the room: the members row scrolls inside itself; the phone page never scrolls sideways.
+  await expect(host.page.getByTestId('room-members')).toContainText('Gul');
+  expect(
+    await host.page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth),
+  ).toBe(true);
 
   // Host changes a rule: everyone is un-readied and told.
   await host.page.getByRole('switch', { name: 'Team mode' }).click();
@@ -131,14 +136,14 @@ test('going offline shows reconnecting, coming back restores the room', async ({
   await expect(host.page.getByTestId('room-code')).toHaveText(code);
 });
 
-test('the seat board keeps its size and four equal tiles as seats fill and empty', async ({ browser }) => {
+test('the seat board keeps its size, place and four equal tiles as seats fill and empty', async ({ browser }) => {
   const host = await player(browser, 'Zohaib');
   await createRoom(host.page);
   const sizes = () =>
     Promise.all(
       ['green', 'yellow', 'red', 'blue', 'board'].map(async (c) => {
         const b = (await host.page.getByTestId(c === 'board' ? 'seat-board' : `seat-${c}`).boundingBox())!;
-        return `${Math.round(b.width)}x${Math.round(b.height)}`;
+        return `${Math.round(b.width)}x${Math.round(b.height)}@${Math.round(b.x)},${Math.round(b.y)}`;
       }),
     );
   const settled = async () => {
@@ -146,7 +151,7 @@ test('the seat board keeps its size and four equal tiles as seats fill and empty
     return sizes();
   };
   const empty = await settled();
-  expect(new Set(empty.slice(0, 4)).size).toBe(1); // four equal tiles
+  expect(new Set(empty.slice(0, 4).map((x) => x.split('@')[0])).size).toBe(1); // four equal tiles
   await host.page.getByTestId('add-bot-green').click();
   await host.page.getByTestId('add-bot-yellow').click();
   expect(await settled()).toEqual(empty); // two filled, two empty: nothing moves
@@ -155,4 +160,6 @@ test('the seat board keeps its size and four equal tiles as seats fill and empty
   expect(await settled()).toEqual(empty);
   await host.page.getByTestId('seat-x-red').click();
   expect(await settled()).toEqual(empty);
+  // Everyone sat down or stood up: the members row under the board is always there.
+  await expect(host.page.getByTestId('room-members')).toContainText('Zohaib');
 });

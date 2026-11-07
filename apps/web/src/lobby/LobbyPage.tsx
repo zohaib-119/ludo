@@ -18,7 +18,6 @@ export function LobbyPage() {
   const memberId = useConnection((s) => s.memberId);
   const host = isHost(view, memberId);
   const self = me(view, memberId);
-  const watchers = view.members.filter((m) => !m.seat);
   const seatedCount = occupiedColors(view).length;
   const desktop = useIsDesktop();
 
@@ -26,8 +25,8 @@ export function LobbyPage() {
   return (
     <div className="flex min-h-dvh flex-col pb-36 lg:h-dvh lg:min-h-0 lg:overflow-hidden lg:pb-0">
       <TopBar code={view.code} inGame={false} />
-      <main className="mx-auto grid w-full max-w-[1500px] flex-1 gap-4 px-4 lg:min-h-0 lg:grid-cols-[minmax(0,1fr)_300px_260px] xl:grid-cols-[minmax(0,1fr)_360px_380px] lg:pb-[5.75rem]">
-        <div className="flex min-h-0 flex-col gap-3">
+      <main className="mx-auto grid w-full max-w-[1500px] flex-1 grid-cols-[minmax(0,1fr)] gap-4 px-4 lg:min-h-0 lg:grid-cols-[minmax(0,1fr)_300px_260px] xl:grid-cols-[minmax(0,1fr)_360px_380px] lg:pb-[5.75rem]">
+        <div className="flex min-h-0 min-w-0 flex-col gap-3">
           <ShareCard code={view.code} />
           <Card className="flex min-h-0 flex-1 flex-col">
             <SectionTitle aside={<span className="text-sm font-semibold text-muted">{seatedCount}/4</span>}>
@@ -36,24 +35,28 @@ export function LobbyPage() {
             <div className="flex min-h-0 flex-1 items-center justify-center">
               <SeatBoard view={view} memberId={memberId} className="lg:w-[min(100%,calc(100dvh-24rem))]" />
             </div>
-            {watchers.length > 0 && (
-              <div className="mt-3 border-t border-line pt-2">
-                <ul className="flex flex-wrap gap-1.5" aria-label={t('lobby.watching')}>
-                  {watchers.map((m) => (
-                    <li
-                      key={m.id}
-                      className="flex items-center gap-1.5 rounded-full bg-surface-2 py-0.5 pr-2.5 pl-0.5 text-xs font-medium"
-                    >
-                      <Avatar avatar={m.avatar} size={22} />
-                      {m.name}
-                      {m.id === memberId && <Badge tone="accent">{t('lobby.you')}</Badge>}
-                      {m.isHost && <Badge>{t('lobby.host')}</Badge>}
-                      <Dot tone={m.connected ? 'online' : 'offline'} />
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            )}
+            {/* Everyone in the room. Always shown, one fixed-height line, so the seat board never moves. */}
+            <div className="mt-3 border-t border-line pt-2">
+              <ul
+                className="flex h-7 items-center gap-1.5 overflow-x-auto"
+                aria-label={t('lobby.inRoom')}
+                data-testid="room-members"
+              >
+                {view.members.map((m) => (
+                  <li
+                    key={m.id}
+                    className="flex shrink-0 items-center gap-1.5 rounded-full bg-surface-2 py-0.5 pr-2.5 pl-0.5 text-xs font-medium"
+                  >
+                    <Avatar avatar={m.avatar} size={22} color={m.seat ?? undefined} />
+                    {m.name}
+                    {m.id === memberId && <Badge tone="accent">{t('lobby.you')}</Badge>}
+                    {m.isHost && <Badge>{t('lobby.host')}</Badge>}
+                    {!m.seat && <span className="text-muted">{t('lobby.watchingShort')}</span>}
+                    <Dot tone={m.connected ? 'online' : 'offline'} />
+                  </li>
+                ))}
+              </ul>
+            </div>
           </Card>
         </div>
         <div className="min-h-0">
