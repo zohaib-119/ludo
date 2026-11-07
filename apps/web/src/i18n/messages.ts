@@ -15,6 +15,9 @@ const en = {
   'home.create': 'Create game',
   'home.creating': 'Creating…',
   'home.joinTitle': 'Join a game',
+  'home.createTitle': 'Create a game',
+  'home.features': 'Two dice · House rules · Up to 4 friends',
+  'home.rollDice': 'Roll the dice',
   'home.codePlaceholder': 'Room code',
   'home.join': 'Join',
   'home.joining': 'Joining…',
@@ -246,12 +249,9 @@ const en = {
   'chat.empty': 'No messages yet. Say hi!',
   'chat.placeholder': 'Message',
   'chat.send': 'Send',
+  'chat.sendReaction': 'Send reaction',
 
   // Settings
-  'settings.theme': 'Theme',
-  'settings.theme.system': 'System',
-  'settings.theme.light': 'Light',
-  'settings.theme.dark': 'Dark',
   'settings.sound': 'Sound',
   'settings.sound.help': 'Dice, moves and captures — you hear every player’s turn.',
   'settings.volume': 'Volume',
