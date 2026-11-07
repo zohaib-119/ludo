@@ -33,18 +33,18 @@ export function GameMenu({ open, onClose }: { open: boolean; onClose: () => void
     <>
       <Sheet open={open && sub === 'none'} onClose={onClose} title={t('game.menu')}>
         <div className="space-y-4">
-          {mySeat && playing && !view.seats[mySeat]?.autoplay && (
-            <Button
-              variant="secondary"
-              full
-              icon={<Bot className="size-4" />}
-              onClick={() => {
-                void sendCommand({ type: 'setAutoplay', on: true });
-                onClose();
-              }}
-            >
-              {t('game.letBotPlayForMe')}
-            </Button>
+          {mySeat && playing && (
+            <div className="rounded-2xl border-2 border-accent/30 bg-accent-soft px-4">
+              <ToggleRow
+                title={t('game.autoMode')}
+                help={t('game.autoMode.help')}
+                checked={Boolean(view.seats[mySeat]?.autoplay)}
+                onChange={(on) => {
+                  void sendCommand({ type: 'setAutoplay', on });
+                  if (on) onClose();
+                }}
+              />
+            </div>
           )}
           <div className="divide-y divide-line rounded-2xl bg-surface-2 px-4">
             <label className="flex items-center justify-between gap-3 py-3">

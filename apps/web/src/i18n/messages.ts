@@ -148,6 +148,8 @@ const en = {
   'game.logEmpty': 'Nothing has happened yet.',
   'game.rules': 'Rules',
   'game.letBotPlayForMe': 'Let the bot play for me',
+  'game.autoMode': 'Auto mode',
+  'game.autoMode.help': 'The bot plays your turns for you until you switch it off.',
   'game.quickMove': 'Quick move',
   'game.quickMove.help': 'One tap moves a piece when it has only one possible move.',
   'game.autoMove': 'Auto-move',
