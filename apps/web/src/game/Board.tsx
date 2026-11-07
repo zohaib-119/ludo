@@ -63,20 +63,23 @@ export function Board(props: BoardProps) {
       {preview && selectedPlaced && <Preview move={preview} piece={selectedPlaced.piece} rotation={rotation} />}
 
       {/* Pieces, in a stable order so stacks overlap consistently. */}
-      {placed.map((p) => (
-        <PieceView
-          key={p.piece.id}
-          piece={p.piece}
-          x={p.x}
-          y={p.y}
-          scale={p.scale}
-          movable={movable.has(p.piece.id)}
-          selected={selected === p.piece.id}
-          colorBlind={props.colorBlind}
-          reducedMotion={props.reducedMotion}
-          onTap={props.onPieceTap}
-        />
-      ))}
+      {/* Movable pieces are drawn last so they sit on top of anything sharing their square. */}
+      {[...placed]
+        .sort((a, b) => Number(movable.has(a.piece.id)) - Number(movable.has(b.piece.id)))
+        .map((p) => (
+          <PieceView
+            key={p.piece.id}
+            piece={p.piece}
+            x={p.x}
+            y={p.y}
+            scale={p.scale}
+            movable={movable.has(p.piece.id)}
+            selected={selected === p.piece.id}
+            colorBlind={props.colorBlind}
+            reducedMotion={props.reducedMotion}
+            onTap={props.onPieceTap}
+          />
+        ))}
 
       {/* Choice bubbles above the selected piece. */}
       {selectedPlaced && options.length > 1 && (
@@ -209,6 +212,8 @@ const PieceView = memo(function PieceView({
       initial={false}
       animate={{ x, y }}
       transition={transition}
+      // Only my movable pieces take taps; everything else lets them through to what's underneath.
+      style={{ pointerEvents: movable ? 'auto' : 'none' }}
       role={movable ? 'button' : undefined}
       tabIndex={movable ? 0 : undefined}
       aria-label={label}
@@ -252,8 +257,8 @@ const PieceView = memo(function PieceView({
             {GLYPH[piece.color]}
           </text>
         )}
-        {/* Generous invisible hit area (44px-ish on phones). */}
-        <circle r={0.55} fill="transparent" />
+        {/* A movable piece answers to a tap anywhere on its square, not just on the piece. */}
+        {movable && <rect x={-0.55} y={-0.55} width={1.1} height={1.1} fill="transparent" />}
       </motion.g>
     </motion.g>
   );
