@@ -55,11 +55,23 @@ All colours, sizes and timings are CSS custom properties (exposed through Tailwi
 - Drawn as **one SVG** with a 15 × 15 grid viewBox, scaled to the container. Crisp at every size, cheap to animate.
 - **Corners (yards):** large rounded squares in the player's base colour with a lighter inner tray holding 4 piece slots. The yard of the player whose turn it is gets a slow breathing glow.
 - **Track squares:** `--surface-2` with a thin border. Each player's start square is filled with their light colour and marked with a small arrow showing direction of travel.
-- **Safe squares:** a plain soft-gold fill (no star symbol), with a tooltip "Safe square".
+- **Safe squares:** filled with the colour of the home column they sit beside (no star symbol), with a tooltip "Safe square".
 - **Finishing columns:** filled with the player's light colour, leading to the centre.
 - **Centre (home):** four triangles in player colours meeting at a point. Finished pieces sit small inside their colour's triangle.
 - **Kill-to-enter lock:** when the rule is on and a player hasn't captured yet, a small lock sits on the entrance to their column. It unlocks with a click animation and sound on their first capture.
 - **Move preview:** ghost piece at 40 % opacity at the destination, and the path squares between highlight in a light trail.
+
+## 3.1 Personal themes
+
+Each player picks their own look from the palette button (landing page footer, lobby and game header). The choice is kept in this browser only (`dodice.settings` in localStorage) and never sent to the server, so everyone in a room can see the same game in a different style. All designs are drawn in code (`apps/web/src/lib/themes.ts`), so there is nothing to download or license.
+
+| Group  | Choices                                                                      |
+| ------ | ---------------------------------------------------------------------------- |
+| Board  | Classic (default), Wooden, Pastel, Royal (maroon and gold), Night (dark)     |
+| Pieces | Glossy (default), Flat, Pawn (ringed top), Gem (faceted), Coin (rimmed disc) |
+| Dice   | Tinted in the player colour (default), Ivory, Casino red, Wooden, Neon       |
+
+A board theme sets the paper, tray, track, grid, frame and its own tuning of the four player colours. The app chrome stays in the light theme.
 
 ## 4. Pieces
 

@@ -58,7 +58,7 @@ With one die, a 6 gives a re-roll.
 
 - A piece leaves the yard only on a 6.
 - Finishing needs an **exact** roll. Overshooting is not playable.
-- The marked safe squares (shown as plain gold squares) are safe: no captures there.
+- The marked safe squares are safe: no captures there. Each is tinted in the colour of the home column next to it.
 - No blocks (stacks are never walls). Pieces can pass over and share squares freely.
 - A captured piece returns to the yard.
 
@@ -121,14 +121,14 @@ A mixed stack has one piece from each teammate on the same square.
 
 - 52-square shared track. Each color has a start square, and the colors' start squares are 13 squares apart.
 - From its start square a piece travels 51 squares of track (progress 0-50), then enters its own 5-square finishing column (51-55), then home (56). A full journey is 56 steps after leaving the yard.
-- 8 safe squares: the four start squares, plus four marked squares 8 squares past each start (drawn as plain gold squares).
+- 8 safe squares: the four start squares, plus four marked squares 8 squares past each start (each tinted in the colour of the home column it sits beside).
 - These follow the most common modern layout found in online references. Positions are stored as data, so they can be changed in one place.
 
 ## 12. Timers and bots
 
 - `turnTimer` (host setting): off / 15 / 30 / 45 / 60 seconds, **off by default**. The timer counts down each decision (a roll or a move) separately.
 - If the timer runs out, the bot makes that one decision for the player.
-- After 2 timeouts in a row, the player is put on **autoplay**: the bot plays all their turns until they tap "I'm back".
+- After 2 timeouts in a row, the player is put on **autoplay**: the bot plays all their turns until they switch Auto mode off in the game menu.
 - `disconnectTakeover` (host setting): 15 / 30 / 60 seconds / never, **60 seconds by default**. Once a disconnected player's turn has waited this long, the bot plays for them until they reconnect. They get control back at the start of their next turn.
 - With the timer off and takeover set to never, the game simply waits for the player. The host can always tap "Let bot play" for a disconnected player.
 - The host can fill empty seats with bots in the lobby.
