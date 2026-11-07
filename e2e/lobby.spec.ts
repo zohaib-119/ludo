@@ -130,3 +130,29 @@ test('going offline shows reconnecting, coming back restores the room', async ({
   await expect(seat(host.page, 'red')).toContainText('Zohaib');
   await expect(host.page.getByTestId('room-code')).toHaveText(code);
 });
+
+test('the seat board keeps its size and four equal tiles as seats fill and empty', async ({ browser }) => {
+  const host = await player(browser, 'Zohaib');
+  await createRoom(host.page);
+  const sizes = () =>
+    Promise.all(
+      ['green', 'yellow', 'red', 'blue', 'board'].map(async (c) => {
+        const b = (await host.page.getByTestId(c === 'board' ? 'seat-board' : `seat-${c}`).boundingBox())!;
+        return `${Math.round(b.width)}x${Math.round(b.height)}`;
+      }),
+    );
+  const settled = async () => {
+    await host.page.waitForTimeout(600); // let layout animations finish
+    return sizes();
+  };
+  const empty = await settled();
+  expect(new Set(empty.slice(0, 4)).size).toBe(1); // four equal tiles
+  await host.page.getByTestId('add-bot-green').click();
+  await host.page.getByTestId('add-bot-yellow').click();
+  expect(await settled()).toEqual(empty); // two filled, two empty: nothing moves
+  await sit(host.page, 'red');
+  await host.page.getByTestId('add-bot-blue').click();
+  expect(await settled()).toEqual(empty);
+  await host.page.getByTestId('seat-x-red').click();
+  expect(await settled()).toEqual(empty);
+});
