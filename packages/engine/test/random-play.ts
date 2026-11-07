@@ -4,16 +4,16 @@ import { type Color, type GameState, type Rng, type Settings, apply, createGame,
 export const VALID_SEATINGS: Color[][] = [
   ['red', 'yellow'],
   ['green', 'blue'],
-  // Side by side is allowed too.
-  ['red', 'green'],
-  ['green', 'yellow'],
-  ['yellow', 'blue'],
-  ['red', 'blue'],
   ['red', 'green', 'yellow'],
   ['red', 'green', 'blue'],
   ['red', 'yellow', 'blue'],
   ['green', 'yellow', 'blue'],
   ['red', 'green', 'yellow', 'blue'],
+  // Side by side is allowed too. (Appended: scripts pick seatings by index.)
+  ['red', 'green'],
+  ['green', 'yellow'],
+  ['yellow', 'blue'],
+  ['red', 'blue'],
 ];
 
 function deepFreeze<T>(value: T): T {
