@@ -37,6 +37,7 @@ const { GameScreen } = await import('../src/game/GameScreen');
 const { GameMenu } = await import('../src/game/GameMenu');
 const { Board } = await import('../src/game/Board');
 const { SeatBoard } = await import('../src/lobby/SeatBoard');
+const { LobbyPage } = await import('../src/lobby/LobbyPage');
 const { MemoryRouter } = await import('react-router');
 
 /** A started game: me (red) against a bot (yellow); it's my turn to roll. */
@@ -350,5 +351,55 @@ describe('themes', () => {
         const look = diceLook(id, c);
         expect(look.face).not.toBe(look.pip);
       }
+  });
+});
+
+describe('dice tray', () => {
+  it('sits in the colour of whoever is rolling, named for them', () => {
+    const { view, me } = gameView(); // red (me) to roll
+    showView(view, me);
+    const { unmount } = render(
+      <MemoryRouter>
+        <GameScreen />
+      </MemoryRouter>,
+    );
+    const box = screen.getByTestId('dice-box');
+    expect(box.getAttribute('data-color')).toBe('red');
+    expect(box.textContent).toContain('Your dice');
+    expect(within(box).getByTestId('tray')).toBeTruthy();
+    unmount();
+    // The bot's turn: the tray turns yellow and carries its name.
+    const theirs = { ...view, game: { ...view.game!, turn: { ...view.game!.turn, seat: 'yellow' as const } } };
+    showView(theirs, me);
+    render(
+      <MemoryRouter>
+        <GameScreen />
+      </MemoryRouter>,
+    );
+    expect(screen.getByTestId('dice-box').getAttribute('data-color')).toBe('yellow');
+    expect(screen.getByTestId('dice-box').textContent).toContain(`${view.seats.yellow!.name}’s dice`);
+  });
+});
+
+describe('lobby members row', () => {
+  it('lists everyone in the room, seated or not, with their avatar', () => {
+    let id = 0;
+    const ctrl = new RoomController('ABCDEF', { rng: seededRng(1), now: () => 1000, newId: () => `m${++id}` });
+    const host = (
+      ctrl.join({ playerToken: 'token-host-1', name: 'zohaib', avatar: 'toonHead:Mina' }) as { memberId: string }
+    ).memberId;
+    ctrl.join({ playerToken: 'token-guest-1', name: 'sara' });
+    ctrl.command(host, { type: 'takeSeat', color: 'red' });
+    showView(ctrl.view(), host);
+    render(
+      <MemoryRouter>
+        <LobbyPage />
+      </MemoryRouter>,
+    );
+    const row = screen.getByTestId('room-members');
+    expect(row.textContent).toContain('zohaib');
+    expect(row.textContent).toContain('sara');
+    expect(row.textContent).toContain('watching'); // sara isn't seated
+    expect(row.querySelector('img[data-avatar="toonHead:Mina"]')).toBeTruthy();
   });
 });

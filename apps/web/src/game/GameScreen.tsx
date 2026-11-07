@@ -16,7 +16,7 @@ import { getConnection, useConnection } from '../net/session';
 import { Announcer } from '../ui/Announcer';
 import { AppearanceButton } from '../ui/Appearance';
 import { ChatButton, ChatPanel, useIsDesktop } from '../ui/ChatControls';
-import { Button, IconButton, Logo, cx } from '../ui/kit';
+import { Button, IconButton, Logo, cx, pieceColor } from '../ui/kit';
 import { Board } from './Board';
 import { movablePieceIds, onlyMove, valuesForPiece } from './choices';
 import { Die } from './Dice';
@@ -349,6 +349,9 @@ function ActionArea({
   const now = useNow(250, deadline > 0) + clockOffset;
   const left = deadline > 0 ? deadline - now : 0;
   const size = tray.length <= 2 ? 54 : tray.length <= 4 ? 44 : 36;
+  const trayColor: Color = traySeat ?? seat;
+  const memberId = useConnection((s) => s.memberId);
+  const mySeat = view.members.find((m) => m.id === memberId)?.seat ?? null;
 
   // Last 5 seconds of my own decision: a soft tick each second.
   const secondsLeft = deadline > 0 && (awaitingRoll || awaitingMove) ? Math.ceil(left / 1000) : null;
@@ -381,47 +384,64 @@ function ActionArea({
       data-testid="action-area"
       data-seat={seat}
     >
+      {/* The dice sit on a tray in the colour of whoever rolled them. */}
       <div
-        className="flex h-[68px] flex-wrap content-center items-center justify-center gap-2.5"
-        role="group"
-        aria-label="Dice to play"
-        data-testid="tray"
+        className="relative w-full rounded-2xl px-3 pt-5 pb-2 transition-colors duration-300"
+        style={{
+          // The player's deep shade (so light dice stand out on every colour), rimmed in their bright one.
+          background: `linear-gradient(180deg, color-mix(in srgb, ${pieceColor(trayColor)} 45%, var(--${trayColor}-dark)), var(--${trayColor}-dark))`,
+          boxShadow: `inset 0 2px 10px rgb(0 0 0 / 0.25), 0 0 0 3px ${pieceColor(trayColor)}`,
+        }}
+        data-testid="dice-box"
+        data-color={trayColor}
       >
-        <AnimatePresence initial={false}>
-          {tray.map((d) => {
-            const interactive = awaitingMove && !d.void;
-            const chosen = interactive && chosenValue === d.value;
-            return (
-              <motion.button
-                key={d.id}
-                type="button"
-                layout
-                disabled={!interactive}
-                onClick={() => interactive && onChooseValue(d.value)}
-                aria-pressed={interactive ? chosen : undefined}
-                aria-label={`Die ${d.value}`}
-                className={cx(
-                  'rounded-[22%] disabled:cursor-default',
-                  chosen && 'ring-4 ring-text ring-offset-2 ring-offset-bg',
-                )}
-                initial={{ opacity: 0, scale: 0.5, y: 8 }}
-                animate={{ opacity: 1, scale: 1, y: chosen ? -6 : 0 }}
-                exit={{ opacity: 0, scale: 0.4, y: -14, transition: { duration: reduced ? 0 : 0.22 } }}
-                transition={{ type: 'spring', stiffness: 520, damping: 30 }}
-              >
-                <Die
-                  id={d.id}
-                  value={d.value}
-                  rolling={d.rolling}
-                  color={traySeat}
-                  voided={d.void}
-                  reducedMotion={reduced}
-                  size={size}
-                />
-              </motion.button>
-            );
-          })}
-        </AnimatePresence>
+        <p className="absolute top-1.5 left-3 max-w-[90%] truncate text-[11px] font-bold tracking-wider text-white/90 uppercase">
+          {trayColor === mySeat
+            ? t('game.yourDice')
+            : t('game.diceOf', { name: view.seats[trayColor]?.name ?? trayColor })}
+        </p>
+        <div
+          className="flex h-[68px] flex-wrap content-center items-center justify-center gap-2.5"
+          role="group"
+          aria-label="Dice to play"
+          data-testid="tray"
+        >
+          <AnimatePresence initial={false}>
+            {tray.map((d) => {
+              const interactive = awaitingMove && !d.void;
+              const chosen = interactive && chosenValue === d.value;
+              return (
+                <motion.button
+                  key={d.id}
+                  type="button"
+                  layout
+                  disabled={!interactive}
+                  onClick={() => interactive && onChooseValue(d.value)}
+                  aria-pressed={interactive ? chosen : undefined}
+                  aria-label={`Die ${d.value}`}
+                  className={cx(
+                    'rounded-[22%] disabled:cursor-default',
+                    chosen && 'ring-4 ring-text ring-offset-2 ring-offset-bg',
+                  )}
+                  initial={{ opacity: 0, scale: 0.5, y: 8 }}
+                  animate={{ opacity: 1, scale: 1, y: chosen ? -6 : 0 }}
+                  exit={{ opacity: 0, scale: 0.4, y: -14, transition: { duration: reduced ? 0 : 0.22 } }}
+                  transition={{ type: 'spring', stiffness: 520, damping: 30 }}
+                >
+                  <Die
+                    id={d.id}
+                    value={d.value}
+                    rolling={d.rolling}
+                    color={traySeat}
+                    voided={d.void}
+                    reducedMotion={reduced}
+                    size={size}
+                  />
+                </motion.button>
+              );
+            })}
+          </AnimatePresence>
+        </div>
       </div>
 
       <div className="flex h-14 items-center justify-center">
