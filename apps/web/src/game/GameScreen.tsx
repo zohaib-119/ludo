@@ -3,7 +3,7 @@
  */
 import type { Color, LegalMove } from '@ludo/engine';
 import type { Command } from '@ludo/protocol';
-import { ListOrdered, Menu } from 'lucide-react';
+import { Menu } from 'lucide-react';
 import { AnimatePresence, motion } from 'motion/react';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useStore } from 'zustand';
@@ -13,14 +13,13 @@ import { useSettings } from '../lib/settings';
 import { sendCommand } from '../net/commands';
 import { getConnection, useConnection } from '../net/session';
 import { Announcer } from '../ui/Announcer';
-import { ChatControls } from '../ui/ChatControls';
+import { ChatButton, ChatPanel, useIsDesktop } from '../ui/ChatControls';
 import { Button, IconButton, Logo, cx } from '../ui/kit';
 import { Board } from './Board';
 import { movablePieceIds, onlyMove, valuesForPiece } from './choices';
 import { Die } from './Dice';
 import { GameMenu } from './GameMenu';
 import { type Corner, cornerOf, rotationFor } from './geometry';
-import { LogSheet } from './LogSheet';
 import { NORMAL_TIMING, Playback, REDUCED_TIMING, type TrayDie } from './playback';
 import { PlayerPanel } from './PlayerPanel';
 import { Results } from './Results';
@@ -165,7 +164,7 @@ export function GameScreen() {
     : [];
 
   const [menuOpen, setMenuOpen] = useState(false);
-  const [logOpen, setLogOpen] = useState(false);
+  const desktop = useIsDesktop();
   const mySeatView = mySeat ? view.seats[mySeat] : undefined;
   const showResults = view.phase === 'finished' && (caughtUp || game.endedByHost);
 
@@ -180,23 +179,20 @@ export function GameScreen() {
         progress={pb.progress}
         isMe={color === mySeat}
         clockOffset={clockOffset}
-        align={corner.endsWith('right') ? 'right' : 'left'}
+        align={!desktop && corner.endsWith('right') ? 'right' : 'left'}
       />
     );
   };
 
   return (
     <div className="flex min-h-dvh flex-col">
-      <header className="mx-auto flex w-full max-w-6xl items-center justify-between gap-2 px-3 py-2">
+      <header className="mx-auto flex w-full max-w-[1800px] items-center justify-between gap-2 px-3 py-2 lg:px-5">
         <div className="flex items-center gap-2">
           <Logo size={26} />
           <span className="room-code text-sm text-muted">{view.code}</span>
         </div>
         <div className="flex items-center gap-1">
-          <ChatControls />
-          <IconButton label={t('game.log')} onClick={() => setLogOpen(true)}>
-            <ListOrdered className="size-5" />
-          </IconButton>
+          {!desktop && <ChatButton />}
           <IconButton label={t('game.menu')} onClick={() => setMenuOpen(true)} data-testid="game-menu">
             <Menu className="size-5" />
           </IconButton>
@@ -204,7 +200,7 @@ export function GameScreen() {
       </header>
 
       {mySeatView?.autoplay && playing && (
-        <div className="mx-auto mb-2 flex w-full max-w-6xl items-center justify-between gap-3 bg-warning-soft px-4 py-2 text-sm font-semibold text-warning sm:rounded-xl">
+        <div className="mx-auto mb-2 flex w-full max-w-[1800px] items-center justify-between gap-3 bg-warning-soft px-4 py-2 text-sm font-semibold text-warning sm:rounded-xl">
           {t('game.autoplayOn')}
           <Button size="sm" onClick={() => void sendCommand({ type: 'setAutoplay', on: false })} data-testid="im-back">
             {t('game.imBack')}
@@ -212,7 +208,7 @@ export function GameScreen() {
         </div>
       )}
 
-      <main className="game-grid mx-auto w-full max-w-6xl px-3 pb-4">
+      <main className="game-grid mx-auto w-full max-w-[1800px] px-3 pb-4 lg:px-5">
         <div style={{ gridArea: 'tl' }}>{panel('top-left')}</div>
         <div style={{ gridArea: 'tr' }}>{panel('top-right')}</div>
         <div style={{ gridArea: 'bl' }}>{panel('bottom-left')}</div>
@@ -220,9 +216,9 @@ export function GameScreen() {
 
         <div
           style={{ gridArea: 'board' }}
-          className="relative mx-auto aspect-square w-full max-w-[min(100%,calc(100dvh-330px))] lg:max-w-none"
+          className="relative mx-auto aspect-square w-full max-w-[min(100%,calc(100dvh-330px))] lg:max-w-[min(100%,calc(100dvh-84px))]"
         >
-          <div className="size-full overflow-hidden rounded-[1.4rem] shadow-lift ring-1 ring-line">
+          <div className="size-full overflow-hidden rounded-[1.6rem] bg-[#e9dfcd] p-[1.2%] shadow-lift ring-1 ring-[#d4c7b0]">
             <Board
               pieces={game.pieces}
               progress={pb.progress}
@@ -288,11 +284,18 @@ export function GameScreen() {
             clockOffset={clockOffset}
           />
         </div>
+
+        {desktop && (
+          <aside style={{ gridArea: 'chat' }} className="h-[calc(100dvh-84px)]">
+            <div className="flex h-full flex-col rounded-2xl border border-line bg-surface p-4 shadow-card">
+              <ChatPanel className="flex-1" />
+            </div>
+          </aside>
+        )}
       </main>
 
       <Announcer />
       <GameMenu open={menuOpen} onClose={() => setMenuOpen(false)} />
-      <LogSheet open={logOpen} onClose={() => setLogOpen(false)} lines={pb.log} />
       {showResults && <Results />}
     </div>
   );
@@ -360,7 +363,11 @@ function ActionArea({
 
   // Fixed heights: nothing below the board changes size as turns go by.
   return (
-    <div className="mx-auto flex w-full max-w-md flex-col items-center gap-2" data-testid="action-area">
+    <div
+      className="mx-auto flex w-full max-w-md flex-col items-center gap-2"
+      data-testid="action-area"
+      data-seat={seat}
+    >
       <div
         className="flex h-[68px] flex-wrap content-center items-center justify-center gap-2.5"
         role="group"
