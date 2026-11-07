@@ -253,11 +253,20 @@ export function legalMoves(state: GameState): LegalMove[] {
 
 /** Number of dice for the next roll (docs §4.2). */
 export function diceCountFor(state: GameState, controls: Color): 1 | 2 {
-  if (state.settings.diceMode === 1) return 1;
-  const unfinished = state.pieces.filter((p) => p.color === controls && p.progress < HOME);
+  return diceCountForPieces(state.settings, state.pieces, controls);
+}
+
+/** The same rule from just the settings and pieces (what a client can see). */
+export function diceCountForPieces(
+  settings: Pick<Settings, 'diceMode' | 'singleDieWhenAllInColumn'>,
+  pieces: readonly Piece[],
+  controls: Color,
+): 1 | 2 {
+  if (settings.diceMode === 1) return 1;
+  const unfinished = pieces.filter((p) => p.color === controls && p.progress < HOME);
   const inColumn = (p: Piece): boolean => p.progress >= COLUMN_FIRST && p.progress <= COLUMN_LAST;
   if (unfinished.length === 1 && inColumn(unfinished[0]!)) return 1; // Rule A
-  if (state.settings.singleDieWhenAllInColumn && unfinished.length > 0 && unfinished.every(inColumn)) {
+  if (settings.singleDieWhenAllInColumn && unfinished.length > 0 && unfinished.every(inColumn)) {
     return 1; // Rule B
   }
   return 2;

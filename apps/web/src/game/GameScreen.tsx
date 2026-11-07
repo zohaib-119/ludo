@@ -1,7 +1,7 @@
 /**
  * The game screen (docs/01-product-and-ux.md §4.3).
  */
-import type { Color, LegalMove } from '@ludo/engine';
+import { type Color, type LegalMove, diceCountForPieces } from '@ludo/engine';
 import type { Command } from '@ludo/protocol';
 import { Menu } from 'lucide-react';
 import { AnimatePresence, motion } from 'motion/react';
@@ -19,7 +19,7 @@ import { ChatButton, ChatPanel, useIsDesktop } from '../ui/ChatControls';
 import { Button, IconButton, Logo, cx, pieceColor } from '../ui/kit';
 import { Board } from './Board';
 import { movablePieceIds, onlyMove, valuesForPiece } from './choices';
-import { Die } from './Dice';
+import { Die, ReadyDie } from './Dice';
 import { GameMenu } from './GameMenu';
 import { type Corner, cornerOf, rotationFor } from './geometry';
 import { NORMAL_TIMING, Playback, REDUCED_TIMING, type TrayDie } from './playback';
@@ -348,7 +348,10 @@ function ActionArea({
   const deadline = game.turn.deadline;
   const now = useNow(250, deadline > 0) + clockOffset;
   const left = deadline > 0 ? deadline - now : 0;
-  const size = tray.length <= 2 ? 54 : tray.length <= 4 ? 44 : 36;
+  // On my roll, the dice still to be thrown wait on the tray: tapping the tray rolls them.
+  const readyCount = awaitingRoll ? diceCountForPieces(view.settings, game.pieces, game.turn.controls) : 0;
+  const shown = tray.length + readyCount;
+  const size = shown <= 2 ? 54 : shown <= 4 ? 44 : 36;
   const trayColor: Color = traySeat ?? seat;
   const memberId = useConnection((s) => s.memberId);
   const mySeat = view.members.find((m) => m.id === memberId)?.seat ?? null;
@@ -359,12 +362,10 @@ function ActionArea({
     if (secondsLeft !== null && secondsLeft > 0 && secondsLeft <= 5) sound.play('tick');
   }, [secondsLeft]);
 
-  const rollLabel =
-    game.turn.rollReason === 'reroll' || game.turn.rollReason === 'bonusReroll'
-      ? t('game.rollAgain')
-      : game.turn.rollReason === 'bonus'
-        ? t('game.rollBonus')
-        : t('game.roll');
+  const again = game.turn.rollReason === 'reroll' || game.turn.rollReason === 'bonusReroll';
+  const bonus = game.turn.rollReason === 'bonus';
+  const rollLabel = again ? t('game.rollAgain') : bonus ? t('game.rollBonus') : t('game.roll');
+  const rollHint = again ? t('game.tapToRollAgain') : bonus ? t('game.tapToRollBonus') : t('game.tapToRoll');
 
   let status = '';
   if (playing && !myTurn) {
@@ -440,22 +441,38 @@ function ActionArea({
                 </motion.button>
               );
             })}
+            {Array.from({ length: readyCount }, (_, i) => (
+              <motion.span
+                key={`ready-${i}`}
+                layout
+                initial={{ opacity: 0, scale: 0.6 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.6, transition: { duration: reduced ? 0 : 0.15 } }}
+              >
+                <ReadyDie color={trayColor} size={size} shaking={pending} reducedMotion={reduced} />
+              </motion.span>
+            ))}
           </AnimatePresence>
         </div>
+        {/* The whole tray is the roll button (laid over the dice: buttons can't nest). */}
+        {awaitingRoll && (
+          <button
+            type="button"
+            onClick={onRoll}
+            disabled={pending}
+            aria-label={rollLabel}
+            className="absolute inset-0 z-10 cursor-pointer rounded-2xl transition-colors hover:bg-white/10 active:bg-white/15 disabled:cursor-progress"
+            data-testid="roll-button"
+          />
+        )}
       </div>
 
       <div className="flex h-14 items-center justify-center">
         {awaitingRoll ? (
           <div className="flex items-center gap-3">
-            <Button
-              size="lg"
-              className="min-w-44 animate-[pulse_2.2s_ease-in-out_infinite]"
-              onClick={onRoll}
-              loading={pending}
-              data-testid="roll-button"
-            >
-              {rollLabel}
-            </Button>
+            <p className="text-center text-sm font-semibold text-text" role="status" data-testid="roll-hint">
+              {rollHint}
+            </p>
             {deadline > 0 && (
               <span
                 className={cx(

@@ -114,3 +114,52 @@ export function Die({
     </div>
   );
 }
+
+/**
+ * A die waiting to be rolled: same size and style as a real one, with a "?" face.
+ * While `shaking`, it rattles as if in a cup (the roll is on its way).
+ */
+export function ReadyDie({
+  color,
+  size = 54,
+  shaking = false,
+  reducedMotion = false,
+}: {
+  color: Color | null;
+  size?: number;
+  shaking?: boolean;
+  reducedMotion?: boolean;
+}) {
+  const chosen = useSettings((s) => s.diceStyle);
+  const look = diceLook(chosen, color);
+  return (
+    <motion.span
+      className="relative flex items-center justify-center rounded-[22%] font-display font-extrabold select-none"
+      style={{
+        width: size,
+        height: size,
+        fontSize: size * 0.5,
+        background: look.face,
+        color: look.pip,
+        boxShadow: `inset 0 -3px 0 ${look.edge}, inset 0 0 0 1px ${look.edge}, 0 3px 8px rgb(0 0 0 / 0.25)`,
+        textShadow: look.glow ? `0 0 ${size * 0.12}px ${look.glow}` : undefined,
+      }}
+      animate={
+        reducedMotion
+          ? undefined
+          : shaking
+            ? { rotate: [0, -14, 12, -10, 8, 0], x: [0, -3, 3, -2, 2, 0] }
+            : { y: [0, -4, 0], rotate: [0, -4, 0] }
+      }
+      transition={
+        shaking
+          ? { duration: 0.45, repeat: Infinity, ease: 'easeInOut' }
+          : { duration: 1.6, repeat: Infinity, ease: 'easeInOut' }
+      }
+      aria-hidden
+      data-testid="ready-die"
+    >
+      ?
+    </motion.span>
+  );
+}

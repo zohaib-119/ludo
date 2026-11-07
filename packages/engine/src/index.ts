@@ -7,6 +7,7 @@ export {
   canEnterColumn,
   canPlayAll,
   diceCountFor,
+  diceCountForPieces,
   isEnemy,
   isTeammate,
   legalMoves,
