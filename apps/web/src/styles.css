@@ -1,8 +1,7 @@
 @import 'tailwindcss';
 
 /* ---------------------------------------------------------------------------
-   Design tokens (docs/02-visual-design.md §2). Light by default, dark via the
-   OS setting unless the user picked a theme (html[data-theme]).
+   Design tokens (docs/02-visual-design.md §2). One light theme.
    --------------------------------------------------------------------------- */
 :root {
   --bg: #f4efe6;
@@ -39,62 +38,6 @@
   --blue-dark: #105a9c;
 
   color-scheme: light;
-}
-
-@media (prefers-color-scheme: dark) {
-  :root:not([data-theme='light']) {
-    --bg: #14161c;
-    --bg-glow: #1b1e26;
-    --surface: #1e2129;
-    --surface-2: #272b35;
-    --surface-3: #313642;
-    --line: #353a46;
-    --text: #f2efe9;
-    --text-muted: #a09b92;
-    --accent: #7c93f2;
-    --accent-strong: #97a9f6;
-    --accent-soft: #252c48;
-    --on-accent: #10131c;
-    --danger: #ff6b6b;
-    --danger-soft: #3a2024;
-    --success: #51cf66;
-    --success-soft: #1c3324;
-    --warning: #ffb347;
-    --warning-soft: #3a2c16;
-    --shadow-color: 0 0 0;
-    --red-light: #5c2326;
-    --green-light: #1f4429;
-    --yellow-light: #4d3d0c;
-    --blue-light: #183a5c;
-    color-scheme: dark;
-  }
-}
-
-:root[data-theme='dark'] {
-  --bg: #14161c;
-  --bg-glow: #1b1e26;
-  --surface: #1e2129;
-  --surface-2: #272b35;
-  --surface-3: #313642;
-  --line: #353a46;
-  --text: #f2efe9;
-  --text-muted: #a09b92;
-  --accent: #7c93f2;
-  --accent-strong: #97a9f6;
-  --accent-soft: #252c48;
-  --on-accent: #10131c;
-  --danger: #ff6b6b;
-  --danger-soft: #3a2024;
-  --success: #51cf66;
-  --success-soft: #1c3324;
-  --warning: #ffb347;
-  --warning-soft: #3a2c16;
-  --shadow-color: 0 0 0;
-  --red-light: #5c2326;
-  --green-light: #1f4429;
-  --yellow-light: #4d3d0c;
-  --blue-light: #183a5c;
-  color-scheme: dark;
 }
 
 @theme inline {
@@ -150,6 +93,8 @@ body,
    never shifts the page (and the board) sideways. */
 html {
   scrollbar-gutter: stable;
+  /* The reserved scrollbar strip shows the html background: match the page. */
+  background-color: var(--bg);
 }
 
 body {
@@ -215,19 +160,20 @@ button:disabled {
   align-content: start;
 }
 @media (min-width: 1024px) {
+  /* Desktop: players and dice on the left, the board as big as the height allows, chat on the right. */
   .game-grid {
-    gap: 1rem 1.25rem;
-    grid-template-columns: minmax(0, 1fr) min(calc(100dvh - 190px), 700px) minmax(0, 1fr);
-    grid-template-rows: auto 1fr auto auto;
+    gap: 0.75rem 1.25rem;
+    grid-template-columns: 15rem minmax(0, 1fr) 20rem;
+    grid-template-rows: auto auto auto auto 1fr;
     grid-template-areas:
-      'tl board tr'
-      '.  board .'
-      'bl board br'
-      '.  action .';
+      'tl board chat'
+      'tr board chat'
+      'bl board chat'
+      'br board chat'
+      'action board chat';
     align-items: start;
   }
-  .game-grid > [style*='grid-area: bl'],
-  .game-grid > [style*='grid-area: br'] {
+  .game-grid > [style*='grid-area: action'] {
     align-self: end;
   }
 }

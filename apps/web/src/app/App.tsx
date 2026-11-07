@@ -2,7 +2,7 @@ import { Suspense, lazy, useEffect } from 'react';
 import { installAudioUnlock, sound } from '../audio/sound';
 import { BrowserRouter, Route, Routes } from 'react-router';
 import { HomePage } from '../home/HomePage';
-import { applyTheme, useSettings } from '../lib/settings';
+import { useSettings } from '../lib/settings';
 import { RoomPage } from '../room/RoomPage';
 import { Toaster } from '../ui/toast';
 import { NotFoundPage } from './NotFoundPage';
@@ -12,9 +12,7 @@ const HowToPlayPage = lazy(() => import('../help/HowToPlayPage').then((m) => ({ 
 installAudioUnlock();
 
 export function App() {
-  const theme = useSettings((s) => s.theme);
   const volume = useSettings((s) => s.soundVolume);
-  useEffect(() => applyTheme(theme), [theme]);
   useEffect(() => sound.setVolume(volume), [volume]);
   return (
     <BrowserRouter>

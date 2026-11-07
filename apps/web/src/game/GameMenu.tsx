@@ -3,12 +3,12 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router';
 import { t } from '../i18n/messages';
 import { lastRoom } from '../lib/identity';
-import { type Theme, useSettings } from '../lib/settings';
+import { useSettings } from '../lib/settings';
 import { RulesPanel } from '../lobby/RulesPanel';
 import { sendCommand } from '../net/commands';
 import { getConnection, useConnection } from '../net/session';
 import { sound } from '../audio/sound';
-import { Button, Segmented, Sheet, Switch } from '../ui/kit';
+import { Button, Sheet, Switch } from '../ui/kit';
 
 export function GameMenu({ open, onClose }: { open: boolean; onClose: () => void }) {
   const view = useConnection((s) => s.view)!;
@@ -109,18 +109,6 @@ export function GameMenu({ open, onClose }: { open: boolean; onClose: () => void
               checked={settings.reducedMotion ?? reducedBySystem}
               onChange={(v) => settings.update({ reducedMotion: v })}
             />
-            <div className="py-3">
-              <Segmented<Theme>
-                label={t('settings.theme')}
-                size="sm"
-                value={settings.theme}
-                onChange={(v) => settings.update({ theme: v })}
-                options={(['system', 'light', 'dark'] as Theme[]).map((v) => ({
-                  value: v,
-                  label: t(`settings.theme.${v}`),
-                }))}
-              />
-            </div>
           </div>
           <div className="flex gap-2">
             <Button variant="ghost" full icon={<ScrollText className="size-4" />} onClick={() => setSub('rules')}>

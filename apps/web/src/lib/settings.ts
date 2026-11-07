@@ -1,10 +1,7 @@
 import { create } from 'zustand';
 import { readJson, writeJson } from './storage';
 
-export type Theme = 'system' | 'light' | 'dark';
-
 export interface PersonalSettings {
-  theme: Theme;
   soundVolume: number; // 0..1
   haptics: boolean;
   quickMove: boolean;
@@ -16,7 +13,6 @@ export interface PersonalSettings {
 
 const KEY = 'dodice.settings';
 const DEFAULTS: PersonalSettings = {
-  theme: 'system',
   soundVolume: 0.8,
   haptics: true,
   quickMove: true,
@@ -38,9 +34,3 @@ export const useSettings = create<SettingsStore>((set, get) => ({
     writeJson(KEY, values);
   },
 }));
-
-export function applyTheme(theme: Theme): void {
-  const root = document.documentElement;
-  if (theme === 'system') root.removeAttribute('data-theme');
-  else root.setAttribute('data-theme', theme);
-}
