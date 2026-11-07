@@ -7,7 +7,15 @@ import { randomInt, randomUUID } from 'node:crypto';
 import { schema, t } from '@colyseus/schema';
 import { type Client, CloseCode, type Deferred, Room, ServerError } from '@colyseus/core';
 import type { Rng } from '@ludo/engine';
-import { JOIN_REFUSED_CLOSE_CODE, LIMITS, type KickReason, ROOM_CODE_ALPHABET, ROOM_CODE_LENGTH } from '@ludo/protocol';
+import {
+  JOIN_REFUSED_CLOSE_CODE,
+  LIMITS,
+  type KickReason,
+  ROOM_CODE_ALPHABET,
+  ROOM_CODE_LENGTH,
+  ROOM_EXISTS,
+  parseRoomCode,
+} from '@ludo/protocol';
 import { RoomController } from './controller';
 
 /** Synced state: a revision number and the JSON public view (docs/05-protocol.md §2). */
@@ -45,6 +53,16 @@ export function generateRoomCode(isTaken: (code: string) => boolean = (c) => act
   throw new Error('Could not generate a free room code');
 }
 
+/** The code asked for by a "reopen" create, when valid; throws ROOM_EXISTS when it is taken. */
+export function reopenCode(options: unknown, isTaken: (code: string) => boolean = (c) => activeCodes.has(c)) {
+  const wanted = (options as { reopen?: unknown } | null)?.reopen;
+  if (typeof wanted !== 'string') return null;
+  const code = parseRoomCode(wanted);
+  if (!code || code !== wanted) return null;
+  if (isTaken(code)) throw new ServerError(409, ROOM_EXISTS);
+  return code;
+}
+
 interface Session {
   memberId: string;
   client: Client;
@@ -65,9 +83,10 @@ export class LudoRoom extends Room<{ state: LudoStateType }> {
   private wakeTimer: { clear(): void } | null = null;
   private wakeAt: number | null = null;
 
-  // Create options come from the client, so nothing in them is trusted here.
-  override onCreate() {
-    const code = generateRoomCode();
+  // Create options come from the client, so nothing in them is trusted here. The only
+  // field read is `reopen`: a well-formed code that is free (after a restart) is reused.
+  override onCreate(options?: unknown) {
+    const code = reopenCode(options) ?? generateRoomCode();
     activeCodes.add(code);
     this.roomId = code;
     this.controller = new RoomController(code, {

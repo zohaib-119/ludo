@@ -5,9 +5,16 @@
  * Layer 2: if that fails (or the page was reloaded) we rejoin with the player
  *          token, which reclaims the same seat, retrying with backoff forever
  *          until the room is known to be gone.
+ * Layer 3: rooms live in server memory, so a server restart loses them. If the
+ *          room vanished during a short outage, we bring it back under the same
+ *          code (the old host first), retake our seat, and the new host restores
+ *          the rules and bots. Everyone is told; a game in progress is lost.
+ * Waking:  connecting while the server is asleep or restarting keeps retrying
+ *          for a while (with `waking` set for the UI) instead of failing at once.
  * The UI reads one status from the store and never queues clicks while offline.
  */
 import { Client, type Room } from '@colyseus/sdk';
+import { TURN_ORDER } from '@ludo/engine';
 import { createStore } from 'zustand/vanilla';
 import {
   type ChatMessage,
@@ -20,6 +27,7 @@ import {
   type NoticeMessage,
   ROOM_NAME,
   type ReactMessage,
+  ROOM_EXISTS,
   type RoomView,
   type WelcomeMessage,
 } from '@ludo/protocol';
@@ -45,6 +53,18 @@ export interface ConnectionState {
   reconnectingSince: number | null;
   /** serverTime − Date.now(), estimated from view updates. */
   clockOffset: number;
+  /** Connecting keeps failing to reach the server: it is probably asleep or restarting. */
+  waking: boolean;
+  /** When the next rejoin attempt is due (ms), for "next try in 4 s". */
+  nextRetryAt: number | null;
+  /** The room was lost in a server restart and is being brought back. */
+  restoring: boolean;
+}
+
+/** After a server restart: the room is back under the same code. */
+export interface RestoredInfo {
+  gameLost: boolean;
+  reopenedByMe: boolean;
 }
 
 export type ClientResult = CommandResult | { ok: false; code: 'OFFLINE'; message: string };
@@ -56,6 +76,7 @@ interface Channels {
   react: ReactMessage;
   notice: NoticeMessage;
   backOnline: null;
+  restored: RestoredInfo;
 }
 
 const INITIAL: ConnectionState = {
@@ -68,6 +89,9 @@ const INITIAL: ConnectionState = {
   kicked: null,
   reconnectingSince: null,
   clockOffset: 0,
+  waking: false,
+  nextRetryAt: null,
+  restoring: false,
 };
 
 const KNOWN_JOIN_ERRORS: FailReason[] = ['ROOM_NOT_FOUND', 'GAME_IN_PROGRESS', 'ROOM_FULL', 'NAME_INVALID'];
@@ -85,6 +109,12 @@ export interface ConnectionOptions {
   endpoint: string;
   /** Backoff for token rejoin attempts (layer 2), in ms. */
   rejoinDelays?: number[];
+  /** How long to keep trying to reach a sleeping/restarting server when connecting, in ms. */
+  wakeTimeoutMs?: number;
+  /** A room lost within this long after the drop is reopened (a restart); later, it has closed. */
+  restoreWindowMs?: number;
+  /** Non-hosts wait this long before reopening, so the old host gets to reopen (and stay host). */
+  reopenGraceMs?: number;
   now?: () => number;
 }
 
@@ -104,7 +134,13 @@ export class Connection {
     react: new Set(),
     notice: new Set(),
     backOnline: new Set(),
+    restored: new Set(),
   };
+  /** Bumped by every connect/leave so an outdated attempt stops quietly. */
+  private connectSeq = 0;
+  private readonly wakeTimeoutMs: number;
+  private readonly restoreWindowMs: number;
+  private readonly reopenGraceMs: number;
   private readonly rejoinDelays: number[];
   private readonly now: () => number;
   private detachWindow: (() => void) | null = null;
@@ -112,6 +148,9 @@ export class Connection {
   constructor(options: ConnectionOptions) {
     this.client = new Client(options.endpoint);
     this.rejoinDelays = options.rejoinDelays ?? [500, 1000, 2000, 4000, 8000, 10000];
+    this.wakeTimeoutMs = options.wakeTimeoutMs ?? 75_000;
+    this.restoreWindowMs = options.restoreWindowMs ?? 5 * 60_000;
+    this.reopenGraceMs = options.reopenGraceMs ?? 2500;
     this.now = options.now ?? Date.now;
     this.attachWindowListeners();
   }
@@ -132,12 +171,30 @@ export class Connection {
     this.joinOptions = options;
     this.intentionalLeave = false;
     this.kickReason = null;
+    const seq = ++this.connectSeq;
     this.store.setState({ ...INITIAL, status: 'connecting', code });
-    try {
-      const room = code ? await this.client.joinById(code, options) : await this.client.create(ROOM_NAME, options);
-      this.attach(room);
-    } catch (error) {
-      this.store.setState({ status: 'failed', failure: joinFailure(error) });
+    const started = this.now();
+    for (let attempt = 0; ; attempt++) {
+      try {
+        const room = code ? await this.client.joinById(code, options) : await this.client.create(ROOM_NAME, options);
+        if (seq !== this.connectSeq) {
+          await room.leave().catch(() => {});
+          return;
+        }
+        this.attach(room);
+        return;
+      } catch (error) {
+        if (seq !== this.connectSeq) return;
+        const failure = joinFailure(error);
+        // Can't reach the server: it may be asleep or restarting. Keep trying for a while.
+        if (failure !== 'NETWORK' || this.now() - started >= this.wakeTimeoutMs) {
+          this.store.setState({ status: 'failed', failure, waking: false });
+          return;
+        }
+        this.store.setState({ waking: true });
+        await this.wait(this.delayFor(attempt));
+        if (seq !== this.connectSeq) return;
+      }
     }
   }
 
@@ -157,6 +214,7 @@ export class Connection {
   /** Leave on purpose: tell the server, close, forget the room. */
   async leave(): Promise<void> {
     this.intentionalLeave = true;
+    this.connectSeq++;
     this.cancelRejoin();
     if (this.room && this.state.status === 'connected') await this.send({ type: 'leaveRoom' });
     await this.disposeRoom();
@@ -179,6 +237,7 @@ export class Connection {
   /** Stop everything (tests, page teardown). */
   async destroy(): Promise<void> {
     this.intentionalLeave = true;
+    this.connectSeq++;
     this.cancelRejoin();
     this.detachWindow?.();
     await this.disposeRoom();
@@ -199,6 +258,9 @@ export class Connection {
       failure: null,
       kicked: null,
       reconnectingSince: null,
+      waking: false,
+      nextRetryAt: null,
+      restoring: false,
     });
 
     room.onStateChange((state: { revision?: number; view?: string }) => this.readState(state));
@@ -266,18 +328,95 @@ export class Connection {
       this.emit('backOnline', null);
     } catch (error) {
       const reason = joinFailure(error);
-      if (reason === 'ROOM_NOT_FOUND' || reason === 'GAME_IN_PROGRESS') {
-        this.rejoining = false;
-        this.store.setState({ status: 'failed', failure: reason === 'ROOM_NOT_FOUND' ? 'ROOM_CLOSED' : reason });
+      const since = this.state.reconnectingSince;
+      const snapshot = this.state.view;
+      // Gone during a short outage: the server restarted. Bring the room back.
+      if (reason === 'ROOM_NOT_FOUND' && snapshot && since !== null && this.now() - since < this.restoreWindowMs) {
+        void this.restore(snapshot, this.state.memberId);
         return;
       }
-      const delay = this.rejoinDelays[Math.min(this.rejoinAttempt, this.rejoinDelays.length - 1)]!;
-      this.rejoinAttempt += 1;
-      this.rejoinTimer = setTimeout(() => {
-        this.rejoinTimer = null;
-        void this.rejoin();
-      }, delay);
+      if (reason === 'ROOM_NOT_FOUND' || reason === 'GAME_IN_PROGRESS') {
+        this.rejoining = false;
+        this.store.setState({
+          status: 'failed',
+          failure: reason === 'ROOM_NOT_FOUND' ? 'ROOM_CLOSED' : reason,
+          nextRetryAt: null,
+        });
+        return;
+      }
+      this.scheduleRejoin();
     }
+  }
+
+  private scheduleRejoin(): void {
+    const delay = this.delayFor(this.rejoinAttempt);
+    this.rejoinAttempt += 1;
+    this.store.setState({ nextRetryAt: this.now() + delay });
+    this.rejoinTimer = setTimeout(() => {
+      this.rejoinTimer = null;
+      void this.rejoin();
+    }, delay);
+  }
+
+  /**
+   * Layer 3: the room was lost in a server restart. Join it if someone already
+   * reopened it, otherwise reopen it under the same code; then put things back.
+   */
+  private async restore(snapshot: RoomView, oldMemberId: string | null): Promise<void> {
+    const code = this.state.code;
+    const options = this.joinOptions;
+    if (!code || !options) return;
+    this.store.setState({ restoring: true, nextRetryAt: null });
+    const wasHost = snapshot.hostId === oldMemberId;
+    if (!wasHost) await this.wait(this.reopenGraceMs + Math.random() * 500);
+    if (this.intentionalLeave) return;
+
+    let room: Room | null = null;
+    let reopenedByMe = false;
+    try {
+      room = await this.client.joinById(code, options);
+    } catch (error) {
+      if (joinFailure(error) === 'ROOM_NOT_FOUND') {
+        try {
+          room = await this.client.create(ROOM_NAME, { ...options, reopen: code });
+          reopenedByMe = true;
+        } catch (createError) {
+          // Someone else reopened it a moment earlier: join theirs.
+          if (String((createError as Error)?.message ?? createError).includes(ROOM_EXISTS)) {
+            room = await this.client.joinById(code, options).catch(() => null);
+          }
+        }
+      }
+    }
+    if (this.intentionalLeave) {
+      await room?.leave().catch(() => {});
+      return;
+    }
+    if (!room) {
+      // Still can't get in (server flapping): keep going with the normal backoff.
+      this.store.setState({ restoring: false });
+      this.scheduleRejoin();
+      return;
+    }
+    this.attach(room);
+    this.rejoining = false;
+
+    // Put back what we can: my seat; and, if I reopened it, the rules and the bots.
+    const mySeat = snapshot.members.find((m) => m.id === oldMemberId)?.seat ?? null;
+    if (reopenedByMe) {
+      await this.send({ type: 'updateSettings', settings: snapshot.settings });
+      for (const color of TURN_ORDER) if (snapshot.seats[color]?.isBot) await this.send({ type: 'addBot', color });
+    }
+    if (mySeat) await this.send({ type: 'takeSeat', color: mySeat });
+    this.emit('restored', { gameLost: snapshot.phase !== 'lobby', reopenedByMe });
+  }
+
+  private delayFor(attempt: number): number {
+    return this.rejoinDelays[Math.min(attempt, this.rejoinDelays.length - 1)]!;
+  }
+
+  private wait(ms: number): Promise<void> {
+    return new Promise((resolve) => setTimeout(resolve, ms));
   }
 
   private cancelRejoin(): void {

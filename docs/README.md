@@ -23,7 +23,7 @@ These documents describe the whole product before any code is written. Implement
 | Rules engine    | Custom, pure TypeScript, no dependencies                                     | No library understands these rules. Pure functions make it testable and reusable by the bot (and a future RL bot).                                  |
 | Client          | React 19 + Vite, SVG board, Motion for animation, Tailwind CSS               | Responsive, crisp at any size, rich animation without a game engine                                                                                 |
 | Identity        | No accounts. A random player token stored in the browser plus a display name | The token lets players reclaim their seat after any disconnect                                                                                      |
-| Persistence     | Rooms live in server memory (v1). Snapshot-to-SQLite is a later milestone    | Simple. A server restart losing live games is acceptable at first                                                                                   |
+| Persistence     | Rooms live in server memory (v1). Snapshot-to-SQLite is a later milestone    | Simple. After a restart clients reopen their room under the same code with seats, rules and bots; only a game in progress is lost                   |
 | Bots            | Heuristic bot in v1; RL bot later                                            | Needed for timers, disconnects and empty seats                                                                                                      |
 
 ## Not in scope for v1

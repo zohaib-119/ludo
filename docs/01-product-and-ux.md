@@ -157,7 +157,7 @@ Illustrated explanation of the base game and every toggle in RULES.md, written f
 | Another player is offline                     | Their panel shows the grey dot and timer; when it is their turn the centre of the board shows "Waiting for Ali (offline) — bot plays in 0:24" or, with takeover off, "Waiting for Ali" and a host-only **Let bot play** button |
 | Room not found                                | Friendly page: "This room doesn't exist or has ended" with Create / Join buttons                                                                                                                                               |
 | Room full / game started and you have no seat | "This game has already started" (spectating is out of scope for v1)                                                                                                                                                            |
-| Server restarting                             | "The server is restarting — your game could not be saved" (until persistence is added)                                                                                                                                         |
+| Server restarting                             | "Can’t reach the server — it may be restarting", with a countdown and Retry; then "The server restarted" while the room is brought back under the same code, and a notice that a game in progress was lost                     |
 
 ## 6. Personal settings (stored locally)
 

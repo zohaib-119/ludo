@@ -16,7 +16,7 @@ import { t } from '../i18n/messages';
 import { type Profile, isValidName, lastRoom, loadProfile, playerToken, saveProfile } from '../lib/identity';
 import { storagePersists } from '../lib/storage';
 import { serverUrl } from '../net/config';
-import { getConnection } from '../net/session';
+import { getConnection, useConnection } from '../net/session';
 import { AppearanceButton } from '../ui/Appearance';
 import { AvatarPicker } from '../ui/AvatarPicker';
 import { Avatar, Button, Sheet, TextField, cx } from '../ui/kit';
@@ -31,6 +31,9 @@ export function HomePage() {
 
   // "Continue game": only if the last room still exists on the server.
   useEffect(() => {
+    // Wake the server as soon as someone opens the app (a free host may be asleep),
+    // so it is ready by the time they press Create or Join.
+    fetch(`${serverUrl()}/healthz`, { cache: 'no-store' }).catch(() => {});
     const last = lastRoom.get();
     if (!last) return;
     const ctrl = new AbortController();
@@ -198,6 +201,7 @@ function PlayDialog({ mode, open, onClose }: { mode: 'create' | 'join'; open: bo
   const [codeError, setCodeError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [persists] = useState(storagePersists);
+  const waking = useConnection((s) => s.waking);
 
   // Re-read the saved profile whenever the dialog opens (the other dialog may have changed it).
   useEffect(() => {
@@ -222,15 +226,22 @@ function PlayDialog({ mode, open, onClose }: { mode: 'create' | 'join'; open: bo
     if (!nameOk) return;
     setBusy(true);
     const conn = getConnection();
+    // Retries quietly while the server wakes up (conn.state.waking); closing the dialog cancels.
     await conn.connect(null, { playerToken: playerToken(), name: profile.name.trim(), avatar: profile.avatar });
     setBusy(false);
     const { status, code: created } = conn.state;
     if (status === 'connected' && created) navigate(`/r/${created}`);
-    else toast(t('room.errorBody'), 'danger');
+    else if (status === 'failed') toast(t('room.errorBody'), 'danger');
+  };
+
+  const close = () => {
+    if (busy) void getConnection().leave(); // stop waiting for the server
+    setBusy(false);
+    onClose();
   };
 
   return (
-    <Sheet open={open} onClose={onClose} title={mode === 'create' ? t('home.createTitle') : t('home.joinTitle')}>
+    <Sheet open={open} onClose={close} title={mode === 'create' ? t('home.createTitle') : t('home.joinTitle')}>
       <form onSubmit={submit} className="space-y-4" noValidate>
         <AvatarPicker value={profile.avatar} onChange={(avatar) => commit({ ...profile, avatar })} />
 
@@ -288,8 +299,19 @@ function PlayDialog({ mode, open, onClose }: { mode: 'create' | 'join'; open: bo
           loading={busy}
           data-testid={mode === 'create' ? 'create-submit' : 'join-submit'}
         >
-          {mode === 'create' ? (busy ? t('home.creating') : t('home.create')) : t('home.join')}
+          {mode === 'create'
+            ? busy
+              ? waking
+                ? t('room.waking')
+                : t('home.creating')
+              : t('home.create')
+            : t('home.join')}
         </Button>
+        {busy && waking && (
+          <p className="text-center text-xs text-muted" data-testid="waking-hint">
+            {t('room.wakingHint')}
+          </p>
+        )}
       </form>
     </Sheet>
   );

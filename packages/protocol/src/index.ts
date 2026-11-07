@@ -163,6 +163,18 @@ export interface JoinOptions {
   avatar: string;
 }
 
+/**
+ * Create options. `reopen` asks for a specific code: used to bring a room back
+ * after the server restarted (rooms live in memory), so everyone's link still works.
+ * Refused with ROOM_EXISTS when that code is in use.
+ */
+export interface CreateOptions extends JoinOptions {
+  reopen?: string;
+}
+
+/** Join/create error when reopening a code that is already open (someone else reopened it first). */
+export const ROOM_EXISTS = 'ROOM_EXISTS';
+
 // ---------------------------------------------------------------------------
 // Commands (client → server). Sent with room.request('cmd', command).
 // ---------------------------------------------------------------------------

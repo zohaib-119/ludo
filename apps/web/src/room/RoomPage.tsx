@@ -9,7 +9,7 @@ import type { FailReason } from '../net/connection';
 import { listenToChat, useChat } from '../net/chat';
 import { getConnection, useConnection } from '../net/session';
 import { Avatar, Button, Card, Logo, Spinner, TextField } from '../ui/kit';
-import { toast } from '../ui/toast';
+import { toast, useToasts } from '../ui/toast';
 import { ConnectionBanner } from './ConnectionBanner';
 
 // The game screen (board, dice, animations) loads only when a game starts.
@@ -24,6 +24,7 @@ export function RoomPage() {
   const kicked = useConnection((s) => s.kicked);
   const view = useConnection((s) => s.view);
   const connectedCode = useConnection((s) => s.code);
+  const waking = useConnection((s) => s.waking);
 
   // Join (or rejoin) this room unless we're already in it.
   useEffect(() => {
@@ -57,7 +58,10 @@ export function RoomPage() {
     return (
       <Centered>
         <Spinner className="size-8" />
-        <p className="text-muted">{t('room.connecting', { code })}</p>
+        <p className="text-muted" data-testid="room-connecting">
+          {waking ? t('room.waking') : t('room.connecting', { code })}
+        </p>
+        {waking && <p className="text-sm text-muted">{t('room.wakingHint')}</p>}
       </Centered>
     );
   }
@@ -119,10 +123,21 @@ function useRoomNotices() {
       }
     });
     const offBack = conn.on('backOnline', () => toast(t('room.backOnline'), 'success'));
+    // After a server restart the room is back: say so clearly, and for longer than a normal toast.
+    const offRestored = conn.on('restored', ({ gameLost }) =>
+      useToasts
+        .getState()
+        .push(
+          gameLost ? t('room.restoredGameLost') : t('room.restored', { code: conn.state.code ?? '' }),
+          'warning',
+          9000,
+        ),
+    );
     return () => {
       offStore();
       offNotice();
       offBack();
+      offRestored();
     };
   }, []);
 }

@@ -403,3 +403,33 @@ describe('lobby members row', () => {
     expect(row.querySelector('img[data-avatar="toonHead:Mina"]')).toBeTruthy();
   });
 });
+
+describe('connection overlay', () => {
+  it('explains an outage with a countdown and Retry, and says when the room is being brought back', async () => {
+    const { ConnectionBanner } = await import('../src/room/ConnectionBanner');
+    const store = getConnection().store;
+    const now = Date.now();
+    store.setState({
+      status: 'reconnecting',
+      reconnectingSince: now - 20_000,
+      nextRetryAt: now + 4_000,
+      restoring: false,
+    });
+    const { unmount } = render(<ConnectionBanner />);
+    const overlay = screen.getByTestId('connection-overlay');
+    expect(overlay.textContent).toContain('Can’t reach the server');
+    expect(overlay.textContent).toContain('put back in your seat automatically');
+    expect(overlay.textContent).toMatch(/Trying again in [45]s/);
+    expect(within(overlay).getByRole('button', { name: 'Retry now' })).toBeTruthy();
+    unmount();
+
+    // Server came back without the room: the overlay shows at once, without Retry.
+    store.setState({ reconnectingSince: Date.now(), nextRetryAt: null, restoring: true });
+    render(<ConnectionBanner />);
+    const restoring = screen.getByTestId('connection-overlay');
+    expect(restoring.textContent).toContain('The server restarted');
+    expect(restoring.textContent).toContain('same code');
+    expect(within(restoring).queryByRole('button')).toBeNull();
+    store.setState({ status: 'idle', reconnectingSince: null, restoring: false });
+  });
+});
