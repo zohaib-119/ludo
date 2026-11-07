@@ -96,7 +96,7 @@ All animation uses **Motion** (formerly Framer Motion) for UI and SVG elements. 
 
 ## 7. Sound
 
-Short, soft, tactile sounds, using **Howler.js** with an audio sprite (one file, all sounds). No background music. Game sounds (dice, hops, captures, finishes) play for **every** player, whoever's turn it is.
+Short, soft, tactile sounds, **synthesised in the browser with the Web Audio API** (`apps/web/src/audio/sound.ts`): no audio files to download or license, instant start, one volume control. Audio unlocks on the first tap or key press, as browsers require. No background music. Game sounds (dice, hops, captures, finishes) play for **every** player, whoever's turn it is.
 
 | Event                | Sound                                                                                        |
 | -------------------- | -------------------------------------------------------------------------------------------- |

@@ -126,7 +126,9 @@ Random games with random settings, random seats and random legal actions, for th
 - `apps/web/test/lobby-logic.test.ts`: the client's start-blocker messages agree with the server for all 32 seat/team combinations.
 - `apps/web/test/components.test.tsx` (jsdom): rules panel (host vs guest, conditional options, change highlight), seat board (host controls), home page (name and code validation, pasted links, saved profile).
 - `e2e/lobby.spec.ts` (Playwright, real browsers, server and web app started by the config): four-player lobby flow with rule changes un-readying everyone, refresh keeping the seat in lobby and game, second tab, unknown/started rooms, leaving, going offline and back.
-- Run with `npm test` and `npm run e2e`. Set `PW_CHROMIUM_PATH` to use an already-installed Chromium instead of `npx playwright install`.
+- `e2e/game.spec.ts`: turns against bots, a full autoplay game to results and rematch, host ending a game, an offline player with host takeover.
+- `e2e/extras.spec.ts`: chat and reactions between players (lobby and game), the QR code, the How to play page and its links, the app manifest and icons, screen-reader turn announcement.
+- Run with `npm test` and `npm run e2e`. CI (`.github/workflows/ci.yml`) runs typecheck, lint, the format check, unit tests and the browser tests. Set `PW_CHROMIUM_PATH` to use an already-installed Chromium instead of `npx playwright install`.
 
 ## 7. CI
 
