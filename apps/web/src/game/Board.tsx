@@ -5,8 +5,9 @@
  */
 import { type Color, COLUMN_CELLS, type LegalMove, type Piece, pathBetween, pointFor } from '@ludo/engine';
 import { motion } from 'motion/react';
-import { memo, useMemo } from 'react';
-import { BOARD_THEMES, type BoardTheme, type PieceStyleId } from '../lib/themes';
+import { type RefObject, memo, useEffect, useMemo, useRef, useState } from 'react';
+import { useSettings } from '../lib/settings';
+import { BOARD_THEMES, type BoardTheme, type PieceStyleId, diceLook } from '../lib/themes';
 import { BoardArt, BoardDefs, PieceShape } from './BoardArt';
 import { placePieces, rotatePoint } from './geometry';
 
@@ -38,13 +39,16 @@ export interface BoardProps {
 
 export function Board(props: BoardProps) {
   const { pieces, progress, rotation, movable, selected, options, preview } = props;
+  const svgRef = useRef<SVGSVGElement>(null);
   const theme = props.theme ?? BOARD_THEMES.classic;
   const pieceStyle = props.pieceStyle ?? 'glossy';
   const placed = useMemo(() => placePieces(pieces, progress, rotation), [pieces, progress, rotation]);
   const selectedPlaced = placed.find((p) => p.piece.id === selected);
+  const choiceSize = useChoiceSize(svgRef);
 
   return (
     <svg
+      ref={svgRef}
       viewBox="-0.25 -0.25 15.5 15.5"
       className="block size-full select-none"
       role="img"
@@ -89,13 +93,19 @@ export function Board(props: BoardProps) {
           />
         ))}
 
-      {/* Choice bubbles above the selected piece. */}
+      {/* Which die to play: real dice faces next to the selected piece, big enough to tap safely. */}
       {selectedPlaced && options.length > 1 && (
         <g>
           {options.map((m, i) => {
             const n = options.length;
-            const bx = selectedPlaced.x + (i - (n - 1) / 2) * 0.95;
-            const by = Math.max(0.6, selectedPlaced.y - 1.05);
+            const gap = choiceSize + 0.25;
+            const half = choiceSize / 2 + 0.1;
+            // Centred over the piece, kept on the board; below the piece when it is near the top.
+            const rowLeft = Math.min(Math.max(selectedPlaced.x - ((n - 1) * gap) / 2, half), 15 - half - (n - 1) * gap);
+            const bx = rowLeft + i * gap;
+            const offset = choiceSize / 2 + 0.7; // clear of the piece itself
+            const above = selectedPlaced.y - offset;
+            const by = above - half < 0 ? selectedPlaced.y + offset : above;
             return (
               <motion.g
                 key={m.value}
@@ -116,24 +126,105 @@ export function Board(props: BoardProps) {
                 }}
                 data-testid={`choice-${m.value}`}
               >
-                <circle cx={bx} cy={by} r={0.42} fill="var(--text)" />
-                <text
-                  x={bx}
-                  y={by + 0.15}
-                  textAnchor="middle"
-                  fontSize={0.48}
-                  fontWeight={800}
-                  fill="var(--bg)"
-                  fontFamily="var(--font-display)"
-                >
-                  {m.value}
-                </text>
+                <ChoiceDie x={bx} y={by} value={m.value} color={selectedPlaced.piece.color} size={choiceSize} />
               </motion.g>
             );
           })}
         </g>
       )}
     </svg>
+  );
+}
+
+/**
+ * Size of a "which die?" choice, in board squares (a square is 1): at least about
+ * 46 px on screen so a finger can't miss on a phone, and 1.3 squares on bigger boards.
+ */
+const CHOICE_MIN_PX = 46;
+function useChoiceSize(svgRef: RefObject<SVGSVGElement | null>): number {
+  const [size, setSize] = useState(1.3);
+  useEffect(() => {
+    const svg = svgRef.current;
+    if (!svg) return;
+    const update = () => {
+      const pxPerSquare = svg.getBoundingClientRect().width / 15.5;
+      if (pxPerSquare > 0) setSize(Math.min(2.4, Math.max(1.3, CHOICE_MIN_PX / pxPerSquare)));
+    };
+    update();
+    if (typeof ResizeObserver === 'undefined') return;
+    const ro = new ResizeObserver(update);
+    ro.observe(svg);
+    return () => ro.disconnect();
+  }, [svgRef]);
+  return size;
+}
+/** Pip positions on a 3×3 grid, as for the real dice. */
+const CHOICE_PIPS: Record<number, Array<[number, number]>> = {
+  1: [[0, 0]],
+  2: [
+    [-1, -1],
+    [1, 1],
+  ],
+  3: [
+    [-1, -1],
+    [0, 0],
+    [1, 1],
+  ],
+  4: [
+    [-1, -1],
+    [1, -1],
+    [-1, 1],
+    [1, 1],
+  ],
+  5: [
+    [-1, -1],
+    [1, -1],
+    [0, 0],
+    [-1, 1],
+    [1, 1],
+  ],
+  6: [
+    [-1, -1],
+    [1, -1],
+    [-1, 0],
+    [1, 0],
+    [-1, 1],
+    [1, 1],
+  ],
+};
+
+/** A die face drawn in the board's SVG, in the player's dice style. */
+function ChoiceDie({ x, y, value, color, size }: { x: number; y: number; value: number; color: Color; size: number }) {
+  const style = useSettings((st) => st.diceStyle);
+  const look = diceLook(style, color);
+  const s = size;
+  const step = s * 0.27;
+  return (
+    <g>
+      {/* A slightly larger, invisible target so near-misses still count. */}
+      <rect x={x - s / 2 - 0.12} y={y - s / 2 - 0.12} width={s + 0.24} height={s + 0.24} fill="transparent" />
+      <rect x={x - s / 2} y={y - s / 2 + 0.07} width={s} height={s} rx={s * 0.22} fill="black" opacity={0.25} />
+      <rect
+        x={x - s / 2}
+        y={y - s / 2}
+        width={s}
+        height={s}
+        rx={s * 0.22}
+        fill={look.face}
+        stroke={look.edge}
+        strokeWidth={0.05}
+      />
+      {CHOICE_PIPS[value]?.map(([dx, dy], i) => (
+        <circle
+          key={i}
+          cx={x + dx * step}
+          cy={y + dy * step}
+          r={s * 0.1}
+          fill={look.pip}
+          style={look.glow ? { filter: `drop-shadow(0 0 0.06px ${look.glow})` } : undefined}
+        />
+      ))}
+    </g>
   );
 }
 

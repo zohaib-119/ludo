@@ -84,6 +84,8 @@ A board theme sets the paper, tray, track, grid, frame and its own tuning of the
 
 - Rendered as **3D CSS cubes** (CSS transforms, no WebGL) with rounded edges and pips. Each face is pre-built; a roll animates random tumbling for ~700 ms then eases to the face matching the server value.
 - Dice sit on a tray in the rolling player's colour (their deep shade, rimmed in their bright one) labelled "Your dice" or "Sara's dice"; the tray keeps a fixed height.
+- **Rolling:** there is no Roll button. On your roll the tray holds the dice still to be thrown ("?" faces, gently bobbing; one or two by the single-die rules), and tapping the tray rolls them (Space works too). The hint below reads "Tap the dice to roll".
+- **Which die to play:** when a tapped piece can use more than one value, real dice faces (in your dice style) appear next to it, at least about 46 px on screen so a finger can't miss.
 - **Bank chips:** after landing, dice shrink into numbered chips in the bank row. The selected chip is raised and outlined. Used chips fly to the piece they moved and fade.
 - **Re-roll:** the double six (or single six) glows gold before sliding into the bank.
 - **Void:** dice shake left-right, turn grey, a strike line draws through them.

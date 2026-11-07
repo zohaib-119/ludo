@@ -355,6 +355,49 @@ describe('themes', () => {
 });
 
 describe('dice tray', () => {
+  it('on my roll it holds dice waiting to be thrown; tapping the tray rolls (no Roll button)', () => {
+    const { view, me } = gameView(); // red (me) to roll, two dice
+    showView(view, me);
+    const { unmount } = render(
+      <MemoryRouter>
+        <GameScreen />
+      </MemoryRouter>,
+    );
+    const box = screen.getByTestId('dice-box');
+    expect(within(box).getAllByTestId('ready-die')).toHaveLength(2);
+    expect(screen.getByTestId('roll-hint').textContent).toBe('Tap the dice to roll');
+    // The only "Roll" control is the tray itself.
+    const roll = screen.getByRole('button', { name: 'Roll' });
+    expect(roll).toBe(screen.getByTestId('roll-button'));
+    expect(box.contains(roll)).toBe(true);
+    fireEvent.click(roll);
+    expect(sent.map((c) => c.type)).toEqual(['roll']);
+    unmount();
+
+    // In 1-die mode, one die waits.
+    const one = { ...view, settings: { ...view.settings, diceMode: 1 as const } };
+    showView(one, me);
+    render(
+      <MemoryRouter>
+        <GameScreen />
+      </MemoryRouter>,
+    );
+    expect(within(screen.getByTestId('dice-box')).getAllByTestId('ready-die')).toHaveLength(1);
+  });
+
+  it('shows no waiting dice and no roll target on someone else’s turn', () => {
+    const { view, me } = gameView();
+    const theirs = { ...view, game: { ...view.game!, turn: { ...view.game!.turn, seat: 'yellow' as const } } };
+    showView(theirs, me);
+    render(
+      <MemoryRouter>
+        <GameScreen />
+      </MemoryRouter>,
+    );
+    expect(screen.queryByTestId('ready-die')).toBeNull();
+    expect(screen.queryByTestId('roll-button')).toBeNull();
+  });
+
   it('sits in the colour of whoever is rolling, named for them', () => {
     const { view, me } = gameView(); // red (me) to roll
     showView(view, me);
@@ -431,5 +474,43 @@ describe('connection overlay', () => {
     expect(restoring.textContent).toContain('same code');
     expect(within(restoring).queryByRole('button')).toBeNull();
     store.setState({ status: 'idle', reconnectingSince: null, restoring: false });
+  });
+});
+
+describe('which die to play', () => {
+  it('offers real dice faces (pips, no numbers) beside the piece, and picking one plays it', () => {
+    const pieces = [{ id: 'red-0', color: 'red' as const, progress: 10 }];
+    const options = [3, 6].map((value) => ({ pieceId: 'red-0', value, from: 10, to: 10 + value }) as never);
+    const chosen: number[] = [];
+    const { container } = render(
+      <Board
+        pieces={pieces}
+        progress={{}}
+        rotation={0}
+        activeColor="red"
+        movable={new Set(['red-0'])}
+        selected="red-0"
+        options={options}
+        preview={null}
+        locked={[]}
+        colorBlind={false}
+        reducedMotion
+        onPieceTap={() => {}}
+        onChoose={(m) => chosen.push((m as { value: number }).value)}
+        onBackgroundTap={() => {}}
+      />,
+    );
+    for (const value of [3, 6]) {
+      const die = screen.getByTestId(`choice-${value}`);
+      expect(die.getAttribute('aria-label')).toBe(`Move ${value}`);
+      expect(die.querySelectorAll('circle')).toHaveLength(value); // one pip per point
+      expect(die.querySelector('text')).toBeNull();
+    }
+    // At least 1.3 board squares across: much bigger than the old 0.84 bubbles.
+    const face = screen.getByTestId('choice-3').querySelectorAll('rect')[2]!;
+    expect(Number(face.getAttribute('width'))).toBeGreaterThanOrEqual(1.3);
+    fireEvent.click(screen.getByTestId('choice-6'));
+    expect(chosen).toEqual([6]);
+    expect(container.querySelector('[data-testid=choice-6]')).toBeTruthy();
   });
 });
