@@ -34,6 +34,7 @@ The full rules are in [RULES.md](RULES.md), and the in-game **How to play** page
 - **Never lose your seat.** Refresh, switch networks or lose signal, and you're put straight back. If the server restarts, your room comes back with the same code, everyone's seats, the rules and the bots.
 - **Your own style.** 5 boards, 5 piece styles and 5 dice styles, plus generated avatars. Each player's choice is saved in their own browser.
 - **Chat and quick reactions,** sounds made in the browser, vibration on your turn, and a layout made for phones as well as desktops.
+- **Installable app (PWA).** Add it to your home screen or desktop. It opens instantly, works offline up to the point of joining a game, and offers updates without interrupting a game.
 - **Accessible.** Keyboard play (Space rolls), screen-reader announcements, colour-blind markers and reduced motion.
 
 ## Run it locally

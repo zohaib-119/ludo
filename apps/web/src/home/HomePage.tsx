@@ -4,7 +4,7 @@
  */
 import { type Color, pointFor } from '@ludo/engine';
 import { LIMITS, parseRoomCode } from '@ludo/protocol';
-import { ArrowRight, BookOpen, LogIn, Plus } from 'lucide-react';
+import { ArrowRight, BookOpen, Download, LogIn, Plus } from 'lucide-react';
 import { motion } from 'motion/react';
 import { type FormEvent, useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router';
@@ -19,6 +19,7 @@ import { serverUrl } from '../net/config';
 import { getConnection, useConnection } from '../net/session';
 import { AppearanceButton } from '../ui/Appearance';
 import { AvatarPicker } from '../ui/AvatarPicker';
+import { isStandalone, promptInstall, useInstall } from '../pwa/install';
 import { Avatar, Button, Sheet, TextField, cx } from '../ui/kit';
 import { toast } from '../ui/toast';
 
@@ -107,6 +108,7 @@ export function HomePage() {
             <BookOpen className="size-4" /> {t('help.link')}
           </Link>
           <AppearanceButton variant="link" />
+          <InstallButton />
         </div>
         <span className="text-muted">{t('home.features')}</span>
       </footer>
@@ -224,6 +226,10 @@ function PlayDialog({ mode, open, onClose }: { mode: 'create' | 'join'; open: bo
       return;
     }
     if (!nameOk) return;
+    if (navigator.onLine === false) {
+      toast(t('pwa.offline'), 'warning');
+      return;
+    }
     setBusy(true);
     const conn = getConnection();
     // Retries quietly while the server wakes up (conn.state.waking); closing the dialog cancels.
@@ -314,5 +320,21 @@ function PlayDialog({ mode, open, onClose }: { mode: 'create' | 'join'; open: bo
         )}
       </form>
     </Sheet>
+  );
+}
+
+/** Shown only where the browser offers installing (and not once installed). */
+function InstallButton() {
+  const available = useInstall((s) => s.event !== null);
+  if (!available || isStandalone()) return null;
+  return (
+    <button
+      type="button"
+      onClick={() => void promptInstall()}
+      className="inline-flex items-center gap-1.5 font-semibold text-accent underline-offset-4 hover:underline"
+      data-testid="install-app"
+    >
+      <Download className="size-4" /> {t('pwa.install')}
+    </button>
   );
 }

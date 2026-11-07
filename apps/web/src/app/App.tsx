@@ -4,12 +4,15 @@ import { BrowserRouter, Route, Routes } from 'react-router';
 import { HomePage } from '../home/HomePage';
 import { useSettings } from '../lib/settings';
 import { RoomPage } from '../room/RoomPage';
+import { listenForInstall } from '../pwa/install';
+import { OfflinePill, UpdatePrompt } from '../pwa/PwaUi';
 import { Toaster } from '../ui/toast';
 import { NotFoundPage } from './NotFoundPage';
 
 const HowToPlayPage = lazy(() => import('../help/HowToPlayPage').then((m) => ({ default: m.HowToPlayPage })));
 
 installAudioUnlock();
+listenForInstall();
 
 export function App() {
   const volume = useSettings((s) => s.soundVolume);
@@ -30,6 +33,8 @@ export function App() {
         <Route path="*" element={<NotFoundPage />} />
       </Routes>
       <Toaster />
+      <UpdatePrompt />
+      <OfflinePill />
     </BrowserRouter>
   );
 }

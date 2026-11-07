@@ -3,7 +3,7 @@
  * Lobby and home components in a simulated browser. Commands are captured
  * instead of sent, so these check what the UI asks the server to do.
  */
-import { cleanup, fireEvent, render, screen, within } from '@testing-library/react';
+import { act, cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { seededRng } from '@ludo/engine';
 import type { Command, RoomView } from '@ludo/protocol';
@@ -231,6 +231,25 @@ describe('HomePage', () => {
     fireEvent.change(screen.getByLabelText('Your name'), { target: { value: 'Zohaib' } });
     fireEvent.click(screen.getByRole('radio', { name: 'Avatar 3' }));
     expect(JSON.parse(localStorage.getItem('dodice.profile')!)).toEqual({ name: 'Zohaib', avatar: 'avataaars:Hamza' });
+  });
+
+  it('offers Install app only when the browser allows it, and shows the browser prompt', async () => {
+    const { listenForInstall } = await import('../src/pwa/install');
+    listenForInstall();
+    await renderHome();
+    expect(screen.queryByTestId('install-app')).toBeNull(); // nothing offered yet
+    const prompt = vi.fn(async () => {});
+    const offer = Object.assign(new Event('beforeinstallprompt', { cancelable: true }), {
+      prompt,
+      userChoice: Promise.resolve({ outcome: 'accepted' as const }),
+    });
+    act(() => {
+      window.dispatchEvent(offer);
+    });
+    expect(offer.defaultPrevented).toBe(true); // our button instead of the browser's mini-infobar
+    fireEvent.click(await screen.findByTestId('install-app'));
+    expect(prompt).toHaveBeenCalledOnce();
+    await waitFor(() => expect(screen.queryByTestId('install-app')).toBeNull()); // installed: gone
   });
 
   it('avatars are generated pictures; More rolls new ones and keeps yours', async () => {
